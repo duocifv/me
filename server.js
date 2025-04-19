@@ -1,4 +1,3 @@
-// server.js
 const Fastify = require('fastify');
 const { PrismaClient } = require('./generated/prisma')
 
@@ -6,13 +5,11 @@ const { PrismaClient } = require('./generated/prisma')
 const fastify = Fastify({ logger: true });
 const prisma = new PrismaClient();
 
-// GET /users: trả về danh sách user
 fastify.get('/users', async (request, reply) => {
   const users = await prisma.user.findMany();
   reply.send(users);
 });
 
-// POST /users: tạo mới user
 fastify.post('/users', async (request, reply) => {
   const { name, email } = request.body;
   const newUser = await prisma.user.create({
