@@ -1,6 +1,0 @@
----
-deployment:
-  tasks:
-    - export DEPLOYPATH=/home/USERNAME/me/
-    - /bin/cp -R . $DEPLOYPATH
-    - touch $DEPLOYPATH/tmp/restart.txt
