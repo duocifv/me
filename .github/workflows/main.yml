@@ -15,6 +15,9 @@ jobs:
 
     - name: "🔧 Generate Prisma Client"
       run: npx prisma generate
+
+    - name: "🛠 Build project"
+      run: npm run build
     
     - name: 📂 Sync files
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -23,3 +26,4 @@ jobs:
         username: me@my.duocnv.top
         password: Khanh132132!!
         server-dir: /
+        local-dir: "./dist"
