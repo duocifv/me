@@ -19,6 +19,9 @@ jobs:
     - name: "🛠 Build project"
       run: npm run build
     
+    - name: 📂 Verify build output
+      run: ls -R dist/
+    
     - name: 📂 Sync files
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
@@ -26,4 +29,4 @@ jobs:
         username: me@my.duocnv.top
         password: Khanh132132!!
         server-dir: /
-        local-dir: "./dist"
+        local-dir: "dist/"
