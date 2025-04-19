@@ -1,0 +1,25 @@
+
+
+on: push
+name: 🚀 Deploy website on push
+jobs:
+  web-deploy:
+    name: 🎉 Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: 🚚 Get latest code
+      uses: actions/checkout@v4
+      
+    - name: "📦 Install dependencies"
+      run: npm install
+
+    - name: "🔧 Generate Prisma Client"
+      run: npx prisma generate
+    
+    - name: 📂 Sync files
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: 103.221.223.51
+        username: emwinskc@my.duocnv.top
+        password: Khanh132132!!
+        server-dir: /
