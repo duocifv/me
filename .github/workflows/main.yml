@@ -20,6 +20,6 @@ jobs:
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
         server: 103.221.223.51
-        username: emwinskc@my.duocnv.top
+        username: me@my.duocnv.top
         password: Khanh132132!!
         server-dir: /
