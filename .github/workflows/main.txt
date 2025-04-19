@@ -20,3 +20,4 @@
       username: emwinskc@my.duocnv.top
       password: Khanh132132!!
       server-dir: "/"
+      local-dir: "./out"
