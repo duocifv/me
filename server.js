@@ -1,7 +1,6 @@
 // server.js
 const Fastify = require('fastify');
-const { PrismaClient } = require('@prisma/client');
-// const { PrismaClient } = require('./generated/prisma')
+const { PrismaClient } = require('./generated/prisma')
 
 
 const fastify = Fastify({ logger: true });
