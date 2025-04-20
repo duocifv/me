@@ -13,7 +13,11 @@ export default defineConfig({
     password: dbUrl.password,
     dbName: dbUrl.pathname.substring(1),
 
-    entities: ['./dist/src/**/*.entity.js'],
+    entities: [
+        process.env.NODE_ENV === 'production'
+            ? 'src/**/*.entity.js'
+            : 'dist/src/**/*.entity.js',
+    ],
     entitiesTs: ['./src/**/*.entity.ts'],
 
     metadataProvider: TsMorphMetadataProvider,
