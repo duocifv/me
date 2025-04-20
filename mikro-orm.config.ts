@@ -13,7 +13,7 @@ export default defineConfig({
     password: dbUrl.password,
     dbName: dbUrl.pathname.substring(1),
 
-    entities: ['./dist/**/*.entity.js'],
+    entities: ['./dist/src/**/*.entity.js'],
     entitiesTs: ['./src/**/*.entity.ts'],
 
     metadataProvider: TsMorphMetadataProvider,
