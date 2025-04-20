@@ -4,6 +4,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -13,7 +14,16 @@ async function bootstrap() {
     }),
   );
 
-  // (Optional) If you need CORS, pipes, etc. you can enable them here:
+  const config = new DocumentBuilder()
+    .setTitle('API Documentation')
+    .setDescription('API description')
+    .setVersion('1.0')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
+
+    // (Optional) If you need CORS, pipes, etc. you can enable them here:
   // app.enableCors();
   // app.useGlobalPipes(new ValidationPipe());
 
