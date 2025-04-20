@@ -1,14 +1,13 @@
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-
-@Entity() // Đánh dấu lớp này là một entity trong TypeORM
+@Entity()
 export class User {
-  @PrimaryGeneratedColumn() // Khóa chính tự động tăng
-  id: number;
+  @PrimaryKey()
+  id!: number; 
 
-  @Column() // Cột 'name' trong bảng 'User'
-  name: string;
+  @Property({ length: 100 })         
+  name!: string;
 
-  @Column() // Cột 'email' trong bảng 'User'
+  @Property({ length: 100 })
   email: string;
 }
