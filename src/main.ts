@@ -8,7 +8,9 @@ import {
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({
+      ignoreTrailingSlash: true,
+    }),
   );
 
   // (Optional) If you need CORS, pipes, etc. you can enable them here:
