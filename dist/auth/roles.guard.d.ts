@@ -1,8 +1,7 @@
 import { CanActivate, ExecutionContext } from '@nestjs/common';
-import { JwtAuthGuard } from './jwt-auth.guard';
 import { Reflector } from '@nestjs/core';
-export declare class RolesGuard extends JwtAuthGuard implements CanActivate {
+export declare class RolesGuard implements CanActivate {
     private reflector;
     constructor(reflector: Reflector);
-    canActivate(context: ExecutionContext): boolean;
+    canActivate(ctx: ExecutionContext): boolean;
 }

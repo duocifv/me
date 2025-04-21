@@ -11,22 +11,27 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RolesGuard = void 0;
 const common_1 = require("@nestjs/common");
-const jwt_auth_guard_1 = require("./jwt-auth.guard");
 const core_1 = require("@nestjs/core");
-let RolesGuard = class RolesGuard extends jwt_auth_guard_1.JwtAuthGuard {
+const roles_decorator_1 = require("./roles.decorator");
+let RolesGuard = class RolesGuard {
     reflector;
     constructor(reflector) {
-        super();
         this.reflector = reflector;
     }
-    canActivate(context) {
-        const roles = this.reflector.get('roles', context.getHandler());
-        if (!roles) {
+    canActivate(ctx) {
+        const requiredRoles = this.reflector.get(roles_decorator_1.ROLES_KEY, ctx.getHandler());
+        if (!requiredRoles || requiredRoles.length === 0) {
             return true;
         }
-        const request = context.switchToHttp().getRequest();
-        const user = request.user;
-        return roles.includes(user.role);
+        const { user } = ctx.switchToHttp().getRequest();
+        if (!user || !user.roles) {
+            throw new common_1.ForbiddenException('User has no roles');
+        }
+        const hasRole = user.roles.some((role) => requiredRoles.includes(role));
+        if (!hasRole) {
+            throw new common_1.ForbiddenException(`Requires one of roles [${requiredRoles.join(', ')}]`);
+        }
+        return true;
     }
 };
 exports.RolesGuard = RolesGuard;

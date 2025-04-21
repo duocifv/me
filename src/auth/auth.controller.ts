@@ -1,27 +1,28 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+// src/auth/auth.controller.ts
+import { Controller, Request, Post, UseGuards, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { LocalAuthGuard } from './local-auth.guard';
+import { UsersService } from 'src/user/user.service';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private usersService: UsersService,
+  ) {}
 
+  @Public()
+  @Post('register')
+  async register(@Body() body: CreateUserDto) {
+    return this.usersService.create(body);
+  }
+
+  @Public()
+  @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Body() loginDto: LoginDto) {
-    const user = await this.authService.validateUser(loginDto);
-    if (!user) {
-      throw new Error('Invalid credentials');
-    }
-    return this.authService.login(user);
-  }
-
-  @Get('status')
-  getStatus(): string {
-    return 'Auth service is running.';
-  }
-
-  @Get('user')
-  getUser(@Query('id') id: string): string {
-    return `User ID is ${id}`;
+  async login(@Request() req) {
+    return this.authService.login(req.user);
   }
 }

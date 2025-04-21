@@ -1,9 +1,20 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-@Entity()
+@Entity('users')
 export class User {
-  @PrimaryGeneratedColumn() id: number;
-  @Column({ unique: true }) username: string;
-  @Column() password: string;
-  @Column() email: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  password: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['user', 'admin'],
+    default: 'user',
+  })
+  roles: 'user' | 'admin';
 }

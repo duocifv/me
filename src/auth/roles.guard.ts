@@ -1,23 +1,40 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { JwtAuthGuard } from './jwt-auth.guard'; // Sử dụng guard JWT đã tạo
-import { Reflector } from '@nestjs/core';
-import { Role } from './role.enum'; // Thêm enum Role để xác định các vai trò
-
-@Injectable()
-export class RolesGuard extends JwtAuthGuard implements CanActivate {
-  constructor(private reflector: Reflector) {
-    super();
-  }
-
-  canActivate(context: ExecutionContext): boolean {
-    const roles = this.reflector.get<Role[]>('roles', context.getHandler()); // Lấy roles từ metadata của handler
-    if (!roles) {
-      return true; // Nếu không có phân quyền, cho phép truy cập
+// src/auth/roles.guard.ts
+import {
+    Injectable,
+    CanActivate,
+    ExecutionContext,
+    ForbiddenException,
+  } from '@nestjs/common';
+  import { Reflector } from '@nestjs/core';
+  import { ROLES_KEY, Role } from './roles.decorator';
+  
+  @Injectable()
+  export class RolesGuard implements CanActivate {
+    constructor(private reflector: Reflector) {}
+  
+    canActivate(ctx: ExecutionContext): boolean {
+      const requiredRoles = this.reflector.get<Role[]>(
+        ROLES_KEY,
+        ctx.getHandler(),
+      );
+      if (!requiredRoles || requiredRoles.length === 0) {
+        return true; // no roles metadata, allow
+      }
+  
+      const { user } = ctx.switchToHttp().getRequest();
+      if (!user || !user.roles) {
+        throw new ForbiddenException('User has no roles');
+      }
+  
+      const hasRole = user.roles.some((role: Role) =>
+        requiredRoles.includes(role),
+      );
+      if (!hasRole) {
+        throw new ForbiddenException(
+          `Requires one of roles [${requiredRoles.join(', ')}]`,
+        );
+      }
+      return true;
     }
-
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
-
-    return roles.includes(user.role); // Kiểm tra xem người dùng có đủ quyền không
   }
-}
+  

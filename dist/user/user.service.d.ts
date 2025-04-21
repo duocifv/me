@@ -1,10 +1,11 @@
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { JwtService } from '@nestjs/jwt';
-export declare class UserService {
-    private readonly userRepository;
-    private readonly jwtService;
-    constructor(userRepository: Repository<User>, jwtService: JwtService);
-    createUser(username: string, password: string): Promise<User>;
-    findOne(username: string): Promise<User | null>;
+import { CreateUserDto } from './dto/create-user.dto';
+export declare class UsersService {
+    private readonly repo;
+    constructor(repo: Repository<User>);
+    create({ email, password }: CreateUserDto): Promise<User>;
+    findByEmail(email: string): Promise<User | null>;
+    findById(id: string): Promise<User>;
+    findAll(): Promise<Pick<User, 'id' | 'email' | 'roles'>[]>;
 }

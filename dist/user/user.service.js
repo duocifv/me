@@ -12,37 +12,40 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserService = void 0;
+exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const user_entity_1 = require("./user.entity");
 const bcrypt = require("bcryptjs");
-const jwt_1 = require("@nestjs/jwt");
-let UserService = class UserService {
-    userRepository;
-    jwtService;
-    constructor(userRepository, jwtService) {
-        this.userRepository = userRepository;
-        this.jwtService = jwtService;
+const user_entity_1 = require("./user.entity");
+let UsersService = class UsersService {
+    repo;
+    constructor(repo) {
+        this.repo = repo;
     }
-    async createUser(username, password) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = this.userRepository.create({
-            username,
-            password: hashedPassword,
+    async create({ email, password }) {
+        console.log("user ---->", email);
+        const hash = await bcrypt.hash(password, 10);
+        const user = this.repo.create({ email, password: hash });
+        console.log("user ---->", user);
+        return this.repo.save(user);
+    }
+    findByEmail(email) {
+        return this.repo.findOne({ where: { email } });
+    }
+    findById(id) {
+        return this.repo.findOneOrFail({ where: { id } });
+    }
+    findAll() {
+        return this.repo.find({
+            select: ['id', 'email', 'roles'],
         });
-        return this.userRepository.save(user);
-    }
-    async findOne(username) {
-        return this.userRepository.findOne({ where: { username } });
     }
 };
-exports.UserService = UserService;
-exports.UserService = UserService = __decorate([
+exports.UsersService = UsersService;
+exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
-        jwt_1.JwtService])
-], UserService);
+    __metadata("design:paramtypes", [typeorm_2.Repository])
+], UsersService);
 //# sourceMappingURL=user.service.js.map

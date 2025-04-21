@@ -1,28 +1,37 @@
+// src/users/users.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
 import * as bcrypt from 'bcryptjs';
-import { JwtService } from '@nestjs/jwt';
+import { User } from './user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
-export class UserService {
+export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly jwtService: JwtService,
-  ) {}
+    private readonly repo: Repository<User>,
+  ) { }
 
-  async createUser(username: string, password: string): Promise<User> {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.userRepository.create({
-      username,
-      password: hashedPassword,
-    });
-    return this.userRepository.save(user);
+  async create({ email, password }: CreateUserDto): Promise<User> {
+    console.log("user ---->", email)
+    const hash = await bcrypt.hash(password, 10);
+    const user = this.repo.create({ email, password: hash });
+    console.log("user ---->", user)
+    return this.repo.save(user);
   }
 
-  async findOne(username: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { username } });
+  findByEmail(email: string): Promise<User | null> {
+    return this.repo.findOne({ where: { email } });
+  }
+
+  findById(id: string): Promise<User> {
+    return this.repo.findOneOrFail({ where: { id } });
+  }
+
+  findAll(): Promise<Pick<User, 'id' | 'email' | 'roles'>[]> {
+    return this.repo.find({
+      select: ['id', 'email', 'roles'],
+    });
   }
 }

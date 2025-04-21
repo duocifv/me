@@ -13,28 +13,32 @@ exports.User = void 0;
 const typeorm_1 = require("typeorm");
 let User = class User {
     id;
-    username;
-    password;
     email;
+    password;
+    roles;
 };
 exports.User = User;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)(),
-    __metadata("design:type", Number)
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
 ], User.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ unique: true }),
     __metadata("design:type", String)
-], User.prototype, "username", void 0);
+], User.prototype, "email", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], User.prototype, "password", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: ['user', 'admin'],
+        default: 'user',
+    }),
     __metadata("design:type", String)
-], User.prototype, "email", void 0);
+], User.prototype, "roles", void 0);
 exports.User = User = __decorate([
-    (0, typeorm_1.Entity)()
+    (0, typeorm_1.Entity)('users')
 ], User);
 //# sourceMappingURL=user.entity.js.map
