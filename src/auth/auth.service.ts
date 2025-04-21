@@ -3,7 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
-import bcrypt from 'bcryptjs'; // Sử dụng bcrypt để mã hóa mật khẩu
+import bcrypt from 'bcryptjs';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(username: string, password: string): Promise<any> {
+  async validateUser({ password, username }: LoginDto): Promise<User | null> {
     const user = await this.userRepository.findOne({ where: { username } });
 
     if (user && (await bcrypt.compare(password, user.password))) {
@@ -22,7 +23,7 @@ export class AuthService {
     return null; // Nếu không hợp lệ
   }
 
-  async login(user: User) {
+  login(user: User) {
     const payload = { username: user.username, sub: user.id };
     return {
       access_token: this.jwtService.sign(payload),

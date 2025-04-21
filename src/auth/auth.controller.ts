@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 
@@ -8,13 +8,20 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    const user = await this.authService.validateUser(
-      loginDto.username,
-      loginDto.password,
-    );
+    const user = await this.authService.validateUser(loginDto);
     if (!user) {
-      throw new Error('Invalid credentials'); // Nếu không có người dùng, throw error
+      throw new Error('Invalid credentials');
     }
     return this.authService.login(user);
+  }
+
+  @Get('status')
+  getStatus(): string {
+    return 'Auth service is running.';
+  }
+
+  @Get('user')
+  getUser(@Query('id') id: string): string {
+    return `User ID is ${id}`;
   }
 }

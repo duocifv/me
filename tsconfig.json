@@ -1,26 +1,22 @@
 {
-   "compilerOptions": {
-      "lib": [
-         "ESNext"
-      ],
-      "module": "ESNext",
-      "moduleResolution": "node",
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "resolveJsonModule": true,
-      "allowJs": true,
-      "target": "ESNext",
-      "emitDecoratorMetadata": true,
-      "experimentalDecorators": true,
-      "forceConsistentCasingInFileNames": true,
-      "sourceMap": true,
-      "baseUrl": "./",
-      "outDir": "./dist",
-   },
-   "include": [
-      "src/**/*"
-   ],
-   "exclude": [
-      "node_modules"
-   ]
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2023",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false
+  },
+  "include": ["src",]
 }
