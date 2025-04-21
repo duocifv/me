@@ -14,6 +14,7 @@ const app_service_1 = require("./app.service");
 const config_1 = require("@nestjs/config");
 const auth_module_1 = require("./auth/auth.module");
 const user_module_1 = require("./user/user.module");
+const typeorm_config_1 = require("./config/typeorm.config");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -24,14 +25,8 @@ exports.AppModule = AppModule = __decorate([
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
-                useFactory: (config) => ({
-                    type: 'mysql',
-                    host: config.get('DB_HOST'),
-                    port: parseInt(config.get('DB_PORT'), 10),
-                    username: config.get('DB_USER'),
-                    password: config.get('DB_PASSWORD'),
-                    database: config.get('DB_NAME'),
-                    entities: [__dirname + '/**/*.entity{.ts,.js}'],
+                useFactory: () => ({
+                    ...typeorm_config_1.AppDataSource.options,
                     synchronize: false,
                     autoLoadEntities: true,
                 }),
