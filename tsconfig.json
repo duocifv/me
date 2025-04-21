@@ -19,5 +19,5 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": ["src", "prisma", "../generated/prisma"]
+  "include": ["src", "mikro-orm.config.ts"]
 }
