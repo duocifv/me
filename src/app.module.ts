@@ -1,22 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { MikroOrmModule } from '@mikro-orm/nestjs';
-import ormConfig from '../mikro-orm.config';
-import { UsersModule } from './user/users.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
-import { RolesGuard } from './auth/guards/roles.guard';
-import { APP_GUARD } from '@nestjs/core';
+import { ProfileController } from './profile/profile.controller';
+import { dataSource } from './data.source';
 import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [
-    MikroOrmModule.forRoot(ormConfig),
-    UsersModule,
-    AuthModule,
-    UserModule,
-  ],
-  controllers: [AppController],
-  providers: [{ provide: APP_GUARD, useClass: RolesGuard }, AppService],
+  imports: [TypeOrmModule.forRoot(dataSource.options), AuthModule, UserModule],
+  controllers: [ProfileController],
 })
 export class AppModule {}

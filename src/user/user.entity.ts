@@ -1,16 +1,16 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity()
 export class User {
-  @PrimaryKey()
-  id!: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Property({ unique: true })
-  username!: string;
+  @Column({ unique: true })
+  username: string;
 
-  @Property()
-  password!: string;
+  @Column()
+  password: string;
 
-  @Property({ defaultRaw: 'CURRENT_TIMESTAMP' })
-  createdAt?: Date;
+  @Column({ default: 'user' })
+  role: string;
 }

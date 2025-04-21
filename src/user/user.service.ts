@@ -1,30 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@mikro-orm/nestjs';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import bcrypt from 'bcryptjs';
-import { EntityManager, EntityRepository } from '@mikro-orm/mysql';
-import { CreateUserDto } from './user.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private readonly User: EntityRepository<User>,
-    private readonly db: EntityManager,
+    private userRepository: Repository<User>,
   ) {}
 
-  async findByUsername(username: string): Promise<User | null> {
-    return this.User.findOne({ username });
+  async createUser(username: string, password: string): Promise<User> {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = this.userRepository.create({
+      username,
+      password: hashedPassword,
+    });
+    return this.userRepository.save(user);
   }
 
-  async createUser({ username, password }: CreateUserDto): Promise<User> {
-    const hash = await bcrypt.hash(password, 10);
-    const user = this.User.create({
-      username,
-      password: hash,
-    });
-    await this.db.persistAndFlush(user);
-
-    return user;
+  async findOne(username: string): Promise<User | undefined> {
+    return this.userRepository.findOne({ where: { username } });
   }
 }

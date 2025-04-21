@@ -6,7 +6,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
-import passwordManager from './plugins/app/password-manager';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -18,7 +17,6 @@ async function bootstrap() {
   await app.register(fastifyCookie, {
     secret: process.env.COOKIE_SECRET,
   });
-  await app.register(passwordManager);
   const port = process.env.PORT ? +process.env.PORT : 5000;
   await app.listen(port, '0.0.0.0');
 

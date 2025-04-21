@@ -1,24 +1,20 @@
 import { Module } from '@nestjs/common';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { UsersModule } from 'src/user/users.module';
-import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { AuthService } from './auth.service';
+import { JwtStrategy } from './jwt.strategy';
+import { UserModule } from '../user/user.module'; // Giả sử bạn đã có UserModule
 
 @Module({
   imports: [
-    UsersModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_ACCESS_SECRET,
-      signOptions: { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN },
+      secret: process.env.JWT_SECRET_KEY, // Đặt key bảo mật ở đây hoặc trong .env
+      signOptions: { expiresIn: '60m' }, // Thời gian hết hạn của JWT token
     }),
-    JwtModule.register({
-      secret: process.env.JWT_REFRESH_SECRET,
-      signOptions: { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN },
-    }),
+    UserModule, // Đảm bảo có UserModule
   ],
-  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
-  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy],
+  exports: [AuthService],
 })
 export class AuthModule {}
