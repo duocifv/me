@@ -1,7 +1,7 @@
 {
    "compilerOptions": {
       "lib": [
-         "es2021"
+         "ESNext"
       ],
       "module": "ESNext",
       "moduleResolution": "node",
@@ -12,8 +12,9 @@
       "target": "ESNext",
       "emitDecoratorMetadata": true,
       "experimentalDecorators": true,
+      "forceConsistentCasingInFileNames": true,
       "sourceMap": true,
-      "baseUrl": "./src",
+      "baseUrl": "./",
       "outDir": "./dist",
    },
    "include": [
