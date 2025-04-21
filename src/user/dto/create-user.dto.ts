@@ -1,10 +1,11 @@
-import { createZodDto } from "@anatine/zod-nestjs";
-import { z } from "zod";
+import { createZodDto } from '@anatine/zod-nestjs';
+import { z } from 'zod';
 
-export const CreateUserSchema = z.object({
-    email: z.string(),
-    password: z.string()
-})
+// Zod schema cho CreateUserDto
+export const CreateUserZod = z.object({
+  email: z.string().email(),
+  password: z.string().min(6), // Đảm bảo mật khẩu có ít nhất 6 ký tự
+});
 
-// export type CreateUserDto = z.infer<typeof CreateUserSchema>;
-export class CreateUserDto extends createZodDto(CreateUserSchema) { }
+// export type CreateUserDto = z.infer<typeof CreateUserZod>;
+export class CreateUserDto extends createZodDto(CreateUserZod) {}

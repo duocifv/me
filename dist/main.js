@@ -10,13 +10,16 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, new platform_fastify_1.FastifyAdapter({
         ignoreTrailingSlash: true,
     }));
-    const config = new swagger_1.DocumentBuilder()
-        .setTitle('My API')
-        .setDescription('API documentation using Zod and Swagger')
-        .setVersion('1.0')
-        .build();
-    const document = swagger_1.SwaggerModule.createDocument(app, config);
-    swagger_1.SwaggerModule.setup('api', app, document);
+    if (process.env.ENABLE_SWAGGER) {
+        const config = new swagger_1.DocumentBuilder()
+            .setTitle('My API')
+            .setDescription('API documentation using Zod and Swagger')
+            .setVersion('1.0')
+            .build();
+        const document = swagger_1.SwaggerModule.createDocument(app, config);
+        swagger_1.SwaggerModule.setup('api', app, document);
+        console.log('🧪 Swagger enabled at /api');
+    }
     await app.register(cookie_1.default, {
         secret: process.env.COOKIE_SECRET,
     });

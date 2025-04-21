@@ -19,7 +19,7 @@ const local_auth_guard_1 = require("./local-auth.guard");
 const user_service_1 = require("../user/user.service");
 const create_user_dto_1 = require("../user/dto/create-user.dto");
 const public_decorator_1 = require("../common/decorators/public.decorator");
-const nestjs_zod_1 = require("nestjs-zod");
+const zod_validation_pipe_1 = require("../common/pipes/zod-validation.pipe");
 let AuthController = class AuthController {
     authService;
     usersService;
@@ -27,8 +27,8 @@ let AuthController = class AuthController {
         this.authService = authService;
         this.usersService = usersService;
     }
-    async register(body) {
-        return this.usersService.create(body);
+    async register(dto) {
+        return this.usersService.create(dto);
     }
     async login(req) {
         return this.authService.login(req.user);
@@ -38,7 +38,7 @@ exports.AuthController = AuthController;
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('register'),
-    __param(0, (0, common_1.Body)(new nestjs_zod_1.ZodValidationPipe(create_user_dto_1.CreateUserSchema))),
+    __param(0, (0, common_1.Body)(new zod_validation_pipe_1.Z(create_user_dto_1.CreateUserZod))),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
     __metadata("design:returntype", Promise)

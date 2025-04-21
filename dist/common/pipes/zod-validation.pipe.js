@@ -9,10 +9,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ZodValidationPipe = void 0;
+exports.Z = void 0;
 const common_1 = require("@nestjs/common");
 const zod_1 = require("zod");
-let ZodValidationPipe = class ZodValidationPipe {
+let Z = class Z {
     schema;
     constructor(schema) {
         this.schema = schema;
@@ -20,22 +20,18 @@ let ZodValidationPipe = class ZodValidationPipe {
     transform(value) {
         const result = this.schema.safeParse(value);
         if (!result.success) {
-            const errors = result.error.errors.map((err) => ({
-                path: err.path.join('.'),
-                message: err.message,
+            const formatted = result.error.errors.map((e) => ({
+                path: e.path.join('.'),
+                message: e.message,
             }));
-            throw new common_1.BadRequestException({
-                statusCode: 400,
-                message: 'Validation failed',
-                errors,
-            });
+            throw new common_1.BadRequestException({ message: 'Validation failed', errors: formatted });
         }
         return result.data;
     }
 };
-exports.ZodValidationPipe = ZodValidationPipe;
-exports.ZodValidationPipe = ZodValidationPipe = __decorate([
+exports.Z = Z;
+exports.Z = Z = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [zod_1.ZodSchema])
-], ZodValidationPipe);
+], Z);
 //# sourceMappingURL=zod-validation.pipe.js.map
