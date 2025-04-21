@@ -13,6 +13,7 @@ import { AppDataSource } from './config/typeorm.config';
 
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
+import { DemoModule } from './demo/demo.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { RolesGuard } from './auth/roles.guard';
 
     AuthModule,
     UsersModule,
+    DemoModule,
   ],
   controllers: [AppController],
   providers: [

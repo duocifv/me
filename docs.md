@@ -10,6 +10,8 @@ const config = new DocumentBuilder()
   fs.writeFileSync('./openapi.yaml', yamlDocument);
 
 
+nest g resource user
+
 
 npm install -g @nestjs/cli    # hoặc
 npx @nestjs/cli@latest

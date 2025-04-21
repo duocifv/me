@@ -6,6 +6,7 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -14,10 +15,20 @@ async function bootstrap() {
       ignoreTrailingSlash: true,
     }),
   );
+   // Cấu hình Swagger
+   const config = new DocumentBuilder()
+   .setTitle('My API')
+   .setDescription('API documentation using Zod and Swagger')
+   .setVersion('1.0')
+   .build();
+ const document = SwaggerModule.createDocument(app, config);
+ SwaggerModule.setup('api', app, document);
+
   await app.register(fastifyCookie, {
     secret: process.env.COOKIE_SECRET,
   });
   const port = process.env.PORT ? +process.env.PORT : 5000;
+ 
   await app.listen(port, '0.0.0.0');
 
   console.log(`🚀 Server ready at http://localhost:${port}`);
