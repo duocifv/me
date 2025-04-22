@@ -2,14 +2,19 @@ import Fastify from 'fastify';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = Fastify({ logger: false });
+  const port = Number(process.env.PORT) || 3000;
+  const app = Fastify({ logger: true });
+
   await AppModule(app);
 
-  await app.listen({ port: Number(process.env.PORT) || 3000 });
-  app.log.info(`Server running on port ${process.env.PORT || 3000}`);
+  try {
+    await app.listen({ port });
+    console.log(`🚀 Server is running at http://localhost:${port}`);
+    // app.log.info(`🚀 Server is running at ${address}`);
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
 }
 
-bootstrap().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+bootstrap();
