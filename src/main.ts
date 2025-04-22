@@ -8,7 +8,7 @@ async function bootstrap() {
   await AppModule(app);
 
   try {
-    await app.listen({ port });
+    await app.listen({ port, host: '0.0.0.0' });
     console.log(`🚀 Server is running at http://localhost:${port}`);
     // app.log.info(`🚀 Server is running at ${address}`);
   } catch (err) {
