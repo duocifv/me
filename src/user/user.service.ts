@@ -1,8 +1,8 @@
 
 import { eq } from 'drizzle-orm';
 import { CreateUserDto } from './dto/create-user.dto';
-import { db } from '../db/drizzle';
-import { users } from '../db/schema';
+import { db } from '../schema/config';
+import { users } from '../schema/user.schema';
 
 export class UserService {
   
