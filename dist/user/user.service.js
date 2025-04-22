@@ -1,49 +1,32 @@
 "use strict";
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UsersService = void 0;
-const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const bcrypt = require("bcrypt");
-const user_entity_1 = require("./user.entity");
-let UsersService = class UsersService {
-    repo;
-    constructor(repo) {
-        this.repo = repo;
+exports.UserService = void 0;
+const drizzle_orm_1 = require("drizzle-orm");
+const schema_1 = require("src/db/schema");
+const drizzle_config_1 = require("src/db/drizzle.config");
+class UserService {
+    async create(data) {
+        const [result] = await drizzle_config_1.db.insert(schema_1.users).values(data);
+        return result;
     }
-    async create({ email, password }) {
-        const hash = await bcrypt.hash(password, 10);
-        const user = this.repo.create({ email, password: hash });
-        return this.repo.save(user);
+    async findAll() {
+        console.log(" ping ---> 2");
+        const result = await drizzle_config_1.db.select().from(schema_1.users).execute();
+        console.log(" ping ---> 34", result);
+        return result;
     }
-    findByEmail(email) {
-        return this.repo.findOne({ where: { email } });
+    findOne(id) {
+        return drizzle_config_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, id));
     }
-    findById(id) {
-        return this.repo.findOneOrFail({ where: { id } });
+    update(id, data) {
+        return drizzle_config_1.db
+            .update(schema_1.users)
+            .set(data)
+            .where((0, drizzle_orm_1.eq)(schema_1.users.id, id));
     }
-    findAll() {
-        return this.repo.find({
-            select: ['id', 'email', 'roles'],
-        });
+    remove(id) {
+        return drizzle_config_1.db.delete(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, id));
     }
-};
-exports.UsersService = UsersService;
-exports.UsersService = UsersService = __decorate([
-    (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
-], UsersService);
+}
+exports.UserService = UserService;
 //# sourceMappingURL=user.service.js.map

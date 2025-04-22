@@ -1,35 +1,36 @@
-// src/users/users.service.ts
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { User } from './user.entity';
+
+import { eq } from 'drizzle-orm';
 import { CreateUserDto } from './dto/create-user.dto';
+import { users } from 'src/db/schema';
+import { db } from 'src/db/drizzle.config';
 
-@Injectable()
-export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private readonly repo: Repository<User>,
-  ) {}
 
-  async create({ email, password }: CreateUserDto): Promise<User> {
-    const hash = await bcrypt.hash(password, 10);
-    const user = this.repo.create({ email, password: hash });
-    return this.repo.save(user);
+export class UserService {
+  
+  async create(data: CreateUserDto) {
+    const [result] = await db.insert(users).values(data);
+    return result;
   }
 
-  findByEmail(email: string): Promise<User | null> {
-    return this.repo.findOne({ where: { email } });
+  async findAll() {
+    console.log(" ping ---> 2")
+    const result = await db.select().from(users).execute()
+    console.log(" ping ---> 34", result)
+    return result;
   }
 
-  findById(id: string): Promise<User> {
-    return this.repo.findOneOrFail({ where: { id } });
+  findOne(id: number) {
+    return db.select().from(users).where(eq(users.id, id));
   }
 
-  findAll(): Promise<Pick<User, 'id' | 'email' | 'roles'>[]> {
-    return this.repo.find({
-      select: ['id', 'email', 'roles'],
-    });
+  update(id: number, data: Partial<CreateUserDto>) {
+    return db
+      .update(users)
+      .set(data)
+      .where(eq(users.id,id))
+  }
+
+  remove(id: number) {
+    return db.delete(users).where(eq(users.id,id));
   }
 }
