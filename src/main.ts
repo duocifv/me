@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import fwtPlugin from './plugins/jwt';
 import authPlugin from './plugins/auth';
 import guardPlugin from './plugins/guard';
-import errorPlugin from './plugins/sensible'
+import errorPlugin from './plugins/error'
 import swaggerPlugin from './plugins/swagger';
 import zodPlugin from './plugins/zod';
 import dotenv from 'dotenv';

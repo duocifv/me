@@ -52,17 +52,16 @@ export const userRoutes: FastifyPluginCallback = (app, _opts, done) => {
       tags: ['user'],
       body: CreateUserDto, // Sử dụng Zod để xác thực body với CreateUserDto
     },
-    config:{
+    config: {
       public: true
     }
   }, async (req, reply) => {
     const dto = req.body as any;
-    try {
-      const newUser = await userService.create(dto);
-      reply.status(201).send(newUser);
-    } catch (error) {
-      reply.status(500).send({ error: 'Không thể tạo người dùng' });
+    const user = await userService.create(dto);
+    if (!user) {
+      reply.notFound('Không thể tạo người dùng')
     }
+    return reply.send(user)
   });
 
   // Route cập nhật thông tin người dùng
