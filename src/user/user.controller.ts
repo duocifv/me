@@ -1,29 +1,43 @@
 import { FastifyPluginCallback } from 'fastify';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { z } from 'zod'; // Import Zod
 
 export const userRoutes: FastifyPluginCallback = (app, _opts, done) => {
   // Khởi tạo instance của UserService chỉ một lần khi cần.
   const userService = new UserService();
 
   // Route lấy tất cả người dùng
-  app.get('/', async (req, reply) => {
-    
+  app.get('/', {
+    schema: {
+      tags: ['user'],
+    },
+    config: {
+      public: true,
+    },
+  }, async (req, reply) => {
     try {
       const users = await userService.findAll();
-      reply.send(users); // Gửi phản hồi trực tiếp
+      reply.send(users);
     } catch (error) {
       reply.status(500).send({ error: 'Không thể lấy danh sách người dùng' });
     }
   });
 
   // Route lấy người dùng theo ID
-  app.get('/:id', async (req, reply) => {
-    const { id } = req.params as { id: number };
+  app.get('/:id', {
+    schema: {
+      tags: ['user'],
+      params: z.object({
+        id: z.string().uuid(), // Sử dụng zod để xác thực UUID
+      }),
+    },
+  }, async (req, reply) => {
+    const { id } = req.params as { id: string };
     try {
       const user = await userService.findOne(id);
       if (!user) {
-        reply.status(404).send({ error: 'Người dùng không tồn tại' });
+        reply.notFound()
       } else {
         reply.send(user);
       }
@@ -33,8 +47,16 @@ export const userRoutes: FastifyPluginCallback = (app, _opts, done) => {
   });
 
   // Route tạo người dùng mới
-  app.post('/', async (req, reply) => {
-    const dto = req.body as CreateUserDto;
+  app.post('/', {
+    schema: {
+      tags: ['user'],
+      body: CreateUserDto, // Sử dụng Zod để xác thực body với CreateUserDto
+    },
+    config:{
+      public: true
+    }
+  }, async (req, reply) => {
+    const dto = req.body as any;
     try {
       const newUser = await userService.create(dto);
       reply.status(201).send(newUser);
@@ -44,9 +66,17 @@ export const userRoutes: FastifyPluginCallback = (app, _opts, done) => {
   });
 
   // Route cập nhật thông tin người dùng
-  app.put('/:id', async (req, reply) => {
-    const { id } = req.params as { id: number };
-    const dto = req.body as Partial<CreateUserDto>;
+  app.put('/:id', {
+    schema: {
+      tags: ['user'],
+      params: z.object({
+        id: z.string().uuid(), // Sử dụng zod để xác thực UUID
+      }),
+      body: CreateUserDto.partial(), // Chỉ cần một phần của CreateUserDto để cập nhật
+    },
+  }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const dto = req.body as Partial<CreateUserDtoType>;
     try {
       const updatedUser = await userService.update(id, dto);
       if (!updatedUser) {
@@ -60,8 +90,14 @@ export const userRoutes: FastifyPluginCallback = (app, _opts, done) => {
   });
 
   // Route xóa người dùng
-  app.delete('/:id', async (req, reply) => {
-    const { id } = req.params as { id: number };
+  app.delete('/:id', {
+    schema: {
+      params: z.object({
+        id: z.string().uuid(), // Xác thực ID là UUID
+      }),
+    },
+  }, async (req, reply) => {
+    const { id } = req.params as { id: string };
     try {
       const deletedUser = await userService.remove(id);
       if (!deletedUser) {

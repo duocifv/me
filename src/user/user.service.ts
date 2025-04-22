@@ -2,34 +2,32 @@
 import { eq } from 'drizzle-orm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { db } from '../schema/config';
-import { users } from '../schema/user.schema';
+import { User } from '../schema/user.schema';
 
 export class UserService {
   
   async create(data: CreateUserDto) {
-    const [result] = await db.insert(users).values(data);
+    const [result] = await db.insert(User).values(data);
     return result;
   }
 
   async findAll() {
-    console.log(" ping ---> 2")
-    const result = await db.select().from(users).execute()
-    console.log(" ping ---> 34", result)
+    const result = await db.select().from(User).execute()
     return result;
   }
 
   findOne(id: number) {
-    return db.select().from(users).where(eq(users.id, id));
+    return db.select().from(User).where(eq(User.id, id));
   }
 
   update(id: number, data: Partial<CreateUserDto>) {
     return db
-      .update(users)
+      .update(User)
       .set(data)
-      .where(eq(users.id,id))
+      .where(eq(User.id,id))
   }
 
   remove(id: number) {
-    return db.delete(users).where(eq(users.id,id));
+    return db.delete(User).where(eq(User.id,id));
   }
 }
