@@ -5,7 +5,8 @@ import authPlugin from './plugins/auth';
 import guardPlugin from './plugins/guard';
 import errorPlugin from './plugins/error'
 import swaggerPlugin from './plugins/swagger';
-import zodPlugin from './plugins/zod';
+import zodPlugin from './plugins/zod/fastify-zod.';
+import pagination from './plugins/pagination';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -19,6 +20,7 @@ async function bootstrap() {
     app.register(guardPlugin);
     app.register(errorPlugin);
     app.register(zodPlugin);
+    app.register(pagination);
 
     await AppModule(app);
 
