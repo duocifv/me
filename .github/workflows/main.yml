@@ -23,3 +23,4 @@ jobs:
         username: me@my.duocnv.top
         password: Khanh132132!!
         server-dir: /
+        local-dir: "dist/"
