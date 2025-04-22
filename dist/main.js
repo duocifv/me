@@ -17,6 +17,7 @@ async function bootstrap() {
             .setTitle('My API')
             .setDescription('API documentation using Zod and Swagger')
             .setVersion('1.0')
+            .addServer('https://my.duocnv.top/upload/', 'Upload server')
             .build();
         const document = swagger_1.SwaggerModule.createDocument(app, config);
         swagger_1.SwaggerModule.setup('api', app, document);
