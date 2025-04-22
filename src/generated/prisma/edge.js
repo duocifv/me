@@ -120,7 +120,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "D:\\HOTELSPA\\duocnv\\me\\src\\generated\\prisma",
+      "value": "D:\\duocnv\\me\\src\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -134,7 +134,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "D:\\HOTELSPA\\duocnv\\me\\prisma\\schema.prisma",
+    "sourceFilePath": "D:\\duocnv\\me\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -148,12 +148,11 @@ const config = {
     "db"
   ],
   "activeProvider": "mysql",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": null
+        "value": "mysql://root:new_password@localhost:3306/me"
       }
     }
   },
