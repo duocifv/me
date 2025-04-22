@@ -11,9 +11,9 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './user/user.module';
 import { AppDataSource } from './config/typeorm.config';
 
-import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { RolesGuard } from './auth/roles.guard';
-import { DemoModule } from './demo/demo.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
+import { FileUploadModule } from './file-upload/file-upload.module';
 
 @Module({
   imports: [
@@ -24,7 +24,7 @@ import { DemoModule } from './demo/demo.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (cs: ConfigService) => ({
+      useFactory: () => ({
         ...AppDataSource.options,
         synchronize: true,
         autoLoadEntities: true,
@@ -33,7 +33,7 @@ import { DemoModule } from './demo/demo.module';
 
     AuthModule,
     UsersModule,
-    DemoModule,
+    FileUploadModule,
   ],
   controllers: [AppController],
   providers: [

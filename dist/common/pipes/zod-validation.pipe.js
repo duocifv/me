@@ -24,7 +24,10 @@ let Z = class Z {
                 path: e.path.join('.'),
                 message: e.message,
             }));
-            throw new common_1.BadRequestException({ message: 'Validation failed', errors: formatted });
+            throw new common_1.BadRequestException({
+                message: 'Validation failed',
+                errors: formatted,
+            });
         }
         return result.data;
     }

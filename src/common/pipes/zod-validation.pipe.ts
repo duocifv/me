@@ -12,7 +12,10 @@ export class Z implements PipeTransform {
         path: e.path.join('.'),
         message: e.message,
       }));
-      throw new BadRequestException({ message: 'Validation failed', errors: formatted });
+      throw new BadRequestException({
+        message: 'Validation failed',
+        errors: formatted,
+      });
     }
     return result.data;
   }

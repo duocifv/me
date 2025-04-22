@@ -16,9 +16,9 @@ const app_service_1 = require("./app.service");
 const auth_module_1 = require("./auth/auth.module");
 const user_module_1 = require("./user/user.module");
 const typeorm_config_1 = require("./config/typeorm.config");
-const jwt_auth_guard_1 = require("./auth/jwt-auth.guard");
-const roles_guard_1 = require("./auth/roles.guard");
-const demo_module_1 = require("./demo/demo.module");
+const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("./auth/guards/roles.guard");
+const file_upload_module_1 = require("./file-upload/file-upload.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -29,7 +29,7 @@ exports.AppModule = AppModule = __decorate([
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
-                useFactory: (cs) => ({
+                useFactory: () => ({
                     ...typeorm_config_1.AppDataSource.options,
                     synchronize: true,
                     autoLoadEntities: true,
@@ -37,7 +37,7 @@ exports.AppModule = AppModule = __decorate([
             }),
             auth_module_1.AuthModule,
             user_module_1.UsersModule,
-            demo_module_1.DemoModule,
+            file_upload_module_1.FileUploadModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

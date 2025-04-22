@@ -16,7 +16,7 @@ exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const user_entity_1 = require("./user.entity");
 let UsersService = class UsersService {
     repo;
@@ -24,10 +24,8 @@ let UsersService = class UsersService {
         this.repo = repo;
     }
     async create({ email, password }) {
-        console.log("user ---->", email);
         const hash = await bcrypt.hash(password, 10);
         const user = this.repo.create({ email, password: hash });
-        console.log("user ---->", user);
         return this.repo.save(user);
     }
     findByEmail(email) {

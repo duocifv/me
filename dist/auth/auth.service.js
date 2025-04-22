@@ -12,7 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
+const create_user_dto_1 = require("../user/dto/create-user.dto");
 const user_service_1 = require("../user/user.service");
 let AuthService = class AuthService {
     usersService;
@@ -21,11 +22,19 @@ let AuthService = class AuthService {
         this.usersService = usersService;
         this.jwtService = jwtService;
     }
-    async validateUser({ email, password }) {
+    async validateUser(body) {
+        const { email, password } = create_user_dto_1.CreateUserZod.parse(body);
         const user = await this.usersService.findByEmail(email);
-        if (user && (await bcrypt.compare(password, user.password))) {
-            const { password, ...result } = user;
-            return result;
+        if (!user) {
+            throw new common_1.UnauthorizedException('Invalid credentials');
+        }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (user && isMatch) {
+            return {
+                id: user.id,
+                email: user.email,
+                roles: user.roles,
+            };
         }
         throw new common_1.UnauthorizedException('Invalid credentials');
     }

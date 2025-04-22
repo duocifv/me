@@ -7,6 +7,8 @@ import {
 } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import multipart from '@fastify/multipart';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -26,13 +28,17 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);
-
-    console.log('🧪 Swagger enabled at /api');
   }
 
   await app.register(fastifyCookie, {
     secret: process.env.COOKIE_SECRET,
   });
+  await app.register(multipart);
+  app.useStaticAssets({
+    root: join(process.cwd(), 'uploads'),
+    prefix: '/uploads/',
+  });
+
   const port = process.env.PORT ? +process.env.PORT : 5000;
 
   await app.listen(port, '0.0.0.0');
