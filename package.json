@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "prod": "node dist/main.js",
+    "start": "node dist/main.js",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint \"src/**/*.{ts,js}\"",
     "format": "prettier --write .",

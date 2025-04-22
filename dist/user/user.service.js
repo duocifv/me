@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const drizzle_orm_1 = require("drizzle-orm");
-const schema_1 = require("src/db/schema");
-const drizzle_config_1 = require("src/db/drizzle.config");
+const schema_1 = require("../db/schema");
+const drizzle_config_1 = require("../db/drizzle.config");
 class UserService {
     async create(data) {
         const [result] = await drizzle_config_1.db.insert(schema_1.users).values(data);
