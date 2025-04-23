@@ -1,52 +1,15 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-  VersionColumn,
-  Index,
-} from "typeorm";
+// src/entities/User.ts
+import { Entity, PrimaryGeneratedColumn, Column, Unique } from "typeorm";
 
-
-@Index("IDX_USER_EMAIL", ["email"], { unique: true })
 @Entity({ name: "users" })
+@Unique(["email"])
 export class User {
-  @PrimaryGeneratedColumn("uuid")
-  id!: string;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-  @Column("varchar", { length: 100, nullable: false })
+  @Column()
   name!: string;
 
-  @Column("varchar", { length: 255, nullable: false })
+  @Column()
   email!: string;
-
-  @Column("boolean", { default: true, name: "is_active" })
-  isActive!: boolean;
-
-  @CreateDateColumn({
-    type: "timestamp",
-    name: "created_at",
-    default: () => "CURRENT_TIMESTAMP",
-  })
-  createdAt!: Date;
-
-  @UpdateDateColumn({
-    type: "timestamp",
-    name: "updated_at",
-    default: () => "CURRENT_TIMESTAMP",
-    onUpdate: "CURRENT_TIMESTAMP",
-  })
-  updatedAt!: Date;
-
-  @DeleteDateColumn({
-    type: "timestamp",
-    name: "deleted_at",
-    nullable: true,
-  })
-  deletedAt?: Date;
-
-  @VersionColumn({ name: "version" })
-  version!: number;
 }
