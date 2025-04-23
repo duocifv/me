@@ -6,31 +6,17 @@
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
     "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false,
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "types": [
-      "node",
-      "drizzle-orm"
-    ],
-    "baseUrl": "./", // ✅ Cho phép import từ thư mục gốc (nếu cần)
-    "outDir": "./dist",
-    "paths": {
-      "../*": [
-        "src/*"
-      ]
-    }
+    "noFallthroughCasesInSwitch": false
   },
-  "include": [
-    "src/**/*",
-    "src/ormconfig.ts"
-  ]
+  "include": ["src",]
 }

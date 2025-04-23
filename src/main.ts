@@ -1,37 +1,40 @@
-import Fastify from 'fastify';
+import 'dotenv/config';
+import 'reflect-metadata';
+import express from 'express';
 import { AppModule } from './app.module';
-import fwtPlugin from './plugins/jwt';
-import authPlugin from './plugins/auth';
-import guardPlugin from './plugins/guard';
-import errorPlugin from './plugins/error'
-import swaggerPlugin from './plugins/swagger';
-import zodPlugin from './plugins/zod/fastify-zod.';
-import pagination from './plugins/pagination';
-import dotenv from 'dotenv';
-import { db } from './ormconfig';
-
-dotenv.config();
+import fwtMiddleware from './middlewares/jwt.middleware';
+import authMiddleware from './middlewares/auth.middleware';
+import guardMiddleware from './middlewares/guard.middleware';
+import errorMiddleware from './middlewares/error.middleware';
+import swaggerMiddleware from './middlewares/swagger';
+import zodMiddleware from './middlewares/zod/express-zod';
+import paginationMiddleware from './middlewares/pagination.middleware';
+import { db } from './typeorm.config';
 
 async function bootstrap() {
-  const app = Fastify({ logger: false });
+  const app = express();
+
   try {
     await db.initialize();
-    app.register(swaggerPlugin);
-    app.register(fwtPlugin);
-    app.register(authPlugin);
-    app.register(guardPlugin);
-    app.register(errorPlugin);
-    app.register(zodPlugin);
-    app.register(pagination);
+
+    app.use(express.json());
+
+    app.use(swaggerMiddleware);
+    app.use(fwtMiddleware);
+    app.use(authMiddleware);
+    app.use(guardMiddleware);
+    app.use(errorMiddleware);
+    app.use(zodMiddleware);
+    app.use(paginationMiddleware);
 
     await AppModule(app);
 
     const port = Number(process.env.PORT) || 3000;
-    await app.listen({ port, host: '0.0.0.0' });
-    app.log.info(`🚀 Server is running at http://localhost:${port}`);
-  
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`🚀 Server is running at http://localhost:${port}`);
+    });
   } catch (err) {
-    app.log.error(err);
+    console.error(err);
     process.exit(1);
   }
 }

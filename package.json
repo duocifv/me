@@ -12,7 +12,10 @@
     "format": "prettier --write .",
     "test": "jest",
     "test:watch": "jest --watch",
-    "typeorm": "typeorm-ts-node-commonjs"
+    "typeorm": "typeorm-ts-node-commonjs",
+    "mig:gen": "npm run typeorm -- migration:generate src/migrations/Create -d src/typeorm.config.ts",
+    "mig:run": "npm run typeorm -- migration:run -d src/typeorm.config.ts",
+    "mig:revert": "npm run typeorm -- migration:revert -d src/typeorm.config.ts"
   },
   "dependencies": {
     "@fastify/helmet": "^13.0.1",
@@ -21,10 +24,12 @@
     "@fastify/sensible": "^6.0.3",
     "@fastify/swagger": "^9.5.0",
     "@fastify/swagger-ui": "^5.2.2",
+    "@types/http-errors": "^2.0.4",
     "dotenv": "^16.5.0",
     "fastify": "^5.3.2",
     "fastify-guard": "^3.0.1",
     "fastify-type-provider-zod": "^4.0.2",
+    "http-errors": "^2.0.0",
     "mysql2": "^3.14.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.22",
