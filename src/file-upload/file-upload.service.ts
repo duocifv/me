@@ -1,3 +1,5 @@
+// src/modules/file-upload/file-upload.service.ts
+
 import {
   Injectable,
   InternalServerErrorException,
@@ -5,56 +7,52 @@ import {
 } from '@nestjs/common';
 import { mkdir } from 'fs/promises';
 import { join } from 'path';
-import { MemoryStorageFile } from '@blazity/nest-file-fastify';
 import { randomBytes } from 'crypto';
 import { pipeline } from 'stream/promises';
-import { Readable } from 'stream';
-import { createWriteStream } from 'fs';
+import { createReadStream, createWriteStream } from 'fs';
 import { extension } from 'mime-types';
 
 @Injectable()
 export class FileUploadService {
-  private readonly uploadsDir = join(process.cwd(), 'uploads');
+  private readonly tmpDir = join(process.cwd(), 'uploads');
+  private readonly destDir = join(process.cwd(), 'dist', 'uploads');
 
   constructor() {
-    this.ensureUploadsDir();
+    this.initDirs();
   }
 
-  private async ensureUploadsDir(): Promise<void> {
-    try {
-      await mkdir(this.uploadsDir, { recursive: true });
-    } catch (err) {
-      console.error('Failed to create uploads directory:', err);
-      throw new InternalServerErrorException('Không thể tạo thư mục uploads.');
+  private async initDirs() {
+    for (const dir of [this.tmpDir, this.destDir]) {
+      try {
+        await mkdir(dir, { recursive: true });
+      } catch (err) {
+        console.error('Cannot create directory', dir, err);
+        throw new InternalServerErrorException('Server lỗi thư mục lưu file.');
+      }
     }
   }
 
-  private generateFileName(ext: string): string {
-    const suffix = randomBytes(8).toString('hex');
-    return `${suffix}.${ext}`;
+  private genName(ext: string): string {
+    return `${Date.now()}-${randomBytes(6).toString('hex')}.${ext}`;
   }
 
-  async saveFile(file: MemoryStorageFile): Promise<{ url: string }> {
-    const mimeType = String(file.mimetype);
-    const ext = extension(mimeType);
-    if (!ext) {
-      throw new BadRequestException(
-        `Không hỗ trợ định dạng tệp: ${file.mimetype}`,
+  async saveFile(file: Express.Multer.File): Promise<{ url: string }> {
+    const ext = extension(file.mimetype);
+    if (!ext) throw new BadRequestException('Định dạng không hợp lệ.');
+
+    const finalName = this.genName(ext);
+    const destPath = join(this.destDir, finalName);
+
+    try {
+      await pipeline(
+        createReadStream(file.path),
+        createWriteStream(destPath),
       );
-    }
-
-    const fileName = this.generateFileName(ext);
-    const filePath = join(this.uploadsDir, fileName);
-
-    try {
-      const readableStream = Readable.from(file.buffer);
-      const writableStream = createWriteStream(filePath);
-      await pipeline(readableStream, writableStream);
     } catch (err) {
-      console.error('File saving failed:', err);
-      throw new InternalServerErrorException('Lỗi khi lưu tệp.');
+      console.error('Lỗi khi ghi file', err);
+      throw new InternalServerErrorException('Lưu file thất bại.');
     }
 
-    return { url: `/uploads/${fileName}` };
+    return { url: `/uploads/${finalName}` };
   }
 }

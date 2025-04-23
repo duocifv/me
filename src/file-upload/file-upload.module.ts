@@ -1,4 +1,3 @@
-// file-upload.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { FileUploadService } from './file-upload.service';
