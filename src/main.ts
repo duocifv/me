@@ -8,12 +8,14 @@ import swaggerPlugin from './plugins/swagger';
 import zodPlugin from './plugins/zod/fastify-zod.';
 import pagination from './plugins/pagination';
 import dotenv from 'dotenv';
+import { db } from './ormconfig';
 
 dotenv.config();
 
 async function bootstrap() {
   const app = Fastify({ logger: false });
   try {
+    await db.initialize();
     app.register(swaggerPlugin);
     app.register(fwtPlugin);
     app.register(authPlugin);

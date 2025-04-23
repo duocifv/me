@@ -1,13 +1,13 @@
 
 import { eq } from 'drizzle-orm';
 import { CreateUserDto } from './dto/create-user.dto';
-import { db } from '../schema/config';
-import { User } from '../schema/user.schema';
+import { db } from '../ormconfig';
+import { User } from '../entity/User';
 
 export class UserService {
 
   async findAll() {
-    const result = await db.select().from(User).execute()
+    const result = await db.manager.find(User)
     return result;
   }
 
