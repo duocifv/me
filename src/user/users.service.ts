@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,8 +15,10 @@ export class UsersService {
   /**
    * Tạo mới user, hash password trước khi lưu.
    */
-  async create(dto: CreateUserDto): Promise<User> {
-    const exists = await this.usersRepo.findOne({ where: { email: dto.email } });
+  async create(dto: CreateUserDto) {
+    const exists = await this.usersRepo.findOne({
+      where: { email: dto.email },
+    });
     if (exists) {
       throw new ConflictException('Email đã tồn tại');
     }
@@ -28,21 +30,21 @@ export class UsersService {
   /**
    * Tìm user theo email.
    */
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string) {
     return this.usersRepo.findOne({ where: { email } });
   }
 
   /**
    * Tìm user theo id.
    */
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string) {
     return this.usersRepo.findOne({ where: { id } });
   }
 
   /**
    * Validate đăng nhập: so sánh password.
    */
-  async validateUser(email: string, password: string): Promise<User | null> {
+  async validateUser(email: string, password: string) {
     const user = await this.findByEmail(email);
     if (!user) return null;
     const matches = await bcrypt.compare(password, user.password);

@@ -7,6 +7,7 @@ import { FileUploadModule } from './file-upload/file-upload.module';
 import { AuthModule } from './auth/auth.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './user/users.module';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -21,14 +22,18 @@ import { UsersModule } from './user/users.module';
       }),
     }),
     ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 5,
+      throttlers: [
+        {
+          ttl: 60,
+          limit: 5,
+        },
+      ],
     }),
-    
     AuthModule,
     UsersModule,
     FileUploadModule,
   ],
   controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

@@ -16,6 +16,7 @@ const file_upload_module_1 = require("./file-upload/file-upload.module");
 const auth_module_1 = require("./auth/auth.module");
 const throttler_1 = require("@nestjs/throttler");
 const users_module_1 = require("./user/users.module");
+const app_service_1 = require("./app.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -33,14 +34,19 @@ exports.AppModule = AppModule = __decorate([
                 }),
             }),
             throttler_1.ThrottlerModule.forRoot({
-                ttl: 60,
-                limit: 5,
+                throttlers: [
+                    {
+                        ttl: 60,
+                        limit: 5,
+                    },
+                ],
             }),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             file_upload_module_1.FileUploadModule,
         ],
         controllers: [app_controller_1.AppController],
+        providers: [app_service_1.AppService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

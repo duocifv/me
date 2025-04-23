@@ -17,17 +17,39 @@ const refresh_token_entity_1 = require("./entities/refresh-token.entity");
 const access_jwt_strategy_1 = require("./strategies/access-jwt.strategy");
 const refresh_jwt_strategy_1 = require("./strategies/refresh-jwt.strategy");
 const auth_controller_1 = require("./auth.controller");
+const config_1 = require("@nestjs/config");
+const users_module_1 = require("../user/users.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            users_module_1.UsersModule,
             typeorm_1.TypeOrmModule.forFeature([refresh_token_entity_1.RefreshToken]),
-            jwt_1.JwtModule.register({ secret: process.env.JWT_ACCESS_SECRET, signOptions: { expiresIn: '15m' } }),
-            throttler_1.ThrottlerModule.forRoot({ ttl: 60, limit: 5 }),
+            jwt_1.JwtModule.registerAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: async (configService) => ({
+                    secret: configService.get('JWT_ACCESS_SECRET'),
+                    signOptions: { expiresIn: '15m' },
+                }),
+                inject: [config_1.ConfigService],
+            }),
+            throttler_1.ThrottlerModule.forRoot({
+                throttlers: [
+                    {
+                        ttl: 60,
+                        limit: 5,
+                    },
+                ],
+            }),
         ],
-        providers: [auth_service_1.AuthService, tokens_service_1.TokensService, access_jwt_strategy_1.AccessJwtStrategy, refresh_jwt_strategy_1.RefreshJwtStrategy],
+        providers: [
+            auth_service_1.AuthService,
+            tokens_service_1.TokensService,
+            access_jwt_strategy_1.AccessJwtStrategy,
+            refresh_jwt_strategy_1.RefreshJwtStrategy,
+        ],
         controllers: [auth_controller_1.AuthController],
     })
 ], AuthModule);
