@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { z } from 'zod'; // Import Zod
 import { RouteInstance } from '../plugins/zod/fastify-zod.type';
 
-export async function userRoutes(route: RouteInstance) {
+export async function userController(route: RouteInstance) {
   // Khởi tạo instance của UserService chỉ một lần khi cần.
   const userService = new UserService();
 
