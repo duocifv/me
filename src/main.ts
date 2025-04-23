@@ -6,7 +6,7 @@ import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.use(cookieParser(process.env.COOKIE_SECRET));
+  app.use(cookieParser());
 
   if (process.env.ENABLE_SWAGGER) {
     const config = new DocumentBuilder()

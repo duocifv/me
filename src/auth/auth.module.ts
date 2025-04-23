@@ -1,29 +1,21 @@
-// src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
-import { LocalStrategy } from './strategy/local.strategy';
-import { JwtStrategy } from './strategy/jwt.strategy';
+import { TokensService } from './tokens.service';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { AccessJwtStrategy } from './strategies/access-jwt.strategy';
+import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
 import { AuthController } from './auth.controller';
-import { UsersModule } from 'src/user/user.module';
 
 @Module({
   imports: [
-    ConfigModule,
-    UsersModule,
-    PassportModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (cs: ConfigService) => ({
-        secret: cs.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' },
-      }),
-    }),
+    TypeOrmModule.forFeature([RefreshToken]),
+    JwtModule.register({ secret: process.env.JWT_ACCESS_SECRET, signOptions: { expiresIn: '15m' } }),
+    ThrottlerModule.forRoot({ ttl: 60, limit: 5 }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, TokensService, AccessJwtStrategy, RefreshJwtStrategy],
   controllers: [AuthController],
 })
 export class AuthModule {}

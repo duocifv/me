@@ -1,58 +1,48 @@
-// src/modules/file-upload/file-upload.service.ts
-
 import {
   Injectable,
-  InternalServerErrorException,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
-import { mkdir } from 'fs/promises';
 import { join } from 'path';
-import { randomBytes } from 'crypto';
+import { mkdir } from 'fs/promises';
 import { pipeline } from 'stream/promises';
 import { createReadStream, createWriteStream } from 'fs';
 import { extension } from 'mime-types';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class FileUploadService {
-  private readonly tmpDir = join(process.cwd(), 'uploads');
-  private readonly destDir = join(process.cwd(), 'dist', 'uploads');
+  private readonly destDir = join(process.cwd(), 'uploads', 'public');
 
   constructor() {
-    this.initDirs();
+    this.init();
   }
 
-  private async initDirs() {
-    for (const dir of [this.tmpDir, this.destDir]) {
-      try {
-        await mkdir(dir, { recursive: true });
-      } catch (err) {
-        console.error('Cannot create directory', dir, err);
-        throw new InternalServerErrorException('Server lỗi thư mục lưu file.');
-      }
+  private async init() {
+    try {
+      await mkdir(this.destDir, { recursive: true });
+    } catch (err) {
+      throw new InternalServerErrorException('Không tạo được thư mục lưu ảnh');
     }
   }
 
-  private genName(ext: string): string {
+  private generateName(ext: string): string {
     return `${Date.now()}-${randomBytes(6).toString('hex')}.${ext}`;
   }
 
   async saveFile(file: Express.Multer.File): Promise<{ url: string }> {
     const ext = extension(file.mimetype);
-    if (!ext) throw new BadRequestException('Định dạng không hợp lệ.');
+    if (!ext) throw new BadRequestException('Định dạng ảnh không hợp lệ');
 
-    const finalName = this.genName(ext);
-    const destPath = join(this.destDir, finalName);
+    const filename = this.generateName(ext);
+    const destPath = join(this.destDir, filename);
 
     try {
-      await pipeline(
-        createReadStream(file.path),
-        createWriteStream(destPath),
-      );
+      await pipeline(createReadStream(file.path), createWriteStream(destPath));
     } catch (err) {
-      console.error('Lỗi khi ghi file', err);
-      throw new InternalServerErrorException('Lưu file thất bại.');
+      throw new InternalServerErrorException('Ghi file thất bại');
     }
 
-    return { url: `/uploads/${finalName}` };
+    return { url: `/uploads/public/${filename}` };
   }
 }

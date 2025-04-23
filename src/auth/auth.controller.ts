@@ -1,29 +1,29 @@
-// src/auth/auth.controller.ts
-import { Controller, Request, Post, UseGuards, Body } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, UseGuards, HttpCode } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-import { UsersService } from 'src/user/user.service';
-import { CreateUserDto, CreateUserZod } from 'src/user/dto/create-user.dto';
-import { Public } from 'src/common/decorators/public.decorator';
-import { Z } from 'src/common/pipes/zod-validation.pipe';
+import { SignInDto } from './dto/sign-in.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private usersService: UsersService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
-  @Public()
-  @Post('register')
-  async register(@Body(new Z(CreateUserZod)) dto: CreateUserDto) {
-    return this.usersService.create(dto);
+  @Post('login')
+  @HttpCode(200)
+  async login(@Body() dto: SignInDto, @Res({ passthrough: true }) res) {
+    return this.authService.signIn(dto, res);
   }
 
-  @Public()
-  @UseGuards(LocalAuthGuard)
-  @Post('login')
-  async login(@Request() req) {
-    return this.authService.login(req.user);
+  @UseGuards(ThrottlerGuard, AuthGuard('jwt-refresh'))
+  @Post('refresh')
+  @HttpCode(200)
+  async refresh(@Req() req, @Res({ passthrough: true }) res) {
+    return this.authService.refreshTokens(req, res);
+  }
+
+  @Post('logout')
+  @HttpCode(200)
+  async logout(@Req() req, @Res({ passthrough: true }) res) {
+    return this.authService.logout(req, res);
   }
 }

@@ -11,44 +11,63 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
-const jwt_1 = require("@nestjs/jwt");
-const bcrypt = require("bcrypt");
-const create_user_dto_1 = require("../user/dto/create-user.dto");
-const user_service_1 = require("../user/user.service");
+const tokens_service_1 = require("./tokens.service");
+const users_service_1 = require("../user/users.service");
 let AuthService = class AuthService {
     usersService;
-    jwtService;
-    constructor(usersService, jwtService) {
+    tokensService;
+    constructor(usersService, tokensService) {
         this.usersService = usersService;
-        this.jwtService = jwtService;
+        this.tokensService = tokensService;
     }
-    async validateUser(body) {
-        const { email, password } = create_user_dto_1.CreateUserZod.parse(body);
-        const user = await this.usersService.findByEmail(email);
+    async signIn(dto, res) {
+        const user = await this.usersService.validateUser(dto.email, dto.password);
         if (!user) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
+            throw new common_1.UnauthorizedException('Email hoặc mật khẩu không đúng');
         }
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (user && isMatch) {
-            return {
-                id: user.id,
-                email: user.email,
-                roles: user.roles,
-            };
-        }
-        throw new common_1.UnauthorizedException('Invalid credentials');
+        const { accessToken, refreshToken, expiresAt } = await this.tokensService.generateTokenPair(user);
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            maxAge: expiresAt.getTime() - Date.now(),
+        });
+        return { accessToken };
     }
-    async login(user) {
-        const payload = { email: user.email, sub: user.id };
-        return {
-            access_token: this.jwtService.sign(payload),
-        };
+    async refreshTokens(req, res) {
+        const token = req.cookies['refreshToken'];
+        if (!token) {
+            throw new common_1.UnauthorizedException('Không tìm thấy refresh token');
+        }
+        const payload = await this.tokensService.verifyRefreshToken(token);
+        const user = await this.usersService.findById(payload.sub);
+        if (!user) {
+            throw new common_1.UnauthorizedException('Người dùng không tồn tại');
+        }
+        const { accessToken, refreshToken: newRefreshToken, expiresAt, } = await this.tokensService.rotateRefreshToken(payload.jti, user);
+        res.cookie('refreshToken', newRefreshToken, {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            maxAge: expiresAt.getTime() - Date.now(),
+        });
+        return { accessToken };
+    }
+    async logout(req, res) {
+        const token = req.cookies['refreshToken'];
+        if (token) {
+            await this.tokensService.revokeRefreshToken(token);
+        }
+        res.clearCookie('refreshToken', { path: '/' });
+        return { message: 'Đăng xuất thành công' };
     }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [user_service_1.UsersService,
-        jwt_1.JwtService])
+    __metadata("design:paramtypes", [users_service_1.UsersService,
+        tokens_service_1.TokensService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

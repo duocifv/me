@@ -1,9 +1,10 @@
-import { createZodDto } from '@anatine/zod-nestjs';
-import { z } from 'zod';
+import { IsEmail, IsString, MinLength } from 'class-validator';
 
-export const CreateUserZod = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-});
+export class CreateUserDto {
+  @IsEmail()
+  email: string;
 
-export class CreateUserDto extends createZodDto(CreateUserZod) {}
+  @IsString()
+  @MinLength(6)
+  password: string;
+}

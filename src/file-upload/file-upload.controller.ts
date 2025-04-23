@@ -1,71 +1,39 @@
-// src/modules/file-upload/upload.controller.ts
-
 import {
-  BadRequestException,
   Controller,
+  Post,
   HttpCode,
   HttpStatus,
-  Post,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { Public } from 'src/common/decorators/public.decorator';
 import {
   ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
   ApiBody,
-  ApiProperty,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Public } from 'src/common/decorators/public.decorator';
+import { multerOptions } from './multer.config';
 import { FileUploadService } from './file-upload.service';
+import { UploadFileDto } from './upload-file.dto';
 
-class UploadFileDto {
-  @ApiProperty({
-    type: 'string',
-    format: 'binary',
-    description: 'Chọn tệp hình ảnh (PNG, JPEG, GIF), max 5MB',
-  })
-  file: any;
-}
-
-@ApiTags('upload')
+@ApiTags('Upload')
 @Controller('upload')
-export class UploadController {
+export class FileUploadController {
   constructor(private readonly fileUploadService: FileUploadService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Public()
-  @ApiOperation({ summary: 'Upload ảnh (PNG/JPEG/GIF), max 5MB' })
+  @ApiOperation({ summary: 'Upload ảnh' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UploadFileDto })
-  @ApiResponse({ status: 201, description: 'Upload thành công, trả về URL.' })
-  @ApiResponse({ status: 400, description: 'Sai định dạng hoặc vượt quá size.' })
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (_req, file, cb) => {
-          const timestamp = Date.now();
-          const orig = file.originalname.replace(/\s+/g, '_');
-          cb(null, `${timestamp}-${orig}`);
-        },
-      }),
-      limits: { fileSize: 5 * 1024 * 1024 },
-      fileFilter: (_req, file, cb) => {
-        const allowed = ['image/png', 'image/jpeg', 'image/gif'];
-        if (!allowed.includes(file.mimetype)) {
-          return cb(new BadRequestException('Chỉ cho phép PNG/JPEG/GIF'), false);
-        }
-        cb(null, true);
-      },
-    }),
-  )
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
-    const result = await this.fileUploadService.saveFile(file);
-    return { url: result.url };
+  @ApiResponse({ status: 201, description: 'Thành công, trả về URL' })
+  @ApiResponse({ status: 400, description: 'Lỗi định dạng hoặc vượt dung lượng' })
+  @UseInterceptors(FileInterceptor('file', multerOptions))
+  async upload(@UploadedFile() file: Express.Multer.File) {
+    return this.fileUploadService.saveFile(file);
   }
 }

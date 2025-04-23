@@ -7,7 +7,7 @@ const swagger_1 = require("@nestjs/swagger");
 const cookieParser = require("cookie-parser");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    app.use(cookieParser(process.env.COOKIE_SECRET));
+    app.use(cookieParser());
     if (process.env.ENABLE_SWAGGER) {
         const config = new swagger_1.DocumentBuilder()
             .setTitle('My API')
