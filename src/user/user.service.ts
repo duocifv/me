@@ -1,33 +1,41 @@
-
-import { eq } from 'drizzle-orm';
-import { CreateUserDto } from './dto/create-user.dto';
-import { db } from '../ormconfig';
-import { User } from '../entity/User';
+import { User } from 'src/entity/User';
+import error from 'http-errors';
+import { CreateUserDto, SelectDto, UpdateUserDto } from './user.dto';
+import { Repository } from 'typeorm';
 
 export class UserService {
+  private readonly userRepo: Repository<User>;
 
-  async findAll() {
-    const result = await db.manager.find(User)
-    return result;
+  async findAll(take: number, skip: number) {
+    return this.userRepo.findAndCount({
+      skip,
+      take,
+      order: { createdAt: 'DESC' },
+    });
   }
 
-  async findOne(id: number) {
-    return await db.select().from(User).where(eq(User.id, id));
+  async findOne(dto: SelectDto) {
+    return this.userRepo.findOneOrFail({ where: { id: dto.id } });;
   }
 
-  async create(data: CreateUserDto) {
-    const [result] = await db.insert(User).values(data);
-    return result;
+  async create(dto: CreateUserDto) {
+    const user = this.userRepo.create(dto);
+    return this.userRepo.save(user);
   }
 
-  async update(id: number, body: CreateUserDto) {
-    return await db
-      .update(User)
-      .set(body)
-      .where(eq(User.id, id))
+  async update(dto: UpdateUserDto) {
+    const user = await this.userRepo.preload(dto);
+    if (!user) {
+      throw new error.NotFound();
+    }
+    return this.userRepo.save(user);
   }
 
-  async remove(id: number) {
-    return db.delete(User).where(eq(User.id, id));
+  async remove(dto: SelectDto) {
+    const result = await this.userRepo.delete({ id: dto.id });
+    if (result.affected === 0) {
+      throw new error.NotFound();
+    }
+    return true;
   }
 }

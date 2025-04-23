@@ -1,113 +1,85 @@
-import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { z } from 'zod'; // Import Zod
+import { CreateUserDto, SelectDto, UpdateUserDto } from './user.dto';
 import { RouteInstance } from '../plugins/zod/fastify-zod.type';
+import { PaginationDto } from 'src/plugins/pagination';
 
 export async function userRoutes(route: RouteInstance) {
-  // Khởi tạo instance của UserService chỉ một lần khi cần.
-  const userService = new UserService();
+  const userService =  userService(route);
 
-  // Route lấy tất cả người dùng
-  route.get('/', {
-    schema: {
-      tags: ['user'],
+  route.get(
+    '/',
+    {
+      schema: {
+        tags: ['user'],
+        querystring: PaginationDto,
+      },
+      config: {
+        public: true,
+      },
     },
-    config: {
-      public: true,
-    },
-  }, async (req, reply) => {
-    const { page, limit, offset } = req.pagination;
-    try {
-      const users = await userService.findAll();
-      reply.send(users);
-    } catch (error) {
-      reply.status(500).send({ error: 'Không thể lấy danh sách người dùng' });
+    async (req, res) => {
+      const { take, skip } = req.paginationDto();
+      const [data, count] = await userService.findAll(take, skip);
+      return res.paginationData(data, count, take, skip);
     }
-  });
+  );
 
-  // Route lấy người dùng theo ID
-  route.get('/:id', {
-    schema: {
-      tags: ['user'],
-      params: z.object({
-        id: z.string().uuid(), // Sử dụng zod để xác thực UUID
-      }),
+  route.get(
+    '/:id',
+    {
+      schema: {
+        tags: ['user'],
+        params: SelectDto,
+      },
     },
-  }, async (req, reply) => {
-    const { id } = req.params as { id: string };
-    try {
-      const user = await userService.findOne(id);
-      if (!user) {
-        reply.notFound()
-      } else {
-        reply.send(user);
-      }
-    } catch (error) {
-      reply.status(500).send({ error: 'Lỗi khi lấy người dùng' });
+    async (req) => {
+      const dto = req.params;
+      return await userService.findOne(dto);
     }
-  });
+  );
 
-  // Route tạo người dùng mới
-  route.post('/', {
-    schema: {
-      tags: ['user'],
-      body: CreateUserDto, // Sử dụng Zod để xác thực body với CreateUserDto
+  route.post(
+    '/',
+    {
+      schema: {
+        tags: ['user'],
+        body: CreateUserDto,
+      },
+      config: {
+        public: true,
+      },
     },
-    config: {
-      public: true
+    async (req) => {
+      const dto = req.body;
+      return await userService.create(dto);
     }
-  }, async (req, reply) => {
-    const dto = req.body;
-    const user = await userService.create(dto);
-    if (!user) {
-      reply.notFound('Không thể tạo người dùng')
-    }
-    return reply.send(user)
-  });
+  );
 
-  // Route cập nhật thông tin người dùng
-  route.put('/:id', {
-    schema: {
-      tags: ['user'],
-      params: z.object({
-        id: z.number(), // Sử dụng zod để xác thực UUID
-      }),
-      body: CreateUserDto, // Chỉ cần một phần của CreateUserDto để cập nhật
+  route.put(
+    '/:id',
+    {
+      schema: {
+        tags: ['user'],
+        params: SelectDto,
+        body: UpdateUserDto,
+      },
     },
-  }, async (req, reply) => {
-    const id = req.params.id;
-    const dto = req.body;
-    try {
-      const updatedUser = await userService.update(id, dto);
-      if (!updatedUser) {
-        reply.status(404).send({ error: 'Người dùng không tồn tại' });
-      } else {
-        reply.send(updatedUser);
-      }
-    } catch (error) {
-      reply.status(500).send({ error: 'Không thể cập nhật người dùng' });
+    async (req) => {
+      const dto = { ...req.body, id: req.params.id };
+      return await userService.update(dto);
     }
-  });
+  );
 
-  // Route xóa người dùng
-  route.delete('/:id', {
-    schema: {
-      params: z.object({
-        id: z.string().uuid(), // Xác thực ID là UUID
-      }),
+  route.delete(
+    '/:id',
+    {
+      schema: {
+        tags: ['user'],
+        params: SelectDto,
+      },
     },
-  }, async (req, reply) => {
-    const { id } = req.params;
-    try {
-      const deletedUser = await userService.remove(id);
-      if (!deletedUser) {
-        reply.status(404).send({ error: 'Người dùng không tồn tại' });
-      } else {
-        reply.send({ message: 'Người dùng đã được xóa' });
-      }
-    } catch (error) {
-      reply.status(500).send({ error: 'Không thể xóa người dùng' });
+    async (req) => {
+      const dto = req.params;
+      return await userService.remove(dto);
     }
-  });
-
-};
+  );
+}
