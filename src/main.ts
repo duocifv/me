@@ -3,11 +3,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
+import { patchNestjsSwagger } from '@anatine/zod-nestjs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
-
+  // app.useGlobalPipes(new ZodValidationPipe());
   if (process.env.ENABLE_SWAGGER) {
     const config = new DocumentBuilder()
       .setTitle('My API')
@@ -15,7 +16,7 @@ async function bootstrap() {
       .setVersion('1.0')
       .addServer('http://localhost:5000/', 'Upload server')
       .build();
-
+    patchNestjsSwagger();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);
   }

@@ -1,7 +1,6 @@
 import {
   Controller,
   Post,
-  Body,
   Req,
   Res,
   UseGuards,
@@ -11,6 +10,7 @@ import { AuthService } from './auth.service';
 import { SignInDto } from './dto/sign-in.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { ValidatedBody } from 'src/common/decorators/Zod.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -18,7 +18,10 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  async login(@Body() dto: SignInDto, @Res({ passthrough: true }) res) {
+  async login(
+    @ValidatedBody(SignInDto) dto: SignInDto,
+    @Res({ passthrough: true }) res,
+  ) {
     return this.authService.signIn(dto, res);
   }
 

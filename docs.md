@@ -33,3 +33,8 @@ nest g service auth
 AuthController chứa các route như /login, /refresh…
 
 AuthService chịu trách nhiệm sinh JWT, verify credentials, lưu/rotate refresh token
+
+
+
+báo lỗi zod
+https://github.com/aiji42/zod-i18n/blob/main/packages/core/locales/en/zod.json

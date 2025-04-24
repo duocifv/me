@@ -15,8 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
+const sign_in_dto_1 = require("./dto/sign-in.dto");
 const passport_1 = require("@nestjs/passport");
 const throttler_1 = require("@nestjs/throttler");
+const Zod_decorator_1 = require("../common/decorators/Zod.decorator");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -36,7 +38,7 @@ exports.AuthController = AuthController;
 __decorate([
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(200),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, Zod_decorator_1.ValidatedBody)(sign_in_dto_1.SignInDto)),
     __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
