@@ -17,7 +17,7 @@ import { UsersModule } from 'src/user/users.module';
     TypeOrmModule.forFeature([RefreshToken]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_ACCESS_SECRET'),
         signOptions: { expiresIn: '15m' },
       }),

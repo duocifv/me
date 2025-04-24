@@ -31,7 +31,10 @@ export class FileUploadController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UploadFileDto })
   @ApiResponse({ status: 201, description: 'Thành công, trả về URL' })
-  @ApiResponse({ status: 400, description: 'Lỗi định dạng hoặc vượt dung lượng' })
+  @ApiResponse({
+    status: 400,
+    description: 'Lỗi định dạng hoặc vượt dung lượng',
+  })
   @UseInterceptors(FileInterceptor('file', multerOptions))
   async upload(@UploadedFile() file: Express.Multer.File) {
     return this.fileUploadService.saveFile(file);

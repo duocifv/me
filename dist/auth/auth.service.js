@@ -40,7 +40,7 @@ let AuthService = class AuthService {
         if (!token) {
             throw new common_1.UnauthorizedException('Không tìm thấy refresh token');
         }
-        const payload = await this.tokensService.verifyRefreshToken(token);
+        const payload = this.tokensService.verifyRefreshToken(token);
         const user = await this.usersService.findById(payload.sub);
         if (!user) {
             throw new common_1.UnauthorizedException('Người dùng không tồn tại');

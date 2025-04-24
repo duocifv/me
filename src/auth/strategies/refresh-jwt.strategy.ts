@@ -5,7 +5,10 @@ import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class RefreshJwtStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([

@@ -29,7 +29,7 @@ exports.AuthModule = AuthModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([refresh_token_entity_1.RefreshToken]),
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
-                useFactory: async (configService) => ({
+                useFactory: (configService) => ({
                     secret: configService.get('JWT_ACCESS_SECRET'),
                     signOptions: { expiresIn: '15m' },
                 }),

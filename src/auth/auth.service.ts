@@ -1,3 +1,5 @@
+// src/auth/auth.service.ts
+
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { TokensService } from './tokens.service';
@@ -46,7 +48,7 @@ export class AuthService {
       throw new UnauthorizedException('Không tìm thấy refresh token');
     }
 
-    const payload = await this.tokensService.verifyRefreshToken(token);
+    const payload = this.tokensService.verifyRefreshToken(token);
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException('Người dùng không tồn tại');
