@@ -1,18 +1,18 @@
-import { Response, Request } from 'express';
 import { TokensService } from './tokens.service';
-import { SignInDto } from './dto/sign-in.dto';
 import { UsersService } from 'src/user/users.service';
+import { SignInDto } from './dto/sign-in.dto';
+import { FastifyReply, FastifyRequest } from 'fastify';
 export declare class AuthService {
     private readonly usersService;
     private readonly tokensService;
     constructor(usersService: UsersService, tokensService: TokensService);
-    signIn(dto: SignInDto, res: Response): Promise<{
+    signIn(dto: SignInDto, res: FastifyReply): Promise<{
         accessToken: string;
     }>;
-    refreshTokens(req: Request, res: Response): Promise<{
+    refreshTokens(req: FastifyRequest, res: FastifyReply): Promise<{
         accessToken: string;
     }>;
-    logout(req: Request, res: Response): Promise<{
+    logout(req: FastifyRequest, res: FastifyReply): Promise<{
         message: string;
     }>;
 }

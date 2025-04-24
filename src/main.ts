@@ -1,14 +1,28 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import * as cookieParser from 'cookie-parser';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { patchNestjsSwagger } from '@anatine/zod-nestjs';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+import { multipartPlugin } from './plugins/multipart.lugin';
+import { cookiePlugin } from './plugins/cookie.plugin';
+import { fileManagerPlugin } from './plugins/file.plugin';
+import sensible from '@fastify/sensible';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.use(cookieParser());
-  // app.useGlobalPipes(new ZodValidationPipe());
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+  );
+
+  app.register(sensible);
+  app.register(multipartPlugin);
+  app.register(cookiePlugin);
+  app.register(fileManagerPlugin);
+
   if (process.env.ENABLE_SWAGGER) {
     const config = new DocumentBuilder()
       .setTitle('My API')

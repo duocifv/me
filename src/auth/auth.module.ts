@@ -6,7 +6,6 @@ import { AuthService } from './auth.service';
 import { TokensService } from './tokens.service';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { AccessJwtStrategy } from './strategies/access-jwt.strategy';
-import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
 import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from 'src/user/users.module';
@@ -32,12 +31,7 @@ import { UsersModule } from 'src/user/users.module';
       ],
     }),
   ],
-  providers: [
-    AuthService,
-    TokensService,
-    AccessJwtStrategy,
-    RefreshJwtStrategy,
-  ],
+  providers: [AuthService, TokensService, AccessJwtStrategy],
   controllers: [AuthController],
 })
 export class AuthModule {}

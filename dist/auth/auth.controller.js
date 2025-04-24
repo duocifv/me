@@ -18,7 +18,7 @@ const auth_service_1 = require("./auth.service");
 const sign_in_dto_1 = require("./dto/sign-in.dto");
 const passport_1 = require("@nestjs/passport");
 const throttler_1 = require("@nestjs/throttler");
-const Zod_decorator_1 = require("../common/decorators/Zod.decorator");
+const dto_decorator_1 = require("../common/decorators/dto.decorator");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -38,15 +38,15 @@ exports.AuthController = AuthController;
 __decorate([
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(200),
-    __param(0, (0, Zod_decorator_1.ValidatedBody)(sign_in_dto_1.SignInDto)),
+    (0, dto_decorator_1.Schema)(sign_in_dto_1.SignInSchema),
+    __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([
-    (0, common_1.UseGuards)(throttler_1.ThrottlerGuard, (0, passport_1.AuthGuard)('jwt-refresh')),
-    (0, common_1.Post)('refresh'),
+    (0, common_1.Post)('token'),
     (0, common_1.HttpCode)(200),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Res)({ passthrough: true })),
@@ -55,6 +55,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refresh", null);
 __decorate([
+    (0, common_1.UseGuards)(throttler_1.ThrottlerGuard, (0, passport_1.AuthGuard)('jwt-refresh')),
     (0, common_1.Post)('logout'),
     (0, common_1.HttpCode)(200),
     __param(0, (0, common_1.Req)()),

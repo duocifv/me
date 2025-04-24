@@ -2,13 +2,20 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const core_1 = require("@nestjs/core");
-const app_module_1 = require("./app.module");
-const swagger_1 = require("@nestjs/swagger");
-const cookieParser = require("cookie-parser");
+const platform_fastify_1 = require("@nestjs/platform-fastify");
 const zod_nestjs_1 = require("@anatine/zod-nestjs");
+const swagger_1 = require("@nestjs/swagger");
+const app_module_1 = require("./app.module");
+const multipart_lugin_1 = require("./plugins/multipart.lugin");
+const cookie_plugin_1 = require("./plugins/cookie.plugin");
+const file_plugin_1 = require("./plugins/file.plugin");
+const sensible_1 = require("@fastify/sensible");
 async function bootstrap() {
-    const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    app.use(cookieParser());
+    const app = await core_1.NestFactory.create(app_module_1.AppModule, new platform_fastify_1.FastifyAdapter());
+    app.register(sensible_1.default);
+    app.register(multipart_lugin_1.multipartPlugin);
+    app.register(cookie_plugin_1.cookiePlugin);
+    app.register(file_plugin_1.fileManagerPlugin);
     if (process.env.ENABLE_SWAGGER) {
         const config = new swagger_1.DocumentBuilder()
             .setTitle('My API')

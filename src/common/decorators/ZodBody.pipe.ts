@@ -11,7 +11,7 @@ import { ZodTypeAny, z } from 'zod';
  * @param schema - Zod schema được sử dụng để xác thực dữ liệu.
  * @returns Tham số đã được xác thực và phân tích cú pháp.
  */
-export function ValidatedBody<T extends ZodTypeAny>(schema: T) {
+export function Schema<T extends ZodTypeAny>(schema: T) {
   type Inferred = z.infer<T>; // Sử dụng z.infer để tự động suy luận kiểu dữ liệu từ schema
 
   return createParamDecorator(
@@ -34,5 +34,5 @@ export function ValidatedBody<T extends ZodTypeAny>(schema: T) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return result.data as Inferred; // Trả về dữ liệu đã xác thực và phân tích cú pháp
     },
-  ) as ParameterDecorator; // Đảm bảo trả về kiểu ParameterDecorator hợp lệ
+  ) as ParameterDecorator;
 }

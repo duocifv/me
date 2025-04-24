@@ -5,12 +5,14 @@ import {
   Res,
   UseGuards,
   HttpCode,
+  Body,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignInDto } from './dto/sign-in.dto';
+import { SignInDto, SignInSchema } from './dto/sign-in.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { ValidatedBody } from 'src/common/decorators/Zod.decorator';
+import { Schema } from 'src/common/decorators/dto.decorator';
+import { FastifyReply, FastifyRequest } from 'fastify';
 
 @Controller('auth')
 export class AuthController {
@@ -18,20 +20,21 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  async login(
-    @ValidatedBody(SignInDto) dto: SignInDto,
-    @Res({ passthrough: true }) res,
-  ) {
+  @Schema(SignInSchema)
+  async login(@Body() dto: SignInDto, @Res({ passthrough: true }) res) {
     return this.authService.signIn(dto, res);
   }
 
-  @UseGuards(ThrottlerGuard, AuthGuard('jwt-refresh'))
-  @Post('refresh')
+  @Post('token')
   @HttpCode(200)
-  async refresh(@Req() req, @Res({ passthrough: true }) res) {
+  async refresh(
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ) {
     return this.authService.refreshTokens(req, res);
   }
 
+  @UseGuards(ThrottlerGuard, AuthGuard('jwt-refresh'))
   @Post('logout')
   @HttpCode(200)
   async logout(@Req() req, @Res({ passthrough: true }) res) {

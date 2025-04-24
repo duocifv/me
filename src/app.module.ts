@@ -3,11 +3,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppDataSource } from './config/typeorm.config';
-import { FileUploadModule } from './file-upload/file-upload.module';
 import { AuthModule } from './auth/auth.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './user/users.module';
 import { AppService } from './app.service';
+import { FileModule } from './file/file.module';
 
 @Module({
   imports: [
@@ -31,7 +31,7 @@ import { AppService } from './app.service';
     }),
     AuthModule,
     UsersModule,
-    FileUploadModule,
+    FileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

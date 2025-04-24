@@ -26,9 +26,10 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Email hoặc mật khẩu không đúng');
         }
         const { accessToken, refreshToken, expiresAt } = await this.tokensService.generateTokenPair(user);
-        res.cookie('refreshToken', refreshToken, {
+        res.setCookie('refreshToken', refreshToken, {
             httpOnly: true,
             sameSite: 'strict',
+            signed: true,
             secure: process.env.NODE_ENV === 'production',
             path: '/',
             maxAge: expiresAt.getTime() - Date.now(),
@@ -36,7 +37,7 @@ let AuthService = class AuthService {
         return { accessToken };
     }
     async refreshTokens(req, res) {
-        const token = req.cookies['refreshToken'];
+        const token = req.cookies.refreshToken;
         if (!token) {
             throw new common_1.UnauthorizedException('Không tìm thấy refresh token');
         }
@@ -46,7 +47,7 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Người dùng không tồn tại');
         }
         const { accessToken, refreshToken: newRefreshToken, expiresAt, } = await this.tokensService.rotateRefreshToken(payload.jti, user);
-        res.cookie('refreshToken', newRefreshToken, {
+        res.setCookie('refreshToken', newRefreshToken, {
             httpOnly: true,
             sameSite: 'strict',
             secure: process.env.NODE_ENV === 'production',
@@ -56,7 +57,7 @@ let AuthService = class AuthService {
         return { accessToken };
     }
     async logout(req, res) {
-        const token = req.cookies['refreshToken'];
+        const token = req.cookies.refreshToken;
         if (token) {
             await this.tokensService.revokeRefreshToken(token);
         }

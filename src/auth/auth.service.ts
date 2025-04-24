@@ -1,10 +1,8 @@
-// src/auth/auth.service.ts
-
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { Response, Request } from 'express';
 import { TokensService } from './tokens.service';
-import { SignInDto } from './dto/sign-in.dto';
 import { UsersService } from 'src/user/users.service';
+import { SignInDto } from './dto/sign-in.dto';
+import { FastifyReply, FastifyRequest } from 'fastify';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +15,7 @@ export class AuthService {
    * Đăng nhập: validate user, sinh access + refresh token,
    * gán cookie cho refresh token và trả về access token.
    */
-  async signIn(dto: SignInDto, res: Response) {
+  async signIn(dto: SignInDto, res: FastifyReply) {
     const user = await this.usersService.validateUser(dto.email, dto.password);
     if (!user) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
@@ -26,10 +24,10 @@ export class AuthService {
     const { accessToken, refreshToken, expiresAt } =
       await this.tokensService.generateTokenPair(user);
 
-    // Gán cookie HttpOnly cho refresh token
-    res.cookie('refreshToken', refreshToken, {
+    res.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
       sameSite: 'strict',
+      signed: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: expiresAt.getTime() - Date.now(),
@@ -42,8 +40,8 @@ export class AuthService {
    * Refresh token: đọc cookie, verify, rotate token,
    * gán lại cookie mới và trả về access token mới.
    */
-  async refreshTokens(req: Request, res: Response) {
-    const token = req.cookies['refreshToken'];
+  async refreshTokens(req: FastifyRequest, res: FastifyReply) {
+    const token = req.cookies.refreshToken;
     if (!token) {
       throw new UnauthorizedException('Không tìm thấy refresh token');
     }
@@ -61,7 +59,7 @@ export class AuthService {
     } = await this.tokensService.rotateRefreshToken(payload.jti, user);
 
     // Gán cookie HttpOnly mới
-    res.cookie('refreshToken', newRefreshToken, {
+    res.setCookie('refreshToken', newRefreshToken, {
       httpOnly: true,
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
@@ -75,8 +73,8 @@ export class AuthService {
   /**
    * Logout: revoke refresh token và xóa cookie.
    */
-  async logout(req: Request, res: Response) {
-    const token = req.cookies['refreshToken'];
+  async logout(req: FastifyRequest, res: FastifyReply) {
+    const token = req.cookies.refreshToken;
     if (token) {
       await this.tokensService.revokeRefreshToken(token);
     }

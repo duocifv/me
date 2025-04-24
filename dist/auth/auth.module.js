@@ -15,7 +15,6 @@ const auth_service_1 = require("./auth.service");
 const tokens_service_1 = require("./tokens.service");
 const refresh_token_entity_1 = require("./entities/refresh-token.entity");
 const access_jwt_strategy_1 = require("./strategies/access-jwt.strategy");
-const refresh_jwt_strategy_1 = require("./strategies/refresh-jwt.strategy");
 const auth_controller_1 = require("./auth.controller");
 const config_1 = require("@nestjs/config");
 const users_module_1 = require("../user/users.module");
@@ -44,12 +43,7 @@ exports.AuthModule = AuthModule = __decorate([
                 ],
             }),
         ],
-        providers: [
-            auth_service_1.AuthService,
-            tokens_service_1.TokensService,
-            access_jwt_strategy_1.AccessJwtStrategy,
-            refresh_jwt_strategy_1.RefreshJwtStrategy,
-        ],
+        providers: [auth_service_1.AuthService, tokens_service_1.TokensService, access_jwt_strategy_1.AccessJwtStrategy],
         controllers: [auth_controller_1.AuthController],
     })
 ], AuthModule);

@@ -4,7 +4,7 @@ import { ZodDtoPipe } from '../pipes/zod-dto.pipe';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
-export function BodyDto<T extends z.ZodTypeAny>(schema: T) {
+export function Schema<T extends z.ZodTypeAny>(schema: T) {
   const { definitions, ...rootSchema } = zodToJsonSchema(schema, {
     name: 'Dto',
   });
