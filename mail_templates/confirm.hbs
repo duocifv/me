@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <meta charset='utf-8' />
+    <title>Xác nhận đăng ký</title>
+    <style>
+      /* Một số style cơ bản để email nhìn gọn và chuẩn mobile */
+      body {
+        font-family: sans-serif;
+        background: #f7f7f7;
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+      }
+      h1 {
+        color: #333333;
+        font-size: 24px;
+      }
+      p {
+        color: #555555;
+        line-height: 1.5;
+      }
+      .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        margin-top: 20px;
+        background-color: #1a73e8;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+      .footer {
+        font-size: 12px;
+        color: #999999;
+        margin-top: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <h1>Chào {{name}},</h1>
+      <p>
+        Cảm ơn bạn đã đăng ký tài khoản tại
+        <strong>MyApp</strong>!
+      </p>
+      <p>
+        Để hoàn tất đăng ký, vui lòng nhấn nút bên dưới:
+      </p>
+      <a href='{{confirmUrl}}' class='btn'>Xác nhận tài khoản</a>
+      <p>
+        Nếu nút trên không hoạt động, bạn có thể copy &amp; paste đường dẫn bên
+        dưới vào trình duyệt:
+      </p>
+      <p><small>{{confirmUrl}}</small></p>
+      <div class='footer'>
+        Nếu bạn không yêu cầu email này, hãy bỏ qua nó.
+      </div>
+    </div>
+  </body>
+</html>

@@ -22,7 +22,8 @@
     "packages/**/*",
     "integration/**/*",
     "./src/",
-    "typeorm.config.ts"
+    "typeorm.config.ts",
+    "src/mail/templates/**/*.hbs"
   ],
   "exclude": [
     "node_modules",

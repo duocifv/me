@@ -7,6 +7,9 @@ import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
+  findAll() {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,

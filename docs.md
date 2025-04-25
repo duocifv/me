@@ -1,23 +1,21 @@
 const config = new DocumentBuilder()
-    .setTitle('API Documentation')
-    .setDescription('API description')
-    .setVersion('1.0')
-    .addServer('http://localhost:3000')
-    .build();
+.setTitle('API Documentation')
+.setDescription('API description')
+.setVersion('1.0')
+.addServer('http://localhost:3000')
+.build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  const yamlDocument = yaml.dump(document);
-  fs.writeFileSync('./openapi.yaml', yamlDocument);
-
+const document = SwaggerModule.createDocument(app, config);
+const yamlDocument = yaml.dump(document);
+fs.writeFileSync('./openapi.yaml', yamlDocument);
 
 nest g resource user
 
-
-npm install -g @nestjs/cli    # hoặc
+npm install -g @nestjs/cli # hoặc
 npx @nestjs/cli@latest
 
 2. Cách tạo nhanh với CLI
-Khởi tạo module:
+   Khởi tạo module:
 
 bash
 Sao chép
@@ -34,11 +32,13 @@ AuthController chứa các route như /login, /refresh…
 
 AuthService chịu trách nhiệm sinh JWT, verify credentials, lưu/rotate refresh token
 
-
-
 báo lỗi zod
 https://github.com/aiji42/zod-i18n/blob/main/packages/core/locales/en/zod.json
 
-
-
 https://github.com/nestjs/nest/blob/master/benchmarks/all_output.txt
+
+Nameserver 1
+daisy.ns.cloudflare.com
+
+Nameserver 2
+vicky.ns.cloudflare.com

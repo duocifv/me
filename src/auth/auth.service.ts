@@ -3,14 +3,25 @@ import { TokensService } from './tokens.service';
 import { UsersService } from 'src/user/users.service';
 import { SignInDto } from './dto/sign-in.dto';
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { JwtService } from '@nestjs/jwt';
+import bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly tokensService: TokensService,
+    private jwtService: JwtService
   ) {}
 
+  async validateUser(email: string, pass: string): Promise<any> {
+    const user = await this.usersService.findByEmail(email);
+    if (user && (await bcrypt.compare(pass, user.password))) {
+      const { password, ...result } = user;
+      return result;
+    }
+    return null;
+  }
   /**
    * Đăng nhập: validate user, sinh access + refresh token,
    * gán cookie cho refresh token và trả về access token.
