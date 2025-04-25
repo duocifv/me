@@ -37,7 +37,7 @@ export default tseslint.config(
 
       // ✅ Gợi ý style
       'no-console': 'warn',
-      'prettier/prettier': 'error',
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
 
       "@typescript-eslint/no-unsafe-assignment": "off",
     },

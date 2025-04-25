@@ -6,6 +6,7 @@ import {
   UseGuards,
   HttpCode,
   Body,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto, SignInSchema } from './dto/sign-in.dto';
@@ -22,7 +23,11 @@ export class AuthController {
   @HttpCode(200)
   @Schema(SignInSchema)
   async login(@Body() dto: SignInDto, @Res({ passthrough: true }) res) {
-    return this.authService.signIn(dto, res);
+    const { accessToken, refreshToken, expiresAt } =
+      await this.authService.signIn(dto);
+
+    res.setRefreshToken(refreshToken, expiresAt);
+    return { accessToken };
   }
 
   @Post('token')
@@ -31,7 +36,13 @@ export class AuthController {
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
-    return this.authService.refreshTokens(req, res);
+    const value = req.getRefreshToken();
+
+    const { accessToken, refreshToken, expiresAt } =
+      await this.authService.refreshTokens(value);
+
+    res.setRefreshToken(refreshToken, expiresAt);
+    return { accessToken };
   }
 
   @UseGuards(ThrottlerGuard, AuthGuard('jwt-refresh'))

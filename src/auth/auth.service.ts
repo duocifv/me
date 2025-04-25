@@ -15,59 +15,26 @@ export class AuthService {
    * Đăng nhập: validate user, sinh access + refresh token,
    * gán cookie cho refresh token và trả về access token.
    */
-  async signIn(dto: SignInDto, res: FastifyReply) {
+  async signIn(dto: SignInDto) {
     const user = await this.usersService.validateUser(dto.email, dto.password);
     if (!user) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
-
-    const { accessToken, refreshToken, expiresAt } =
-      await this.tokensService.generateTokenPair(user);
-
-    res.setCookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      sameSite: 'strict',
-      signed: true,
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: expiresAt.getTime() - Date.now(),
-    });
-
-    return { accessToken };
+    return await this.tokensService.generateTokenPair(user);
   }
 
   /**
    * Refresh token: đọc cookie, verify, rotate token,
    * gán lại cookie mới và trả về access token mới.
    */
-  async refreshTokens(req: FastifyRequest, res: FastifyReply) {
-    const token = req.cookies.refreshToken;
-    if (!token) {
-      throw new UnauthorizedException('Không tìm thấy refresh token');
-    }
-
-    const payload = this.tokensService.verifyRefreshToken(token);
+  async refreshTokens(token: string) {
+    const payload = await this.tokensService.verifyRefreshToken(token);
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException('Người dùng không tồn tại');
     }
 
-    const {
-      accessToken,
-      refreshToken: newRefreshToken,
-      expiresAt,
-    } = await this.tokensService.rotateRefreshToken(payload.jti, user);
-
-    // Gán cookie HttpOnly mới
-    res.setCookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: expiresAt.getTime() - Date.now(),
-    });
-
-    return { accessToken };
+    return await this.tokensService.rotateRefreshToken(payload.jti, user);
   }
 
   /**

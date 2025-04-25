@@ -10,24 +10,14 @@ import { Repository } from 'typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
+import { RefreshTokenPayload } from './dto/sign-in.dto';
 import { User } from 'src/user/entities/user.entity';
-
-//
-// Định nghĩa payload rõ ràng để tránh `any`
-//
-export interface RefreshTokenPayload {
-  sub: string; // User ID
-  jti: string; // Token ID
-  iat: number; // Issued at (timestamp)
-  exp: number; // Expiration (timestamp)
-}
 
 @Injectable()
 export class TokensService {
   // Thời gian sống của access & refresh token
   private readonly ACCESS_TOKEN_EXPIRES_IN = '15m';
   private readonly REFRESH_TOKEN_EXPIRES_IN = '30d';
-  // Số lần tối đa cho mỗi refresh-token
   private readonly MAX_USAGE_COUNT = 5;
 
   constructor(
@@ -41,7 +31,11 @@ export class TokensService {
    * - Access token JWT ngắn hạn
    * - Refresh token JWT dài hạn, kèm jti (UUID), lưu DB
    */
-  async generateTokenPair(user: User) {
+  async generateTokenPair(user: User): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+  }> {
     // 1. Access token
     const accessToken = this.jwtService.sign(
       { sub: user.id },
@@ -88,9 +82,11 @@ export class TokensService {
    * Verify refresh token (đồng bộ) và ép kiểu payload.
    * Không lưu bất cứ state nào ở đây.
    */
-  verifyRefreshToken(token: string): RefreshTokenPayload {
+  async verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
+    let payload: RefreshTokenPayload;
+
     try {
-      return this.jwtService.verify<RefreshTokenPayload>(token, {
+      payload = this.jwtService.verify<RefreshTokenPayload>(token, {
         secret: process.env.JWT_REFRESH_SECRET!,
       });
     } catch {
@@ -98,6 +94,16 @@ export class TokensService {
         'Refresh token không hợp lệ hoặc đã hết hạn',
       );
     }
+
+    // Kiểm tra jti trong DB
+    const stored = await this.rtRepo.findOneBy({ token: payload.jti });
+    if (!stored) {
+      throw new UnauthorizedException(
+        'Refresh token không tồn tại hoặc đã bị thu hồi',
+      );
+    }
+
+    return payload;
   }
 
   /**
@@ -105,7 +111,14 @@ export class TokensService {
    * - Kiểm tra tồn tại jti trong DB, chưa expired, và usageCount chưa vượt
    * - Tăng usageCount, xóa record cũ (strict rotation), rồi sinh lại cặp mới
    */
-  async rotateRefreshToken(oldJti: string, user: User) {
+  async rotateRefreshToken(
+    oldJti: string,
+    user: User,
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+  }> {
     const rt = await this.rtRepo.findOne({
       where: { token: oldJti },
     });
@@ -137,8 +150,8 @@ export class TokensService {
    * Revoke (thu hồi) refresh token:
    * - Xóa jti record trong DB để token không thể dùng lại
    */
-  async revokeRefreshToken(token: string) {
-    const { jti } = this.verifyRefreshToken(token);
+  async revokeRefreshToken(token: string): Promise<void> {
+    const { jti } = await this.verifyRefreshToken(token);
     await this.rtRepo.delete({ token: jti });
   }
 }
