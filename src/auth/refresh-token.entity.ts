@@ -19,7 +19,10 @@ export class RefreshToken {
   user: User;
 
   @Column()
-  expires: Date;
+  expiresAt: Date;
+
+  @Column()
+  usageCount: number;
 
   @Column({ default: false })
   revoked: boolean;

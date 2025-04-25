@@ -9,7 +9,7 @@ export class NotificationService {
   }
 
   findOne(id: number) {
-    const item = this.data.find((d) => d.id === id);
+    const item = id
     if (!item) throw new NotFoundException();
     return item;
   }
@@ -17,19 +17,18 @@ export class NotificationService {
   create(payload: any) {
     const id = this.data.length + 1;
     const item = { id, ...payload };
-    this.data.push(item);
+   
     return item;
   }
 
   update(id: number, payload: any) {
-    const idx = this.data.findIndex((d) => d.id === id);
+    const idx = id;
     if (idx === -1) throw new NotFoundException();
-    this.data[idx] = { id, ...payload };
     return this.data[idx];
   }
 
   remove(id: number) {
-    const idx = this.data.findIndex((d) => d.id === id);
+    const idx = id
     if (idx === -1) throw new NotFoundException();
     const [removed] = this.data.splice(idx, 1);
     return removed;

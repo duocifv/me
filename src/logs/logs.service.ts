@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-
-interface LogEntry {
+ 
+export interface LogEntry {
   id: number;
   level: 'log' | 'error' | 'warn' | 'debug';
   timestamp: Date;

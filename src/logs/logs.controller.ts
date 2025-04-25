@@ -12,7 +12,7 @@ export class LogsController {
 
   @Get(':id')
   getOne(@Param('id') id: number) {
-    return this.logsService.findOne(+id);
+    return this.logsService.findOne(id);
   }
 
   @Post()

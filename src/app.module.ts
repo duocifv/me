@@ -36,6 +36,7 @@ import { PermissionsGuard } from './auth/permissions.guard';
       envFilePath: ['.env.development', '.env'],
     }),
     TypeOrmModule.forRootAsync({
+      imports: [CoreModule],
       inject: [AppConfigService],
       useFactory: (cfg: AppConfigService) => cfg.typeOrmConfig,
     }),

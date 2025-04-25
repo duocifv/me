@@ -13,9 +13,7 @@ import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 import { Schema } from 'src/common/decorators/dto.decorator';
 import { UseRoles } from 'nest-access-control';
-import { JwtAuthGuard } from 'src/auth/jwt.guard';
-import { RolesGuard } from 'src/roles.guard';
-import { Roles } from 'src/auth/roles.decorator';
+import { Roles } from 'src/auth/decorator/roles.decorator';
 
 @Controller('users')
 export class UsersController {

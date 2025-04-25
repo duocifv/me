@@ -7,6 +7,7 @@ import { JwtModuleOptions } from '@nestjs/jwt';
 // import { ClientOptions } from '@elastic/elasticsearch';
 import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 
+
 @Injectable()
 export class AppConfigService {
   constructor(private readonly config: ConfigService) {}
@@ -19,13 +20,13 @@ export class AppConfigService {
   // Cấu hình TypeORM
   get typeOrmConfig(): TypeOrmModuleOptions {
     return {
-      type: 'postgres',
+      type: 'mysql',
       host: this.config.get('DB_HOST'),
       port: this.config.get<number>('DB_PORT'),
       username: this.config.get('DB_USER'),
       password: this.config.get('DB_PASS'),
       database: this.config.get('DB_NAME'),
-      entities: [__dirname + '/../**/*.entity.{ts,js}'],
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: this.config.get<boolean>('DB_SYNC'),
       autoLoadEntities: true,
     };

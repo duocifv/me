@@ -9,17 +9,21 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from 'src/user/users.module';
 import { JwtStrategy } from './jwt.strategy';
 import { AppConfigService } from 'src/core/config/config.service';
+import { CoreModule } from 'src/core/core.module';
+import { PermissionsGuard } from './permissions.guard';
 
 @Module({
   imports: [
     UsersModule,
     TypeOrmModule.forFeature([RefreshToken]),
     JwtModule.registerAsync({
+      imports: [CoreModule],
       inject: [AppConfigService],
       useFactory: (cfg: AppConfigService) => cfg.jwtConfig,
     }),
   ],
-  providers: [AuthService, TokensService, JwtStrategy],
+  providers: [AuthService, TokensService, JwtStrategy,PermissionsGuard],
   controllers: [AuthController],
+  exports: [PermissionsGuard, JwtModule],
 })
 export class AuthModule {}

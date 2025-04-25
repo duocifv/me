@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { PERMISSIONS_KEY } from './permissions.decorator';
-import { SCOPES_KEY } from './scopes.decorator';
+import { PERMISSIONS_KEY } from './decorator/permissions.decorator';
+import { SCOPES_KEY } from './decorator/scopes.decorator';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {

@@ -11,7 +11,7 @@ import { RefreshToken } from './refresh-token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { RefreshTokenPayload } from './dto/sign-in.dto';
-import { User } from 'src/user/entities/user.entity';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class TokensService {
