@@ -5,14 +5,22 @@ services:
     container_name: mysql-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: nestdb
-      MYSQL_USER: nestuser
-      MYSQL_PASSWORD: nestpass
+      MYSQL_ROOT_PASSWORD: 132132  # Chỉ cần thiết lập mật khẩu cho tài khoản root
+      MYSQL_DATABASE: me
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql-db  # Kết nối với container MySQL
+      MYSQL_ROOT_PASSWORD: 132132  # Mật khẩu cho tài khoản root
+    ports:
+      - "8080:80"  # Truy cập phpMyAdmin qua port 8080
 
 volumes:
   mysql_data:

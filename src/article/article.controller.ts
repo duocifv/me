@@ -1,37 +1,23 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-} from '@nestjs/common';
+// src/articles/articles.controller.ts
+import { Controller } from '@nestjs/common';
+import { Crud, CrudController } from '@nestjsx/crud';
+import { Article } from './article.entity';
+import { ArticlesService } from './articles.service';
 
+@Crud({
+  model: { type: Article },
+  params: {
+    id: { field: 'id', type: 'number', primary: true },
+  },
+  query: {
+    alwaysPaginate: true,       // luôn trả về pagination
+    limit: 10,                  // default page size
+    maxLimit: 50,               // max page size
+    sort: [{ field: 'createdAt', order: 'DESC' }],
+    // bạn có thể thêm join, filter operators ở đây nếu cần
+  },
+})
 @Controller('articles')
-export class ArticleController {
-  @Get()
-  findAll() {
-    return 'GET all articles';
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return `GET article ${id}`;
-  }
-
-  @Post()
-  create(@Body() body: any) {
-    return { message: 'Article created', data: body };
-  }
-
-  @Put(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    return { message: `Article ${id} updated`, data: body };
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return { message: `Article ${id} deleted` };
-  }
+export class ArticlesController implements CrudController<Article> {
+  constructor(public service: ArticlesService) {}
 }

@@ -3,7 +3,6 @@ import {
   Post,
   Body,
   HttpCode,
-  UseGuards,
   Get,
   Param,
   Put,
@@ -19,22 +18,9 @@ import { Roles } from 'src/auth/decorator/roles.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get('me')
-  me() {
-    return 'GET /api/users/me';
-  }
-
-  @Post('register')
-  @HttpCode(201)
-  @UseRoles({ resource: 'article', action: 'read', possession: 'any' })
-  @Schema(CreateUserSchema)
-  async register(@Body() dto: CreateUserDto) {
-    const user = await this.usersService.create(dto);
-    return { id: user.id, email: user.email };
-  }
-
   @Roles('admin')
   @Get()
+  @UseRoles({ resource: 'article', action: 'read', possession: 'any' })
   findAll() {
     return this.usersService.findAll();
   }
@@ -45,6 +31,7 @@ export class UsersController {
   }
 
   @Post()
+  @HttpCode(201)
   create(@Body() body: any) {
     return { message: 'User created', data: body };
   }
@@ -55,6 +42,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   remove(@Param('id') id: string) {
     return { message: `User ${id} deleted` };
   }

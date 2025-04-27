@@ -8,8 +8,8 @@ import { RefreshToken } from './refresh-token.entity';
 import { AuthController } from './auth.controller';
 import { UsersModule } from 'src/user/users.module';
 import { JwtStrategy } from './jwt.strategy';
-import { AppConfigService } from 'src/core/config/config.service';
-import { CoreModule } from 'src/core/core.module';
+import { AppConfigService } from 'src/shared/config/config.service';
+import { CoreModule } from 'src/shared/core.module';
 import { PermissionsGuard } from './permissions.guard';
 
 @Module({

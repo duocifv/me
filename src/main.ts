@@ -9,7 +9,7 @@ import { AppModule } from './app.module';
 import { multipartPlugin } from './plugins/multipart.lugin';
 import { authPlugin } from './plugins/auth.plugin';
 import { fileManagerPlugin } from './plugins/file.plugin';
-import { GlobalExceptionFilter } from './core/exception/exception.filter';
+import { GlobalExceptionFilter } from './shared/exception/exception.filter';
 import { RolesGuard } from './auth/roles.guard';
 
 async function bootstrap() {
@@ -18,7 +18,6 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalGuards(app.get(RolesGuard));
   await app.register(authPlugin);
   await app.register(multipartPlugin);
   await app.register(fileManagerPlugin);

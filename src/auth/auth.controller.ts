@@ -6,6 +6,8 @@ import {
   UseGuards,
   HttpCode,
   Body,
+  Delete,
+  Get,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto, SignInSchema } from './dto/sign-in.dto';
@@ -69,9 +71,16 @@ export class AuthController {
   }
 
   @UseGuards(ThrottlerGuard, AuthGuard('jwt-refresh'))
-  @Post('logout')
-  @HttpCode(200)
+  @Delete('logout')
+  @HttpCode(204)
   async logout(@Req() req, @Res({ passthrough: true }) res) {
+    return this.authService.logout(req, res);
+  }
+
+  @UseGuards(ThrottlerGuard, AuthGuard('jwt-refresh'))
+  @Get('me')
+  @HttpCode(200)
+  async me(@Req() req, @Res({ passthrough: true }) res) {
     return this.authService.logout(req, res);
   }
 }
