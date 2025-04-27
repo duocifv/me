@@ -13,7 +13,7 @@ import { AuthService } from './auth.service';
 import { SignInDto, SignInSchema } from './dto/sign-in.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { Schema } from 'src/common/decorators/dto.decorator';
+import { Schema } from 'src/shared/decorators/dto.decorator';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Public } from './decorator/public.decorator';
 import { Roles } from './decorator/roles.decorator';

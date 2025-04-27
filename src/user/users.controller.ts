@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
 import { UsersService } from './users.service';
-import { Schema } from 'src/common/decorators/dto.decorator';
+import { Schema } from 'src/shared/decorators/dto.decorator';
 import { UseRoles } from 'nest-access-control';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 
