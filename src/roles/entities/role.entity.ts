@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
+import { RoleName } from '../role.enum';
 
 @Entity('roles')
 export class Role {
@@ -14,7 +15,7 @@ export class Role {
   id: number;
 
   @Column({ unique: true })
-  name: string; // Ví dụ: 'admin', 'editor'
+  name: RoleName; // admin, manager, customer, guest
 
   @Column({ nullable: true })
   description: string;
@@ -23,7 +24,7 @@ export class Role {
     cascade: true,
   })
   @JoinTable({
-    name: 'role_permissions',
+    name: 'role_permissions', // tên bảng trung gian
     joinColumn: {
       name: 'role_id',
       referencedColumnName: 'id',

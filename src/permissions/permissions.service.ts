@@ -1,12 +1,8 @@
-// permissions.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Permission } from 'src/permissions/entities/permission.entity';
-import {
-  PermissionAction,
-  PermissionResource,
-} from 'src/permissions/permission.enum';
+import { PermissionName } from 'src/permissions/permission.enum'; // Import PermissionName enum
 import { Role } from 'src/roles/entities/role.entity';
 
 @Injectable()
@@ -17,14 +13,13 @@ export class PermissionsService {
 
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
-  ) {}
+  ) { }
 
   // Phương thức tạo quyền mới
   async createPermission(
-    action: PermissionAction,
-    resource: PermissionResource,
+    permissionName: PermissionName, // Sử dụng PermissionName enum
   ): Promise<Permission> {
-    const permission = this.permissionRepository.create({ action, resource });
+    const permission = this.permissionRepository.create({ name: permissionName });
     return this.permissionRepository.save(permission);
   }
 
@@ -33,29 +28,28 @@ export class PermissionsService {
     return this.permissionRepository.find();
   }
 
-  // Lấy quyền theo tên tài nguyên và hành động
-  async findPermissionByActionAndResource(
-    action: PermissionAction,
-    resource: PermissionResource,
+  // Lấy quyền theo tên quyền
+  async findPermissionByName(
+    permissionName: PermissionName, // Sử dụng PermissionName enum
   ): Promise<Permission> {
     return this.permissionRepository.findOneOrFail({
-      where: { action, resource },
+      where: { name: permissionName },
     });
   }
 
-  // Lấy tất cả quyền theo tên tài nguyên
-  async findPermissionsByResource(
-    resource: PermissionResource,
+  // Lấy quyền theo tên quyền
+  async findPermissionsByNames(
+    permissionNames: PermissionName[], // Sử dụng PermissionName enum
   ): Promise<Permission[]> {
     return this.permissionRepository.find({
-      where: { resource },
+      where: { name: In(permissionNames) }, // Tìm quyền theo danh sách tên quyền
     });
   }
 
   // Gán quyền cho vai trò
   async assignPermissionsToRole(
     roleId: number,
-    permissionIds: number[],
+    permissionNames: PermissionName[], // Sử dụng PermissionName enum
   ): Promise<void> {
     const role = await this.roleRepository.findOne({
       where: { id: roleId },
@@ -66,10 +60,12 @@ export class PermissionsService {
       throw new Error('Role not found');
     }
 
-    const permissions = await this.permissionRepository.findBy({
-      id: In(permissionIds),
+    // Tìm các quyền theo tên quyền trong PermissionName
+    const permissions = await this.permissionRepository.find({
+      where: { name: In(permissionNames) },
     });
 
+    // Gán quyền cho vai trò
     role.permissions = [...role.permissions, ...permissions];
     await this.roleRepository.save(role);
   }

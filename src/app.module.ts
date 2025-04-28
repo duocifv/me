@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -29,6 +29,7 @@ import { NewsModule } from './news/news.module';
 import { JwtAuthGuard } from './auth/guard/jwt.guard';
 import { RolesGuard } from './auth/guard/roles.guard';
 import { PermissionsGuard } from './auth/guard/permissions.guard';
+import { UserRoleSeeder } from './seeder/user-role.seeder';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { PermissionsGuard } from './auth/guard/permissions.guard';
   controllers: [AppController],
   providers: [
     AppService,
+    UserRoleSeeder,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
@@ -85,4 +87,15 @@ import { PermissionsGuard } from './auth/guard/permissions.guard';
     },
   ],
 })
-export class AppModule {}
+
+export class AppModule implements OnModuleInit {
+  constructor(private readonly userRoleSeeder: UserRoleSeeder) { }
+
+  async onModuleInit() {
+    if (process.env.NODE_ENV !== 'production') {
+      await this.userRoleSeeder.onModuleInit(); // Chạy seeder khi ứng dụng không phải production
+    } else {
+      console.log('Skipping seeding in production environment.');
+    }
+  }
+}

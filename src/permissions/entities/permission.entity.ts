@@ -1,27 +1,19 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm';
-import { PermissionAction, PermissionResource } from '../permission.enum';
 import { Role } from 'src/roles/entities/role.entity';
+import { PermissionName } from 'src/permissions/permission.enum'; // Import PermissionName enum
 
 @Entity('permissions')
 export class Permission {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  name: string;
-
   @Column({
     type: 'enum',
-    enum: PermissionAction,
+    enum: PermissionName,
+    unique: true, // Nếu bạn muốn các giá trị này không bị trùng trong DB
   })
-  action: PermissionAction;
-
-  @Column({
-    type: 'enum',
-    enum: PermissionResource,
-  })
-  resource: PermissionResource;
+  name: PermissionName; // Ánh xạ trực tiếp với PermissionName enum
 
   @ManyToMany(() => Role, (role) => role.permissions)
-  roles: Role[];
+  roles: Role[]; // Quan hệ nhiều-nhiều với Role
 }

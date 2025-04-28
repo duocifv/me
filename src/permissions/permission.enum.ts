@@ -1,13 +1,9 @@
-export enum PermissionAction {
-  READ = 'read',
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-}
-
-export enum PermissionResource {
-  USER = 'user',
-  POST = 'post',
-  COMMENT = 'comment',
-  PRODUCT = 'product',
+export enum PermissionName {
+  MANAGE_USERS = 'MANAGE_USERS',
+  MANAGE_PRODUCTS = 'MANAGE_PRODUCTS',
+  MANAGE_ORDERS = 'MANAGE_ORDERS',
+  VIEW_PRODUCTS = 'VIEW_PRODUCTS',
+  PLACE_ORDER = 'PLACE_ORDER',
+  VIEW_ORDERS = 'VIEW_ORDERS',
+  ACCESS_DASHBOARD = 'ACCESS_DASHBOARD',
 }

@@ -10,13 +10,15 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Roles } from 'src/shared/decorators/roles.decorator';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles('admin')
+  @Public()
+  // @Roles('admin')
   // @Permissions('create:posts')
   // @Scopes('write:posts')
 

@@ -12,6 +12,8 @@ import bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto, UserSchema } from './dto/user.dto';
 import { RolesService } from 'src/roles/roles.service';
+import { PermissionName } from 'src/permissions/permission.enum'; // Import PermissionName enum
+import { RoleName } from 'src/roles/role.enum';
 
 @Injectable()
 export class UsersService {
@@ -33,6 +35,7 @@ export class UsersService {
     return bcrypt.compare(rawToken, storedToken);
   }
 
+  // Tạo người dùng mới
   async create(dto: CreateUserDto): Promise<UserDto> {
     const exists = await this.usersRepo.findOne({
       where: { email: dto.email },
@@ -40,18 +43,22 @@ export class UsersService {
     if (exists) {
       throw new ConflictException('Email đã tồn tại');
     }
+
     const hash = await this.hashToken(dto.password);
 
     const user = this.usersRepo.create({ email: dto.email, password: hash });
     const createdUser = await this.usersRepo.save(user);
 
-    const defaultRole = await this.rolesService.findRoleByName('USER');
+    // Lấy vai trò mặc định là 'USER'
+    const defaultRole = await this.rolesService.findRoleByName(RoleName.CUSTOMER);
 
+    // Lấy quyền của vai trò USER
     const permissions = await this.rolesService.findPermissionsByNames([
-      'READ',
-      'CREATE',
+      PermissionName.VIEW_PRODUCTS,  // Ví dụ quyền xem sản phẩm
+      PermissionName.PLACE_ORDER,    // Ví dụ quyền đặt hàng
     ]);
 
+    // Gán vai trò và quyền cho người dùng
     user.roles = [defaultRole];
     await this.rolesService.assignPermissionsToRole(defaultRole, permissions);
 
@@ -60,14 +67,21 @@ export class UsersService {
     return UserSchema.parse(createdUser);
   }
 
+  // Tìm người dùng theo ID
   async findById(id: string): Promise<User> {
     return this.usersRepo.findOneOrFail({ where: { id } });
   }
 
+  // Tìm người dùng theo email
   async findByEmail(email: string): Promise<User> {
-    return this.usersRepo.findOneOrFail({ where: { email } });
+    const user = await this.usersRepo.findOne({ where: { email } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return user;
   }
 
+  // Xác thực người dùng
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.findByEmail(email);
     const matches = await this.compareToken(password, user.password);
