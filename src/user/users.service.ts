@@ -1,56 +1,79 @@
-import { Injectable, ConflictException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Role } from 'src/roles/entities/role.entity';
+import { User } from './entities/user.entity';
+import { Repository } from 'typeorm';
+import bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
-import * as bcrypt from 'bcryptjs';
-import { User } from './user.entity';
+import { UserDto, UserSchema } from './dto/user.dto';
+import { RolesService } from 'src/roles/roles.service';
 
 @Injectable()
 export class UsersService {
-  findAll() {
-    throw new Error('Method not implemented.');
-  }
   constructor(
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
+    private readonly rolesService: RolesService,
   ) {}
 
-  /**
-   * Tạo mới user, hash password trước khi lưu.
-   */
-  async create(dto: CreateUserDto) {
+  private async hashToken(token: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(token, saltRounds);
+  }
+
+  private async compareToken(
+    rawToken: string,
+    storedToken: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(rawToken, storedToken);
+  }
+
+  async create(dto: CreateUserDto): Promise<UserDto> {
     const exists = await this.usersRepo.findOne({
       where: { email: dto.email },
     });
     if (exists) {
       throw new ConflictException('Email đã tồn tại');
     }
-    const hash = await bcrypt.hash(dto.password, 10);
+    const hash = await this.hashToken(dto.password);
+
     const user = this.usersRepo.create({ email: dto.email, password: hash });
-    return this.usersRepo.save(user);
+    const createdUser = await this.usersRepo.save(user);
+
+    const defaultRole = await this.rolesService.findRoleByName('USER');
+
+    const permissions = await this.rolesService.findPermissionsByNames([
+      'READ',
+      'CREATE',
+    ]);
+
+    user.roles = [defaultRole];
+    await this.rolesService.assignPermissionsToRole(defaultRole, permissions);
+
+    await this.usersRepo.save(user);
+
+    return UserSchema.parse(createdUser);
   }
 
-  /**
-   * Tìm user theo email.
-   */
-  async findByEmail(email: string) {
-    return this.usersRepo.findOne({ where: { email } });
+  async findById(id: string): Promise<User> {
+    return this.usersRepo.findOneOrFail({ where: { id } });
   }
 
-  /**
-   * Tìm user theo id.
-   */
-  async findById(id: number) {
-    return this.usersRepo.findOne({ where: { id } });
+  async findByEmail(email: string): Promise<User> {
+    return this.usersRepo.findOneOrFail({ where: { email } });
   }
 
-  /**
-   * Validate đăng nhập: so sánh password.
-   */
-  async validateUser(email: string, password: string) {
+  async validateUser(email: string, password: string): Promise<User> {
     const user = await this.findByEmail(email);
-    if (!user) return null;
-    const matches = await bcrypt.compare(password, user.password);
-    return matches ? user : null;
+    const matches = await this.compareToken(password, user.password);
+    if (!matches) {
+      throw new UnauthorizedException('Invalid password');
+    }
+    return user;
   }
 }

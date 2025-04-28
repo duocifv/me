@@ -1,7 +1,7 @@
 // src/news/news.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { News } from './news.entity';
+import { News } from './entities/news.entity';
 import { NewsService } from './news.service';
 import { NewsController } from './news.controller';
 

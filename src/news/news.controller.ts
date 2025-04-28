@@ -1,9 +1,15 @@
 // src/news/news.controller.ts
-import { Controller, Get, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { NewsService } from './news.service';
 import { Pagination } from 'nestjs-typeorm-paginate';
 import { PaginateNewsDto } from './paginate-news.dto';
-import { News } from './news.entity';
+import { News } from './entities/news.entity';
 
 @Controller('news')
 export class NewsController {

@@ -1,5 +1,5 @@
-import { RefreshToken } from 'src/auth/refresh-token.entity';
-import { Role } from 'src/roles/role.entity';
+import { RefreshToken } from 'src/auth/entities/refresh-token.entity';
+import { Role } from 'src/roles/entities/role.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -11,8 +11,8 @@ import {
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ unique: true })
   email: string;

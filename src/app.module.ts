@@ -16,17 +16,19 @@ import { SettingsModule } from './settings/settings.module';
 import { HomeModule } from './pages/home/home.module';
 import { AboutModule } from './pages/about/about.module';
 import { ContactModule } from './pages/contact/contact.module';
-import { User } from './user/user.entity';
-import { Role } from './roles/role.entity';
-import { Permission } from './permissions/permission.entity';
+import { User } from './user/entities/user.entity';
+import { Role } from './roles/entities/role.entity';
+import { Permission } from './permissions/entities/permission.entity';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { CoreModule } from './shared/core.module';
 import { NotificationModule } from './notification/notification.module';
 import { LogsModule } from './shared/logs/logs.module';
 import { AppConfigService } from './shared/config/config.service';
 import { APP_GUARD } from '@nestjs/core';
-import { PermissionsGuard } from './auth/permissions.guard';
 import { NewsModule } from './news/news.module';
+import { JwtAuthGuard } from './auth/guard/jwt.guard';
+import { RolesGuard } from './auth/guard/roles.guard';
+import { PermissionsGuard } from './auth/guard/permissions.guard';
 
 @Module({
   imports: [
@@ -64,11 +66,19 @@ import { NewsModule } from './news/news.module';
     DashboardModule,
     NotificationModule,
     LogsModule,
-    NewsModule
+    NewsModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,

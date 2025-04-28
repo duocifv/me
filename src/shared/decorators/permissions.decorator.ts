@@ -1,10 +1,8 @@
 import { SetMetadata } from '@nestjs/common';
-import {
-  PermissionAction,
-  PermissionResource,
-} from '../../permissions/permission.enum';
 
-export const Permissions = (
-  action: PermissionAction,
-  resource: PermissionResource,
-) => SetMetadata('action', action) && SetMetadata('resource', resource);
+export const PERMISSIONS_KEY = 'permissions';
+/**
+ * @Permissions('create:user', 'delete:post', ...)
+ */
+export const Permissions = (...permissions: string[]) =>
+  SetMetadata(PERMISSIONS_KEY, permissions);

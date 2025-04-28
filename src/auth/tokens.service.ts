@@ -1,5 +1,3 @@
-// src/auth/tokens.service.ts
-
 import {
   Injectable,
   UnauthorizedException,
@@ -7,15 +5,15 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
-import { RefreshToken } from './refresh-token.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { RefreshTokenPayload } from './dto/sign-in.dto';
-import { User } from 'src/user/user.entity';
+import { User } from 'src/user/entities/user.entity';
+import bcrypt from 'bcryptjs';
 
 @Injectable()
 export class TokensService {
-  // Thời gian sống của access & refresh token
   private readonly ACCESS_TOKEN_EXPIRES_IN = '15m';
   private readonly REFRESH_TOKEN_EXPIRES_IN = '30d';
   private readonly MAX_USAGE_COUNT = 5;
@@ -26,17 +24,26 @@ export class TokensService {
     private readonly rtRepo: Repository<RefreshToken>,
   ) {}
 
-  /**
-   * Sinh cặp Access + Refresh token:
-   * - Access token JWT ngắn hạn
-   * - Refresh token JWT dài hạn, kèm jti (UUID), lưu DB
-   */
-  async generateTokenPair(user: User): Promise<{
+  private async hashToken(token: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(token, saltRounds);
+  }
+
+  private async compareToken(
+    storedToken: string,
+    rawToken: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(rawToken, storedToken);
+  }
+
+  async generateTokenPair(
+    user: User,
+    ipAddress: string,
+  ): Promise<{
     accessToken: string;
     refreshToken: string;
     expiresAt: Date;
   }> {
-    // 1. Access token
     const accessToken = this.jwtService.sign(
       { sub: user.id },
       {
@@ -45,7 +52,6 @@ export class TokensService {
       },
     );
 
-    // 2. Refresh token
     const jti = randomUUID();
     const refreshToken = this.jwtService.sign(
       { sub: user.id, jti },
@@ -55,21 +61,19 @@ export class TokensService {
       },
     );
 
-    // 3. Tính expiresAt cho DB
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    // 4. Lưu jti vào DB để có thể revoke/rotate sau này
     try {
       await this.rtRepo.save(
         this.rtRepo.create({
-          token: jti,
+          id: jti,
           user,
           expiresAt,
           usageCount: 0,
+          ipAddress,
         }),
       );
     } catch {
-      // Nếu lưu DB thất bại, throw 500
       throw new InternalServerErrorException(
         'Không tạo được refresh token record',
       );
@@ -78,11 +82,10 @@ export class TokensService {
     return { accessToken, refreshToken, expiresAt };
   }
 
-  /**
-   * Verify refresh token (đồng bộ) và ép kiểu payload.
-   * Không lưu bất cứ state nào ở đây.
-   */
-  async verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
+  async verifyRefreshToken(
+    token: string,
+    ipAddress: string,
+  ): Promise<RefreshTokenPayload> {
     let payload: RefreshTokenPayload;
 
     try {
@@ -94,64 +97,59 @@ export class TokensService {
         'Refresh token không hợp lệ hoặc đã hết hạn',
       );
     }
-
-    // Kiểm tra jti trong DB
-    const stored = await this.rtRepo.findOneBy({ token: payload.jti });
+    const stored = await this.rtRepo.findOneBy({ id: payload.jti });
     if (!stored) {
       throw new UnauthorizedException(
         'Refresh token không tồn tại hoặc đã bị thu hồi',
       );
     }
 
+    if (stored.ipAddress !== ipAddress) {
+      throw new UnauthorizedException('Địa chỉ IP không hợp lệ');
+    }
+
     return payload;
   }
 
-  /**
-   * Rotate refresh token:
-   * - Kiểm tra tồn tại jti trong DB, chưa expired, và usageCount chưa vượt
-   * - Tăng usageCount, xóa record cũ (strict rotation), rồi sinh lại cặp mới
-   */
   async rotateRefreshToken(
     oldJti: string,
     user: User,
+    ipAddress: string,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
     expiresAt: Date;
   }> {
     const rt = await this.rtRepo.findOne({
-      where: { token: oldJti },
+      where: { id: oldJti },
     });
 
     if (!rt) {
       throw new UnauthorizedException('Refresh token đã bị thu hồi');
     }
     if (rt.expiresAt < new Date()) {
-      await this.rtRepo.delete({ token: oldJti });
+      await this.rtRepo.delete({ id: oldJti });
       throw new UnauthorizedException('Refresh token đã hết hạn');
     }
     if (rt.usageCount >= this.MAX_USAGE_COUNT) {
-      await this.rtRepo.delete({ token: oldJti });
+      await this.rtRepo.delete({ id: oldJti });
       throw new UnauthorizedException('Refresh token vượt giới hạn sử dụng');
     }
 
-    // Tăng usageCount
+    if (rt.ipAddress !== ipAddress) {
+      throw new UnauthorizedException('Địa chỉ IP không hợp lệ');
+    }
+
     rt.usageCount += 1;
     await this.rtRepo.save(rt);
 
-    // Xóa strict-rotate: không thể dùng lại
-    await this.rtRepo.delete({ token: oldJti });
+    await this.rtRepo.delete({ id: oldJti });
 
-    // Sinh cặp token mới
-    return this.generateTokenPair(user);
+    return this.generateTokenPair(user, ipAddress);
   }
 
-  /**
-   * Revoke (thu hồi) refresh token:
-   * - Xóa jti record trong DB để token không thể dùng lại
-   */
-  async revokeRefreshToken(token: string): Promise<void> {
-    const { jti } = await this.verifyRefreshToken(token);
-    await this.rtRepo.delete({ token: jti });
+  async revokeRefreshToken(token: string, ipAddress: string): Promise<void> {
+    const { jti } = await this.verifyRefreshToken(token, ipAddress);
+    await this.rtRepo.delete({ id: jti });
   }
 }

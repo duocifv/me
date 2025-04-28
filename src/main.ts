@@ -9,18 +9,17 @@ import { AppModule } from './app.module';
 import { multipartPlugin } from './plugins/multipart.lugin';
 import { authPlugin } from './plugins/auth.plugin';
 import { fileManagerPlugin } from './plugins/file.plugin';
-import { GlobalExceptionFilter } from './shared/exception/exception.filter';
-import { RolesGuard } from './auth/roles.guard';
+import mailerPlugin from './plugins/mailer.plugin';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
   );
-  app.useGlobalFilters(new GlobalExceptionFilter());
   await app.register(authPlugin);
   await app.register(multipartPlugin);
   await app.register(fileManagerPlugin);
+  await app.register(mailerPlugin);
 
   if (process.env.ENABLE_SWAGGER) {
     const config = new DocumentBuilder()

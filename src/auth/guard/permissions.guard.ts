@@ -8,14 +8,14 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { PERMISSIONS_KEY } from './decorator/permissions.decorator';
-import { SCOPES_KEY } from './decorator/scopes.decorator';
+import { PERMISSIONS_KEY } from '../../shared/decorators/permissions.decorator';
+import { SCOPES_KEY } from '../../shared/decorators/scopes.decorator';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private jwtService: JwtService, // để verify token và get payload.roles/payload.permissions/payload.scopes
+    private jwtService: JwtService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {

@@ -8,21 +8,21 @@ import {
   Put,
   Delete,
 } from '@nestjs/common';
-import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
 import { UsersService } from './users.service';
-import { Schema } from 'src/shared/decorators/dto.decorator';
-import { UseRoles } from 'nest-access-control';
-import { Roles } from 'src/auth/decorator/roles.decorator';
+import { Roles } from 'src/shared/decorators/roles.decorator';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Roles('admin')
   @Get()
-  @UseRoles({ resource: 'article', action: 'read', possession: 'any' })
+  @Roles('admin')
+  // @Permissions('create:posts')
+  // @Scopes('write:posts')
+
+  // @Roles('admin', 'user')
   findAll() {
-    return this.usersService.findAll();
+    return `GET user all`;
   }
 
   @Get(':id')

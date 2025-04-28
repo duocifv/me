@@ -5,23 +5,23 @@ import { UnauthorizedException } from '@nestjs/common';
 
 declare module 'fastify' {
   interface FastifyReply {
-    /** Ghi cookie refreshToken đã ký */
     setRefreshToken(refreshToken: string, expiresAt: Date): this;
   }
   interface FastifyRequest {
-    /** Đọc & verify cookie refreshToken ký */
+    getRefreshToken(): string;
+  }
+  interface FastifyRequest {
+    getIpAddress(): string;
     getRefreshToken(): string;
   }
 }
 
 export const authPlugin = fp((fastify) => {
-  // đăng ký cookie plugin với secret để ký/giải
   fastify.register(fastifyCookie, {
     secret: process.env.COOKIE_SECRET! || '121212',
     parseOptions: {},
   });
 
-  // decorator trên reply để set cookie đã ký
   fastify.decorateReply(
     'setRefreshToken',
     function (this: FastifyReply, token: string, expiresAt: Date) {
@@ -37,7 +37,6 @@ export const authPlugin = fp((fastify) => {
     },
   );
 
-  // decorator trên request để get & verify cookie đã ký
   fastify.decorateRequest('getRefreshToken', function (this: FastifyRequest) {
     const signed = this.cookies?.refreshToken;
     if (!signed) {
@@ -50,4 +49,18 @@ export const authPlugin = fp((fastify) => {
     }
     return value;
   });
+
+  fastify.decorateRequest(
+    'getIpAddress',
+    function (this: FastifyRequest): string {
+      let ipAddress: string = '';
+
+      if (typeof this.headers['x-forwarded-for'] === 'string') {
+        ipAddress = this.headers['x-forwarded-for'].split(',')[0];
+      } else if (typeof this.ip === 'string') {
+        ipAddress = this.ip;
+      }
+      return ipAddress;
+    },
+  );
 });

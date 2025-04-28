@@ -11,17 +11,23 @@
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "outDir": "dist",
-    "baseUrl": ".",
+    "baseUrl": "./",
+    "paths": {
+      "src/*": [
+        "./src/*"
+      ]
+    }
   },
   "include": [
     "packages/**/*",
     "integration/**/*",
-    "./src/",
+    "src/",
     "typeorm.config.ts",
     "src/mail/templates/**/*.hbs"
   ],

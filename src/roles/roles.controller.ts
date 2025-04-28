@@ -8,6 +8,10 @@ import {
   Param,
   Body,
 } from '@nestjs/common';
+import { CreateRoleDto, CreateRoleSchema } from './dto/create-role.dto';
+import { Schema } from 'src/shared/decorators/dto.decorator';
+import { UpdateRoleDto, UpdateRoleSchema } from './dto/update-role.dto';
+import { IdParamDto, IdParamSchema } from './dto/Id-role.dto';
 
 @Controller('roles')
 export class RolesController {
@@ -17,22 +21,26 @@ export class RolesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  @Schema(IdParamSchema)
+  findOne(@Param('id') id: IdParamDto) {
     return `GET /api/roles/${id}`;
   }
 
   @Post()
-  create(@Body() body: any) {
+  @Schema(CreateRoleSchema)
+  create(@Body() body: CreateRoleDto) {
     return 'POST /api/roles';
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: any) {
+  @Schema(UpdateRoleSchema)
+  update(@Param('id') id: string, @Body() body: UpdateRoleDto) {
     return `PUT /api/roles/${id}`;
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  @Schema(IdParamSchema)
+  remove(@Param('id') id: IdParamDto) {
     return `DELETE /api/roles/${id}`;
   }
 }

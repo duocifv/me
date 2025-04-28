@@ -2,9 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { TokensService } from './tokens.service';
 import { UsersService } from 'src/user/users.service';
 import { SignInDto } from './dto/sign-in.dto';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { UserDto, UserSchema } from 'src/user/dto/user.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,49 +13,73 @@ export class AuthService {
     private readonly tokensService: TokensService,
   ) {}
 
-  async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersService.findByEmail(email);
-    if (user && (await bcrypt.compare(pass, user.password))) {
-      const { password, ...result } = user;
-      return result;
-    }
-    return null;
+  private async compareToken(
+    storedToken: string,
+    rawToken: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(rawToken, storedToken);
   }
-  /**
-   * Đăng nhập: validate user, sinh access + refresh token,
-   * gán cookie cho refresh token và trả về access token.
-   */
-  async signIn(dto: SignInDto) {
+
+  async validateUser(email: string, pass: string): Promise<UserDto> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+    }
+    const match = await this.compareToken(pass, user.password);
+    if (!match) {
+      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+    }
+    return UserSchema.parse(user);
+  }
+
+  async register(dto: CreateUserDto): Promise<UserDto> {
+    const user = await this.usersService.create(dto);
+    return user;
+  }
+
+  async signIn(
+    dto: SignInDto,
+    ipAddress: string,
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+  }> {
     const user = await this.usersService.validateUser(dto.email, dto.password);
     if (!user) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
-    return await this.tokensService.generateTokenPair(user);
+    return await this.tokensService.generateTokenPair(user, ipAddress);
   }
 
-  /**
-   * Refresh token: đọc cookie, verify, rotate token,
-   * gán lại cookie mới và trả về access token mới.
-   */
-  async refreshTokens(token: string) {
-    const payload = await this.tokensService.verifyRefreshToken(token);
+  async refreshTokens(
+    token: string,
+    ipAddress: string,
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+  }> {
+    const payload = await this.tokensService.verifyRefreshToken(
+      token,
+      ipAddress,
+    );
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException('Người dùng không tồn tại');
     }
 
-    return await this.tokensService.rotateRefreshToken(payload.jti, user);
+    return await this.tokensService.rotateRefreshToken(
+      payload.jti,
+      user,
+      ipAddress,
+    );
   }
 
-  /**
-   * Logout: revoke refresh token và xóa cookie.
-   */
-  async logout(req: FastifyRequest, res: FastifyReply) {
-    const token = req.cookies.refreshToken;
-    if (token) {
-      await this.tokensService.revokeRefreshToken(token);
+  async logout(token?: string, ipAddress?: string): Promise<void> {
+    if (!token || !ipAddress) {
+      throw new UnauthorizedException('Không hợp lệ');
     }
-    res.clearCookie('refreshToken', { path: '/' });
-    return { message: 'Đăng xuất thành công' };
+    return this.tokensService.revokeRefreshToken(token, ipAddress);
   }
 }

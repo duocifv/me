@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { MailerOptions } from '@nestjs-modules/mailer';
 import { JwtModuleOptions } from '@nestjs/jwt';
 // import { RedisModuleOptions } from 'nestjs-redis';
 // import { ClientOptions } from '@elastic/elasticsearch';
-import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
-
 
 @Injectable()
 export class AppConfigService {
@@ -29,29 +26,6 @@ export class AppConfigService {
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: this.config.get<boolean>('DB_SYNC'),
       autoLoadEntities: true,
-    };
-  }
-
-  // Cấu hình Mailer
-  get mailerConfig(): MailerOptions {
-    return {
-      transport: {
-        host: this.config.get('SMTP_HOST'),
-        port: this.config.get<number>('SMTP_PORT'),
-        auth: {
-          user: this.config.get('SMTP_USER'),
-          pass: this.config.get('SMTP_PASS'),
-        },
-        jsonTransport: true,
-      },
-      defaults: {
-        from: `"No Reply" <${this.config.get('MAIL_FROM')}>`,
-      },
-      template: {
-        dir: this.config.get('MAIL_TEMPLATE_PATH'),
-        adapter: new PugAdapter(),
-        options: { strict: true },
-      },
     };
   }
 

@@ -3,7 +3,6 @@ import {
   Post,
   Req,
   Res,
-  UseGuards,
   HttpCode,
   Body,
   Delete,
@@ -11,50 +10,50 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto, SignInSchema } from './dto/sign-in.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { Schema } from 'src/shared/decorators/dto.decorator';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Public } from './decorator/public.decorator';
-import { Roles } from './decorator/roles.decorator';
-import { Permissions } from './decorator/permissions.decorator';
-import { Scopes } from './decorator/scopes.decorator';
+import { Public } from '../shared/decorators/public.decorator';
+import { CreateUserDto, CreateUserSchema } from 'src/user/dto/create-user.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-  @Public()
+
   @Post('login')
+  @Public()
   @HttpCode(200)
   @Schema(SignInSchema)
-  async login(@Body() dto: SignInDto, @Res({ passthrough: true }) res) {
+  async login(
+    @Body() dto: SignInDto,
+    @Res({ passthrough: true }) res: FastifyReply,
+    @Req() req: FastifyRequest,
+  ) {
+    const ipAddress = req.getIpAddress();
     const { accessToken, refreshToken, expiresAt } =
-      await this.authService.signIn(dto);
-
+      await this.authService.signIn(dto, ipAddress);
     res.setRefreshToken(refreshToken, expiresAt);
     return { accessToken };
   }
 
-  @Public()
-  @Permissions('create:posts')
-  @Scopes('write:posts')
-  @Roles('admin')
-  @Roles('admin', 'user')
   @Post('register')
-  register(@Body() body: any) {
-    return { message: 'User registered', data: body };
+  @Public()
+  @Schema(CreateUserSchema)
+  register(@Body() dto: CreateUserDto) {
+    return this.authService.register(dto);
   }
 
   @Post('token')
+  @Public()
   @HttpCode(200)
   async refresh(
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
     const value = req.getRefreshToken();
+    const ipAddress = req.getIpAddress();
 
     const { accessToken, refreshToken, expiresAt } =
-      await this.authService.refreshTokens(value);
+      await this.authService.refreshTokens(value, ipAddress);
 
     res.setRefreshToken(refreshToken, expiresAt);
     return { accessToken };
@@ -70,17 +69,23 @@ export class AuthController {
     return { message: 'Password reset', token: body.token };
   }
 
-  @UseGuards(ThrottlerGuard, AuthGuard('jwt-refresh'))
   @Delete('logout')
   @HttpCode(204)
   async logout(@Req() req, @Res({ passthrough: true }) res) {
-    return this.authService.logout(req, res);
+    const token = req.cookies?.refreshToken;
+    const ipAddress = req.getIpAddress();
+    await this.authService.logout(token, ipAddress);
+    res.clearCookie('refreshToken', { path: '/' });
+    return {
+      message: 'Đã đăng xuất',
+    };
   }
 
-  @UseGuards(ThrottlerGuard, AuthGuard('jwt-refresh'))
   @Get('me')
   @HttpCode(200)
-  async me(@Req() req, @Res({ passthrough: true }) res) {
-    return this.authService.logout(req, res);
+  me(@Req() req, @Res({ passthrough: true }) res) {
+    return {
+      message: 'hello',
+    };
   }
 }

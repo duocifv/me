@@ -1,11 +1,16 @@
 // src/common/pagination/pagination.service.ts
 import { Injectable } from '@nestjs/common';
 import { SelectQueryBuilder } from 'typeorm';
-import { paginate, IPaginationOptions, Pagination } from 'nestjs-typeorm-paginate';
+import {
+  paginate,
+  Pagination,
+  IPaginationOptions,
+  ObjectLiteral,
+} from 'nestjs-typeorm-paginate';
 
 @Injectable()
 export class PaginationService {
-  async paginate<T>(
+  async paginate<T extends ObjectLiteral>(
     qb: SelectQueryBuilder<T>,
     options: IPaginationOptions,
     route: string,

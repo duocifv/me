@@ -1,33 +1,14 @@
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
+// src/common/filters/all-exceptions.filter.ts
+import { Catch, ArgumentsHost } from '@nestjs/common';
+import { BaseExceptionFilter } from '@nestjs/core';
 
 @Catch()
-export class GlobalExceptionFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const res = ctx.getResponse<Response>();
-    const req = ctx.getRequest<Request>();
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+export class AllExceptionsFilter extends BaseExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost): void {
+    // Ví dụ: ghi log
+    console.error('Unhandled exception:', exception);
 
-    const message =
-      exception instanceof HttpException
-        ? (exception.getResponse() as any).message || exception.message
-        : 'Internal server error';
-
-    res.status(status).json({
-      statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: req.url,
-      message,
-    });
+    // Gọi về BaseExceptionFilter để giữ hành vi mặc định của NestJS
+    super.catch(exception, host); // :contentReference[oaicite:7]{index=7}
   }
 }
