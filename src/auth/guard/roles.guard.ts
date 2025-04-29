@@ -1,60 +1,22 @@
-// src/auth/roles.guard.ts
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException,
-  ForbiddenException,
-} from '@nestjs/common';
+
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
-import { IS_PUBLIC_KEY } from '../../shared/decorators/public.decorator';
-import { ROLES_KEY } from '../../shared/decorators/roles.decorator';
+import { Role } from 'src/roles/entities/role.entity';
+import { ROLES_KEY } from 'src/shared/decorators/roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(
-    private reflector: Reflector,
-    private jwtService: JwtService,
-  ) {}
+  constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // 1) Bypass if @Public()
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic) return true;
-
-    // 2) Lấy roles yêu cầu từ metadata
-    const requiredRoles = this.reflector.get<string[]>(
-      ROLES_KEY,
-      context.getHandler(),
-    );
-    if (!requiredRoles || requiredRoles.length === 0) {
-      // nếu không có roles nào được khai báo, mặc định allow
+    if (!requiredRoles) {
       return true;
     }
-
-    // 3) Xác thực JWT
-    const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers.authorization;
-    if (!authHeader) throw new UnauthorizedException('Missing token');
-    const [, token] = authHeader.split(' ');
-    let payload: any;
-    try {
-      payload = this.jwtService.verify(token);
-    } catch {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    // 4) Kiểm tra role
-    const userRoles: string[] = payload.roles || [];
-    const hasRole = requiredRoles.some((role) => userRoles.includes(role));
-    if (!hasRole) throw new ForbiddenException('You do not have permission');
-
-    // 5) Gán user vào request để controller dùng tiếp
-    request.user = payload;
-    return true;
+    const { user } = context.switchToHttp().getRequest();
+    return requiredRoles.some((role) => user.roles?.includes(role));
   }
 }

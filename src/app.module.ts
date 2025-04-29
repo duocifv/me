@@ -26,10 +26,10 @@ import { LogsModule } from './shared/logs/logs.module';
 import { AppConfigService } from './shared/config/config.service';
 import { APP_GUARD } from '@nestjs/core';
 import { NewsModule } from './news/news.module';
-import { JwtAuthGuard } from './auth/guard/jwt.guard';
 import { RolesGuard } from './auth/guard/roles.guard';
 import { PermissionsGuard } from './auth/guard/permissions.guard';
 import { UserRoleSeeder } from './seeder/user-role.seeder';
+import { AuthGuard } from './auth/guard/jwt.guard';
 
 @Module({
   imports: [
@@ -75,7 +75,7 @@ import { UserRoleSeeder } from './seeder/user-role.seeder';
     UserRoleSeeder,
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useClass: AuthGuard,
     },
     {
       provide: APP_GUARD,

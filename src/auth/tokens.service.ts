@@ -44,7 +44,7 @@ export class TokensService {
     refreshToken: string;
     expiresAt: Date;
   }> {
-    const accessToken = this.jwtService.sign(
+    const accessToken = await this.jwtService.signAsync(
       { sub: user.id },
       {
         secret: process.env.JWT_ACCESS_SECRET!,
@@ -53,7 +53,7 @@ export class TokensService {
     );
 
     const jti = randomUUID();
-    const refreshToken = this.jwtService.sign(
+    const refreshToken = await this.jwtService.signAsync(
       { sub: user.id, jti },
       {
         secret: process.env.JWT_REFRESH_SECRET!,

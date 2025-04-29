@@ -1,24 +1,57 @@
-import { Injectable, ExecutionContext } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
+import { AppConfigService } from 'src/shared/config/config.service';
 import { IS_PUBLIC_KEY } from 'src/shared/decorators/public.decorator';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private reflector: Reflector) {
-    super();
-  }
+export class AuthGuard implements CanActivate {
+  constructor(
+    private jwtService: JwtService,
+    private cfg: AppConfigService,
+    private reflector: Reflector
+  ) {}
 
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    const req = context.switchToHttp().getRequest();
-    console.log('Authorization header:', req.headers['authorization']);
     if (isPublic) {
+      // 💡 See this condition
       return true;
     }
-    return super.canActivate(context);
+
+    const request = context.switchToHttp().getRequest();
+    const token = this.extractTokenFromHeader(request);
+    if (!token) {
+      throw new UnauthorizedException();
+    }
+    try {
+      const payload = await this.jwtService.verifyAsync(
+        token,
+        {
+          secret: this.cfg.jwtConfig.secret
+        }
+      );
+      // 💡 We're assigning the payload to the request object here
+      // so that we can access it in our route handlers
+      request['user'] = payload;
+    } catch {
+      throw new UnauthorizedException();
+    }
+    return true;
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 }

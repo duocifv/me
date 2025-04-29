@@ -8,22 +8,21 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from 'src/user/users.module';
 import { AppConfigService } from 'src/shared/config/config.service';
 import { CoreModule } from 'src/shared/core.module';
-import { JwtAuthGuard } from './guard/jwt.guard';
+import { AuthGuard } from './guard/jwt.guard';
 import { RolesGuard } from './guard/roles.guard';
 import { PermissionsGuard } from './guard/permissions.guard';
 import { JwtStrategy } from './strategy/jwt.strategy';
-import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RefreshToken]),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [CoreModule],
       inject: [AppConfigService],
       useFactory: (cfg: AppConfigService) => cfg.jwtConfig,
     }),
     forwardRef(() => UsersModule),
+    AppConfigService
   ],
   controllers: [AuthController],
   providers: [
@@ -32,9 +31,9 @@ import { PassportModule } from '@nestjs/passport';
     JwtService,
     RolesGuard,
     PermissionsGuard,
-    JwtAuthGuard,
+    AuthGuard,
     JwtStrategy,
   ],
-  exports: [JwtModule, JwtStrategy, JwtAuthGuard, RolesGuard, PermissionsGuard],
+  exports: [JwtModule, JwtStrategy, AuthGuard, RolesGuard, PermissionsGuard],
 })
 export class AuthModule { }
