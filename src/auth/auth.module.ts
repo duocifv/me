@@ -12,10 +12,12 @@ import { JwtAuthGuard } from './guard/jwt.guard';
 import { RolesGuard } from './guard/roles.guard';
 import { PermissionsGuard } from './guard/permissions.guard';
 import { JwtStrategy } from './strategy/jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RefreshToken]),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [CoreModule],
       inject: [AppConfigService],
@@ -33,6 +35,6 @@ import { JwtStrategy } from './strategy/jwt.strategy';
     JwtAuthGuard,
     JwtStrategy,
   ],
-  exports: [JwtModule, JwtAuthGuard, RolesGuard, PermissionsGuard],
+  exports: [JwtModule, JwtStrategy, JwtAuthGuard, RolesGuard, PermissionsGuard],
 })
-export class AuthModule {}
+export class AuthModule { }

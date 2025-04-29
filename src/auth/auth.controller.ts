@@ -7,6 +7,7 @@ import {
   Body,
   Delete,
   Get,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto, SignInSchema } from './dto/sign-in.dto';
@@ -14,7 +15,9 @@ import { Schema } from 'src/shared/decorators/dto.decorator';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Public } from '../shared/decorators/public.decorator';
 import { CreateUserDto, CreateUserSchema } from 'src/user/dto/create-user.dto';
+import { JwtAuthGuard } from './guard/jwt.guard';
 
+@UseGuards(JwtAuthGuard)  
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

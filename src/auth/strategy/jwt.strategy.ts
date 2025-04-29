@@ -9,11 +9,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: 'your_jwt_secret_key', // Thay bằng khóa bí mật của bạn
+      secretOrKey: 'JWT_SECRET',
     });
   }
 
   validate(payload: any) {
+    console.log("hellooo---->", payload)
     return { userId: payload.sub, email: payload.email };
   }
 }
