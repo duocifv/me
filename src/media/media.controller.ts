@@ -16,11 +16,16 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { pipeline } from 'node:stream/promises';
 import { UploadFileDto } from './upload-file.dto';
+import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
+import { Roles } from 'src/roles/role.enum';
 
+@ApiTags('Media - Khu vực ADMIN mới được truy cập')
+@RolesAllowed(Roles.ADMIN)
 @Controller('media')
 export class FileController {
   @HttpCode(200)

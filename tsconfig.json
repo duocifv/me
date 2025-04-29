@@ -29,6 +29,7 @@
     "integration/**/*",
     "src/",
     "typeorm.config.ts",
+    "src/shared/keys/*.pem",
     "src/mail/templates/**/*.hbs"
   ],
   "exclude": [

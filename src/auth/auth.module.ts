@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
@@ -6,34 +6,34 @@ import { TokensService } from './tokens.service';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { AuthController } from './auth.controller';
 import { UsersModule } from 'src/user/users.module';
-import { AppConfigService } from 'src/shared/config/config.service';
-import { CoreModule } from 'src/shared/core.module';
-import { AuthGuard } from './guard/jwt.guard';
-import { RolesGuard } from './guard/roles.guard';
-import { PermissionsGuard } from './guard/permissions.guard';
 import { JwtStrategy } from './strategy/jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
+import { LocalStrategy } from './strategy/local.strategy';
+import { CoreModule } from 'src/shared/core.module';
+import { AppConfigService } from 'src/shared/config/config.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RefreshToken]),
+    UsersModule,
+    PassportModule,
     JwtModule.registerAsync({
       imports: [CoreModule],
       inject: [AppConfigService],
-      useFactory: (cfg: AppConfigService) => cfg.jwtConfig,
+      useFactory: (cfg: AppConfigService) => ({
+        privateKey: cfg.jwtConfig.privateKey,
+        signOptions: cfg.jwtConfig.signOptions,
+      }),
     }),
-    forwardRef(() => UsersModule),
-    AppConfigService
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
     TokensService,
-    JwtService,
-    RolesGuard,
-    PermissionsGuard,
-    AuthGuard,
     JwtStrategy,
+    JwtService,
+    LocalStrategy
   ],
-  exports: [JwtModule, JwtStrategy, AuthGuard, RolesGuard, PermissionsGuard],
+  exports: [AuthService, JwtStrategy],
 })
 export class AuthModule { }

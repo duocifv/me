@@ -1,10 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { TokensService } from './tokens.service';
 import { UsersService } from 'src/user/users.service';
-import { SignInDto } from './dto/sign-in.dto';
 import bcrypt from 'bcryptjs';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UserDto, UserSchema } from 'src/user/dto/user.dto';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -14,18 +14,18 @@ export class AuthService {
   ) {}
 
   private async compareToken(
-    storedToken: string,
-    rawToken: string,
+    password: string,
+    passwordHash: string,
   ): Promise<boolean> {
-    return bcrypt.compare(rawToken, storedToken);
+    return bcrypt.compare(password, passwordHash);
   }
 
-  async validateUser(email: string, pass: string): Promise<UserDto> {
+  async validateUser(email: string, password: string): Promise<UserDto> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
-    const match = await this.compareToken(pass, user.password);
+    const match = await this.compareToken(password, user.password);
     if (!match) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
@@ -38,17 +38,13 @@ export class AuthService {
   }
 
   async signIn(
-    dto: SignInDto,
+    user: User,
     ipAddress: string,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
     expiresAt: Date;
   }> {
-    const user = await this.usersService.validateUser(dto.email, dto.password);
-    if (!user) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
-    }
     return await this.tokensService.generateTokenPair(user, ipAddress);
   }
 

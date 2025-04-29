@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from 'src/roles/entities/role.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
-import { RoleName } from 'src/roles/role.enum';
+import { Roles } from 'src/roles/role.enum';
 import bcrypt from 'bcryptjs';
 import { PermissionName } from 'src/permissions/permission.enum';
 import { User } from 'src/user/entities/user.entity';
@@ -44,7 +44,7 @@ export class UserRoleSeeder implements OnModuleInit {
 
   // Seeder cho Roles
   private async seedRoles() {
-    const roleNames = Object.values(RoleName);
+    const roleNames = Object.values(Roles);
 
     for (const name of roleNames) {
       const exist = await this.roleRepo.findOne({
@@ -56,7 +56,7 @@ export class UserRoleSeeder implements OnModuleInit {
         const permissions = await this.permissionRepo.find();
         const role = this.roleRepo.create({
           name,
-          permissions: name === RoleName.ADMIN ? permissions : [],
+          permissions: name === Roles.ADMIN ? permissions : [],
         });
         await this.roleRepo.save(role);
         console.log(`Role created: ${name}`);
@@ -79,7 +79,7 @@ export class UserRoleSeeder implements OnModuleInit {
         password: hash,
       });
 
-      const adminRole = await this.roleRepo.findOne({ where: { name: RoleName.ADMIN } });
+      const adminRole = await this.roleRepo.findOne({ where: { name: Roles.ADMIN } });
       
       if (adminRole) {
         adminUser.roles = [adminRole];

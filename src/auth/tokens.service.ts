@@ -10,31 +10,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { RefreshTokenPayload } from './dto/sign-in.dto';
 import { User } from 'src/user/entities/user.entity';
-import bcrypt from 'bcryptjs';
+import { AppConfigService } from 'src/shared/config/config.service';
 
 @Injectable()
 export class TokensService {
-  private readonly ACCESS_TOKEN_EXPIRES_IN = '15m';
-  private readonly REFRESH_TOKEN_EXPIRES_IN = '30d';
   private readonly MAX_USAGE_COUNT = 5;
 
   constructor(
     private readonly jwtService: JwtService,
+    private readonly cfg: AppConfigService,
     @InjectRepository(RefreshToken)
     private readonly rtRepo: Repository<RefreshToken>,
-  ) {}
-
-  private async hashToken(token: string): Promise<string> {
-    const saltRounds = 10;
-    return bcrypt.hash(token, saltRounds);
-  }
-
-  private async compareToken(
-    storedToken: string,
-    rawToken: string,
-  ): Promise<boolean> {
-    return bcrypt.compare(rawToken, storedToken);
-  }
+  ) { }
 
   async generateTokenPair(
     user: User,
@@ -44,20 +31,40 @@ export class TokensService {
     refreshToken: string;
     expiresAt: Date;
   }> {
+    const iss = this.cfg.token.issuer;
+    const aud = this.cfg.token.audience;
+    const now = Math.floor(Date.now() / 1000);
     const accessToken = await this.jwtService.signAsync(
-      { sub: user.id },
       {
-        secret: process.env.JWT_ACCESS_SECRET!,
-        expiresIn: this.ACCESS_TOKEN_EXPIRES_IN,
+        sub: user.id,
+        email: user.email,
+        iss,
+        aud,
+        roles: user.roles,
+        iat: now,
+        nbf: now
+      },
+      {
+        privateKey: this.cfg.token.privateKey,
+        algorithm: 'RS256',
+        expiresIn: this.cfg.token.accessToken.expires,
       },
     );
 
     const jti = randomUUID();
     const refreshToken = await this.jwtService.signAsync(
-      { sub: user.id, jti },
       {
-        secret: process.env.JWT_REFRESH_SECRET!,
-        expiresIn: this.REFRESH_TOKEN_EXPIRES_IN,
+        sub: user.id,
+        jti,
+        iss,
+        aud,
+        iat: now,
+        nbf: now
+      },
+      {
+        privateKey: this.cfg.token.privateKey,
+        algorithm: 'RS256',
+        expiresIn: this.cfg.token.refreshToken.expires,
       },
     );
 
@@ -90,7 +97,8 @@ export class TokensService {
 
     try {
       payload = this.jwtService.verify<RefreshTokenPayload>(token, {
-        secret: process.env.JWT_REFRESH_SECRET!,
+        publicKey: this.cfg.token.publicKey,
+        algorithms: ['RS256'],
       });
     } catch {
       throw new UnauthorizedException(

@@ -13,7 +13,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto, UserSchema } from './dto/user.dto';
 import { RolesService } from 'src/roles/roles.service';
 import { PermissionName } from 'src/permissions/permission.enum'; // Import PermissionName enum
-import { RoleName } from 'src/roles/role.enum';
+import { Roles } from 'src/roles/role.enum';
 
 @Injectable()
 export class UsersService {
@@ -21,7 +21,7 @@ export class UsersService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly rolesService: RolesService,
-  ) {}
+  ) { }
 
   private async hashToken(token: string): Promise<string> {
     const saltRounds = 10;
@@ -50,7 +50,7 @@ export class UsersService {
     const createdUser = await this.usersRepo.save(user);
 
     // Lấy vai trò mặc định là 'USER'
-    const defaultRole = await this.rolesService.findRoleByName(RoleName.CUSTOMER);
+    const defaultRole = await this.rolesService.findRoleByName(Roles.CUSTOMER);
 
     // Lấy quyền của vai trò USER
     const permissions = await this.rolesService.findPermissionsByNames([
@@ -74,7 +74,10 @@ export class UsersService {
 
   // Tìm người dùng theo email
   async findByEmail(email: string): Promise<User> {
-    const user = await this.usersRepo.findOne({ where: { email } });
+    const user = await this.usersRepo.findOne({
+      where: { email },
+      relations: ['roles'],
+    });
     if (!user) {
       throw new UnauthorizedException('User not found');
     }

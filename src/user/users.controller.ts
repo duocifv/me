@@ -9,20 +9,20 @@ import {
   Delete,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { Roles } from 'src/shared/decorators/roles.decorator';
-import { Public } from 'src/shared/decorators/public.decorator';
+import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
+import { Roles } from 'src/roles/role.enum';
+import { ApiTags } from '@nestjs/swagger';
 
+
+@ApiTags('Users - Khu vực ADMIN mới được truy cập')
+@RolesAllowed(Roles.ADMIN)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Public()
-  // @Roles('admin')
   // @Permissions('create:posts')
   // @Scopes('write:posts')
-
-  // @Roles('admin', 'user')
   findAll() {
     return `GET user all`;
   }

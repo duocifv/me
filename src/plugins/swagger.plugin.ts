@@ -23,6 +23,7 @@ export function setupSwagger(app: INestApplication) {
     .build();
 
   patchNestjsSwagger();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {

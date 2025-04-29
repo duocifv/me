@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { JwtModuleOptions } from '@nestjs/jwt';
+import { JwtModuleOptions, TokenOption } from '@nestjs/jwt';
+import * as fs from 'fs';
+import * as path from 'path';
 // import { RedisModuleOptions } from 'nestjs-redis';
 // import { ClientOptions } from '@elastic/elasticsearch';
 
 @Injectable()
 export class AppConfigService {
-  constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService) { }
 
   // Cổng HTTP
   get port(): number {
@@ -31,10 +33,40 @@ export class AppConfigService {
 
   // Cấu hình JWT
   get jwtConfig(): JwtModuleOptions {
+    const privateKey = fs.readFileSync(path.resolve('certs/private.pem'), 'utf8');
+    const publicKey = fs.readFileSync(path.resolve('certs/public.pem'), 'utf8');
+
     return {
-      secret: this.config.get<string>('JWT_SECRET'),
-      signOptions: { expiresIn: this.config.get<string>('JWT_EXPIRES_IN') },
+      privateKey,
+      publicKey,
+      secret: this.config.get<string>('JWT_ACCESS_SECRET'),
+      signOptions: {
+        expiresIn: this.config.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+        algorithm: 'RS256' as const,
+        issuer: this.config.get<string>('JWT_ISSUER'),
+        audience: this.config.get<string>('JWT_AUDIENCE'),
+      },
     };
+  }
+
+  get token():TokenOption {
+    const privateKey = fs.readFileSync(path.resolve('certs/private.pem'), 'utf8');
+    const publicKey = fs.readFileSync(path.resolve('certs/public.pem'), 'utf8');
+
+    return {
+      accessToken: {
+        secret: process.env.JWT_ACCESS_SECRET!,
+        expires: process.env.JWT_ACCESS_EXPIRES_IN || '900s',
+      },
+      refreshToken: {
+        secret: process.env.JWT_REFRESH_SECRET!,
+        expires: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+      },
+      issuer: process.env.JWT_ISSUER!,
+      audience: process.env.JWT_AUDIENCE!,
+      privateKey,
+      publicKey
+    }
   }
 
   // // Cấu hình Redis (cho CacheModule hoặc RedisModule)

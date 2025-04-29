@@ -4,7 +4,7 @@ import { Repository, In } from 'typeorm';
 import { Role } from 'src/roles/entities/role.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
 import { PermissionName } from 'src/permissions/permission.enum'; // Import PermissionName
-import { RoleName } from './role.enum';
+import { Roles } from './role.enum';
 
 @Injectable()
 export class RolesService {
@@ -16,7 +16,7 @@ export class RolesService {
   ) {}
 
   // Lấy vai trò theo tên
-  async findRoleByName(name: RoleName): Promise<Role> {
+  async findRoleByName(name: Roles): Promise<Role> {
     return this.roleRepository.findOneOrFail({
       where: { name },
       relations: ['permissions'],
