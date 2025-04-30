@@ -1,7 +1,7 @@
 import path from "path";
 
 export const uploadConfig = {
-     uploadDir: path.resolve(__dirname, '../../../uploads'),
+    uploadDir: path.resolve(__dirname, '../../../uploads'),
     outputFormat: 'webp',
     allowedMimeTypes: [
         'image/jpeg',
@@ -24,5 +24,14 @@ export const uploadConfig = {
         medium: 640,
         large: 1280,
     },
-   
+    limits: {
+        fieldNameSize: 100,
+        fieldSize: 100,
+        fields: 10,
+        fileSize: 1_000_000,
+        files: 1,
+        headerPairs: 2000,
+        parts: 1000,
+    },
+
 };

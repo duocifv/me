@@ -24,21 +24,15 @@ import { uploadConfig } from './config';
  *   và các thao tác list, stream, delete
  */
 export const fileManagerPlugin = fp(async (fastify: FastifyInstance) => {
+  const { uploadDir, limits, allowedMimeTypes, outputFormat, quality, sizes } = uploadConfig;
+
   // 1) Đăng ký multipart
   fastify.register(multipart, {
-    limits: {
-      fieldNameSize: 100,
-      fieldSize: 100,
-      fields: 10,
-      fileSize: 1_000_000,
-      files: 1,
-      headerPairs: 2000,
-      parts: 1000,
-    },
+    limits,
   });
 
   // 2) Chuẩn bị thư mục lưu
-  const { uploadDir, allowedMimeTypes, outputFormat, quality, sizes } = uploadConfig;
+ 
   if (!existsSync(uploadDir)) {
     mkdirSync(uploadDir, { recursive: true });
   }
