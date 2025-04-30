@@ -4,9 +4,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
-import { multipartPlugin } from './plugins/multipart.lugin';
 import { authPlugin } from './plugins/auth.plugin';
-import { fileManagerPlugin } from './plugins/file.plugin';
+import { fileManagerPlugin } from './plugins/media/media.plugin';
 import mailerPlugin from './plugins/mailer.plugin';
 import { setupSwagger } from './plugins/swagger.plugin';
 import corsPlugin from './plugins/cors.plugin';
@@ -18,7 +17,6 @@ async function bootstrap() {
   );
   await app.register(corsPlugin);
   await app.register(authPlugin);
-  await app.register(multipartPlugin);
   await app.register(fileManagerPlugin);
   await app.register(mailerPlugin);
   if (process.env.ENABLE_SWAGGER) {

@@ -42,12 +42,14 @@ export class AuthController {
     return { accessToken };
   }
 
+  @Public()
   @Post('register')
   @Schema(CreateUserSchema)
   register(@Body() dto: CreateUserDto) {
     return this.authService.register(dto);
   }
 
+  @Public()
   @Post('token')
   @HttpCode(200)
   async refresh(
@@ -64,6 +66,7 @@ export class AuthController {
     return { accessToken };
   }
 
+  @Public()
   @Post('forgot-password')
   forgotPassword(@Body() body: any, @Req() req: any) {
     console.log('User from JWT:', req.user);
@@ -76,7 +79,6 @@ export class AuthController {
     return { message: 'Password reset', token: body.token };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete('logout')
   @HttpCode(204)
   async logout(@Req() req, @Res({ passthrough: true }) res) {
