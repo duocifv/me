@@ -8,7 +8,7 @@ export function setupSwagger(app: INestApplication) {
     .setTitle('My API')
     .setDescription('API documentation using Zod and Swagger')
     .setVersion('1.0')
-    .addServer('http://localhost:5000/', 'Upload server')
+    .addServer(`${process.env.APP_URL!}`, 'Upload server')
     .addSecurityRequirements('access-token')
     .addBearerAuth(
       {
