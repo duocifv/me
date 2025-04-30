@@ -1,14 +1,16 @@
 version: '3.8'
+
 services:
   mysql:
-    image: mysql:8
+    image: mysql:5.7  # ✅ Sử dụng MySQL 5.7 thay vì 8
     container_name: mysql-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 132132  # Chỉ cần thiết lập mật khẩu cho tài khoản root
+      MYSQL_ROOT_PASSWORD: 132132
       MYSQL_DATABASE: me
     ports:
       - "3306:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci  # ✅ Tránh collation MySQL 8
     volumes:
       - mysql_data:/var/lib/mysql
 
@@ -17,10 +19,10 @@ services:
     container_name: phpmyadmin
     restart: always
     environment:
-      PMA_HOST: mysql-db  # Kết nối với container MySQL
-      MYSQL_ROOT_PASSWORD: 132132  # Mật khẩu cho tài khoản root
+      PMA_HOST: mysql-db
+      MYSQL_ROOT_PASSWORD: 132132
     ports:
-      - "8080:80"  # Truy cập phpMyAdmin qua port 8080
+      - "8080:80"
 
 volumes:
   mysql_data:

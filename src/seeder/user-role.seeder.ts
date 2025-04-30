@@ -71,7 +71,7 @@ export class UserRoleSeeder implements OnModuleInit {
     });
 
     if (!exist) {
-      const hash = await bcrypt.hash('adminpassword', 10); // Mật khẩu mặc định
+      const hash = await bcrypt.hash('string', 10); // Mật khẩu mặc định
 
       // Tạo Admin User
       const adminUser = this.userRepo.create({
