@@ -13,13 +13,15 @@ export class PermissionsService {
 
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
-  ) { }
+  ) {}
 
   // Phương thức tạo quyền mới
   async createPermission(
     permissionName: PermissionName, // Sử dụng PermissionName enum
   ): Promise<Permission> {
-    const permission = this.permissionRepository.create({ name: permissionName });
+    const permission = this.permissionRepository.create({
+      name: permissionName,
+    });
     return this.permissionRepository.save(permission);
   }
 

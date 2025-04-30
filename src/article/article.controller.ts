@@ -10,9 +10,9 @@ import { ArticlesService } from './articles.service';
     id: { field: 'id', type: 'number', primary: true },
   },
   query: {
-    alwaysPaginate: true,       // luôn trả về pagination
-    limit: 10,                  // default page size
-    maxLimit: 50,               // max page size
+    alwaysPaginate: true, // luôn trả về pagination
+    limit: 10, // default page size
+    maxLimit: 50, // max page size
     sort: [{ field: 'createdAt', order: 'DESC' }],
     // bạn có thể thêm join, filter operators ở đây nếu cần
   },

@@ -20,10 +20,9 @@ import { User } from 'src/user/entities/user.entity';
 import { UserDto } from 'src/user/dto/user.dto';
 import { Public } from 'src/shared/decorators/public.decorator';
 
-
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Public()
   @UseGuards(LocalAuthGuard)
@@ -38,7 +37,7 @@ export class AuthController {
     const ipAddress = req.getIpAddress();
     const user = req.user as User;
     const { accessToken, refreshToken, expiresAt } =
-      await this.authService.signIn(user , ipAddress);
+      await this.authService.signIn(user, ipAddress);
     res.setRefreshToken(refreshToken, expiresAt);
     return { accessToken };
   }
@@ -65,7 +64,6 @@ export class AuthController {
     return { accessToken };
   }
 
-
   @Post('forgot-password')
   forgotPassword(@Body() body: any, @Req() req: any) {
     console.log('User from JWT:', req.user);
@@ -73,12 +71,10 @@ export class AuthController {
     return { message: 'Reset link sent', user: req.user };
   }
 
-
   @Post('reset-password')
   resetPassword(@Body() body: any) {
     return { message: 'Password reset', token: body.token };
   }
-
 
   @UseGuards(JwtAuthGuard)
   @Delete('logout')

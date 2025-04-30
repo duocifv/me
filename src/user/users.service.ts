@@ -21,7 +21,7 @@ export class UsersService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly rolesService: RolesService,
-  ) { }
+  ) {}
 
   private async hashToken(token: string): Promise<string> {
     const saltRounds = 10;
@@ -54,8 +54,8 @@ export class UsersService {
 
     // Lấy quyền của vai trò USER
     const permissions = await this.rolesService.findPermissionsByNames([
-      PermissionName.VIEW_PRODUCTS,  // Ví dụ quyền xem sản phẩm
-      PermissionName.PLACE_ORDER,    // Ví dụ quyền đặt hàng
+      PermissionName.VIEW_PRODUCTS, // Ví dụ quyền xem sản phẩm
+      PermissionName.PLACE_ORDER, // Ví dụ quyền đặt hàng
     ]);
 
     // Gán vai trò và quyền cho người dùng

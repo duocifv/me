@@ -7,10 +7,7 @@ import * as path from 'path';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
-    const publicKey = fs.readFileSync(
-      path.resolve('certs/public.pem'),
-      'utf8',
-    );
+    const publicKey = fs.readFileSync(path.resolve('certs/public.pem'), 'utf8');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,

@@ -12,7 +12,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/roles/role.enum';
 import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
 
-
 @ApiTags('Permissions - Khu vực ADMIN mới được truy cập')
 @RolesAllowed(Roles.ADMIN)
 @Controller('permissions')

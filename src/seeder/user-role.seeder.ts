@@ -79,8 +79,10 @@ export class UserRoleSeeder implements OnModuleInit {
         password: hash,
       });
 
-      const adminRole = await this.roleRepo.findOne({ where: { name: Roles.ADMIN } });
-      
+      const adminRole = await this.roleRepo.findOne({
+        where: { name: Roles.ADMIN },
+      });
+
       if (adminRole) {
         adminUser.roles = [adminRole];
         await this.userRepo.save(adminUser);

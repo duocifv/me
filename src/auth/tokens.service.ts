@@ -21,7 +21,7 @@ export class TokensService {
     private readonly cfg: AppConfigService,
     @InjectRepository(RefreshToken)
     private readonly rtRepo: Repository<RefreshToken>,
-  ) { }
+  ) {}
 
   async generateTokenPair(
     user: User,
@@ -42,7 +42,7 @@ export class TokensService {
         aud,
         roles: user.roles,
         iat: now,
-        nbf: now
+        nbf: now,
       },
       {
         privateKey: this.cfg.token.privateKey,
@@ -59,7 +59,7 @@ export class TokensService {
         iss,
         aud,
         iat: now,
-        nbf: now
+        nbf: now,
       },
       {
         privateKey: this.cfg.token.privateKey,

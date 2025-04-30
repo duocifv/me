@@ -32,8 +32,8 @@ import { AppConfigService } from 'src/shared/config/config.service';
     TokensService,
     JwtStrategy,
     JwtService,
-    LocalStrategy
+    LocalStrategy,
   ],
   exports: [AuthService, JwtStrategy],
 })
-export class AuthModule { }
+export class AuthModule {}

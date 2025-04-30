@@ -1,5 +1,10 @@
 // src/common/validation/validation.service.ts
-import { Injectable, PipeTransform, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  PipeTransform,
+  ArgumentMetadata,
+  BadRequestException,
+} from '@nestjs/common';
 import { validate, ValidationError } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 
@@ -24,10 +29,9 @@ export class ValidationService implements PipeTransform<any> {
   }
 
   private formatErrors(errors: ValidationError[]) {
-    return errors.map(err => ({
+    return errors.map((err) => ({
       property: err.property,
       constraints: err.constraints,
     }));
   }
 }
-

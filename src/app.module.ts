@@ -30,7 +30,6 @@ import { RolesGuard } from './roles/roles.guard';
 import { UserRoleSeeder } from './seeder/user-role.seeder';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -87,9 +86,8 @@ import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
     // },
   ],
 })
-
 export class AppModule implements OnModuleInit {
-  constructor(private readonly userRoleSeeder: UserRoleSeeder) { }
+  constructor(private readonly userRoleSeeder: UserRoleSeeder) {}
 
   async onModuleInit() {
     if (process.env.NODE_ENV !== 'production') {

@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { JwtModuleOptions, TokenOption } from '@nestjs/jwt';
+import { JwtModuleOptions } from '@nestjs/jwt';
 import * as fs from 'fs';
 import * as path from 'path';
+import { TokenOption } from '../@types/token';
 // import { RedisModuleOptions } from 'nestjs-redis';
 // import { ClientOptions } from '@elastic/elasticsearch';
 
 @Injectable()
 export class AppConfigService {
-  constructor(private readonly config: ConfigService) { }
+  constructor(private readonly config: ConfigService) {}
 
   // Cổng HTTP
   get port(): number {
@@ -33,7 +34,10 @@ export class AppConfigService {
 
   // Cấu hình JWT
   get jwtConfig(): JwtModuleOptions {
-    const privateKey = fs.readFileSync(path.resolve('certs/private.pem'), 'utf8');
+    const privateKey = fs.readFileSync(
+      path.resolve('certs/private.pem'),
+      'utf8',
+    );
     const publicKey = fs.readFileSync(path.resolve('certs/public.pem'), 'utf8');
 
     return {
@@ -49,8 +53,11 @@ export class AppConfigService {
     };
   }
 
-  get token():TokenOption {
-    const privateKey = fs.readFileSync(path.resolve('certs/private.pem'), 'utf8');
+  get token(): TokenOption {
+    const privateKey = fs.readFileSync(
+      path.resolve('certs/private.pem'),
+      'utf8',
+    );
     const publicKey = fs.readFileSync(path.resolve('certs/public.pem'), 'utf8');
 
     return {
@@ -60,13 +67,13 @@ export class AppConfigService {
       },
       refreshToken: {
         secret: process.env.JWT_REFRESH_SECRET!,
-        expires: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+        expires: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
       },
       issuer: process.env.JWT_ISSUER!,
       audience: process.env.JWT_AUDIENCE!,
       privateKey,
-      publicKey
-    }
+      publicKey,
+    };
   }
 
   // // Cấu hình Redis (cho CacheModule hoặc RedisModule)
