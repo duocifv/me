@@ -54,7 +54,7 @@ const data = {
       icon: Search,
     },
     {
-      title: "Ask AI",
+      title: "File Manager",
       url: "#",
       icon: Sparkles,
     },
