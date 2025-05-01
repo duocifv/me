@@ -2,18 +2,19 @@ import path from "path";
 
 export const uploadConfig = {
     uploadDir: path.resolve(__dirname, '../../../uploads'),
-    outputFormat: 'webp',
+    outputFormat: 'jpg',
     allowedMimeTypes: [
+        'image/bmp',
         'image/jpeg',
         'image/png',
         'image/gif',
-        'image/webp',
-        'image/svg+xml',
-        'image/x-icon',
-        'image/heic',
-        'image/heif',
-        'image/bmp',
-        'image/avif',
+        'image/tiff',
+        // 'image/webp',
+        // 'image/svg+xml',
+        // 'image/x-icon',
+        // 'image/heic',
+        // 'image/heif',
+        // 'image/avif',
     ],
     quality: {
         original: 80,

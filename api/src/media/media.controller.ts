@@ -39,12 +39,13 @@ export class FileController {
   })
   @Post('upload')
   async upload(@Req() req: FastifyRequest) {
-    const parts = req.files() as AsyncIterable<any>;
-    for await (const part of parts) {
-      await req.server.fileManager.saveFile(part);
-    }
-    return { message: 'Upload thành công' };
+  const part = await req.file();
+  if(!part){
+    throw new NotFoundException('file không có'); 
   }
+  await req.server.fileManager.saveFile(part);
+  return { message: 'Upload thành công' };
+}
 
   @Get()
   findAll(@Req() req: FastifyRequest) {
