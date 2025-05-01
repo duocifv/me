@@ -1,0 +1,48 @@
+.ui-input input {
+    -webkit-appearance: none;
+    width: 100%;
+    outline: none;
+    border: 1px solid #d1d5db;
+    border-radius: 4.8px;
+    padding: 7px 13px 8px;
+    min-height: 33px;
+    font-family: 'Quicksand', sans-serif;
+    transition: box-shadow 0.2s ease-in-out;
+    padding-block: 1px;
+    font-size: 13px;
+}
+
+.ui-input input:focus {
+    box-shadow: 0 0 0 0.8px rgb(63 63 70);
+    outline: 0;
+}
+
+.ui-input label {
+    display: flex;
+    font-size: 12px;
+    line-height: 12px;
+    align-items: center;
+    font-weight: 500;
+    color: rgb(55 65 81);
+    font-family: 'Quicksand', sans-serif;
+    min-height: 20px;
+    cursor: pointer;
+}
+
+.ui-input span {
+    padding-top: 3px;
+    font-size: 12px;
+    line-height: 12px;
+    color: #eb5050;
+    display: block;
+    visibility: hidden;
+    min-height: 15px;
+}
+
+.ui-input.error input {
+    border: 1px solid #eb5050;
+}
+
+.ui-input.error span {
+    visibility: visible;
+}
