@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "../share/globals.css";
-import Tanstack from "@adapter/share/provider/tanstack";
+// import Tanstack from "@adapter/share/provider/tanstack";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -15,7 +15,8 @@ export default async function RootLayout({
   return (
     <html lang="en" data-theme="light">
       <body className="antialiased">
-        <Tanstack>{children}</Tanstack>
+        {/* <Tanstack>{children}</Tanstack> */}
+        {children}
       </body>
     </html>
   );
