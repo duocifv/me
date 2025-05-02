@@ -82,6 +82,7 @@ export function RolesAndPermissionsSummary() {
       {/* Header + add-role button */}
       <div className="flex justify-between items-center px-4 lg:px-6">
         <div>
+          <h1 className="text-2xl font-semibold">Roles and Permissions</h1>
           <p className="text-sm text-gray-500">
             Dashboard &gt; Role Management &amp; Permission
           </p>

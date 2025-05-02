@@ -26,8 +26,9 @@ const PERMISSIONS = [
   "Payroll",
 ];
 
-export function EditRoleDialog() {
+export function EditRoleDialog({ roleName }: { roleName: string }) {
   const [open, setOpen] = React.useState(false);
+  const [name, setName] = React.useState(roleName);
   const [selectAll, setSelectAll] = React.useState(false);
   const [perms, setPerms] = React.useState<
     Record<string, { read: boolean; write: boolean; create: boolean }>
@@ -60,11 +61,16 @@ export function EditRoleDialog() {
     }));
   };
 
+  const handleSubmit = () => {
+    // TODO: save name and perms
+    setOpen(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Edit Role
+          Edit {roleName}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
@@ -76,7 +82,11 @@ export function EditRoleDialog() {
         <div className="space-y-4 mt-4">
           <label className="block">
             <span className="text-sm font-medium">Role Name</span>
-            <Input placeholder="Enter a role name" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter a role name"
+            />
           </label>
 
           <div>
@@ -124,7 +134,7 @@ export function EditRoleDialog() {
         </div>
 
         <DialogFooter className="mt-6 space-x-2">
-          <Button type="submit">Submit</Button>
+          <Button onClick={handleSubmit}>Submit</Button>
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
