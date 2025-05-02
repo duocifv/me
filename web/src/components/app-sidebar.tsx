@@ -1,24 +1,31 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  LifeBuoy,
-  Map,
-  PieChart,
-  Send,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react"
+  ArrowUpCircleIcon,
+  BarChartIcon,
+  CameraIcon,
+  ClipboardListIcon,
+  DatabaseIcon,
+  DiscAlbum,
+  FileCodeIcon,
+  FileIcon,
+  FileTextIcon,
+  FolderIcon,
+  HelpCircleIcon,
+  LayoutDashboardIcon,
+  ListIcon,
+  MailCheck,
+  RollerCoaster,
+  SearchIcon,
+  SettingsIcon,
+  UsersIcon,
+} from "lucide-react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
-import { NavFavorites } from "@/components/nav-favorites"
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -27,19 +34,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import {
-  AudioWaveform,
-  Blocks,
-  Calendar,
-  Home,
-  Inbox,
-  MessageCircleQuestion,
-  Search,
-  Sparkles,
-  Trash2,
-} from "lucide-react"
-
+} from "@/components/ui/sidebar";
 
 const data = {
   user: {
@@ -47,112 +42,81 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  navHeader: [
+  navMain: [
     {
-      title: "Search",
-      url: "#",
-      icon: Search,
+      title: "Dashboard",
+      url: "/en/",
+      icon: LayoutDashboardIcon,
     },
     {
-      title: "File Manager",
-      url: "#",
-      icon: Sparkles,
+      title: "Media Library",
+      url: "/en/media/",
+      icon: DiscAlbum,
     },
     {
-      title: "Home",
+      title: "Roles and Permissions",
+      url: "/en/roles-permissions/",
+      icon: RollerCoaster,
+    },
+    {
+      title: "Analytics",
       url: "#",
-      icon: Home,
-      isActive: true,
+      icon: BarChartIcon,
     },
     {
       title: "Inbox",
-      url: "#",
-      icon: Inbox,
-      badge: "10",
+      url: "/en/inbox",
+      icon: MailCheck,
+    },
+    {
+      title: "User",
+      url: "/en/users",
+      icon: UsersIcon,
     },
   ],
-  navMain: [
+  navClouds: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
+      title: "Capture",
+      icon: CameraIcon,
       isActive: true,
+      url: "#",
       items: [
         {
-          title: "History",
+          title: "Active Proposals",
           url: "#",
         },
         {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
+          title: "Archived",
           url: "#",
         },
       ],
     },
     {
-      title: "Models",
+      title: "Proposal",
+      icon: FileTextIcon,
       url: "#",
-      icon: Bot,
       items: [
         {
-          title: "Genesis",
+          title: "Active Proposals",
           url: "#",
         },
         {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
+          title: "Archived",
           url: "#",
         },
       ],
     },
     {
-      title: "Documentation",
+      title: "Prompts",
+      icon: FileCodeIcon,
       url: "#",
-      icon: BookOpen,
       items: [
         {
-          title: "Introduction",
+          title: "Active Proposals",
           url: "#",
         },
         {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
+          title: "Archived",
           url: "#",
         },
       ],
@@ -160,64 +124,66 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Support",
+      title: "Settings",
       url: "#",
-      icon: LifeBuoy,
+      icon: SettingsIcon,
     },
     {
-      title: "Feedback",
+      title: "Get Help",
       url: "#",
-      icon: Send,
+      icon: HelpCircleIcon,
+    },
+    {
+      title: "Search",
+      url: "#",
+      icon: SearchIcon,
     },
   ],
-  projects: [
+  documents: [
     {
-      name: "Design Engineering",
+      name: "Data Library",
       url: "#",
-      icon: Frame,
+      icon: DatabaseIcon,
     },
     {
-      name: "Sales & Marketing",
+      name: "Reports",
       url: "#",
-      icon: PieChart,
+      icon: ClipboardListIcon,
     },
     {
-      name: "Travel",
+      name: "Word Assistant",
       url: "#",
-      icon: Map,
+      icon: FileIcon,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar variant="inset" {...props}>
+    <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
               <a href="#">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Command className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Acme Inc</span>
-                  <span className="truncate text-xs">Enterprise</span>
-                </div>
+                <ArrowUpCircleIcon className="h-5 w-5" />
+                <span className="text-base font-semibold">Duocnv</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <NavMain items={data.navHeader} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

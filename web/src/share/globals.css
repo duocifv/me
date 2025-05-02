@@ -5,6 +5,8 @@
 @plugin "@iconify/tailwind4";
 
 @theme inline {
+  --chart-1: red;
+  --chart-2: blue;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -172,6 +174,7 @@ main {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
