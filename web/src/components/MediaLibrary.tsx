@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,16 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  Trash2,
-  HardDrive,
-  Image as ImageIcon,
-  FileText,
-  Music,
-  Video,
-} from "lucide-react";
 import { FileManager } from "./table-media";
-import { MediaSummary } from "./MediaSummary";
 
 // Sample data using Lorem Picsum
 const sampleImages = Array.from({ length: 42 }, (_, i) => ({
@@ -41,7 +31,7 @@ const sampleImages = Array.from({ length: 42 }, (_, i) => ({
 export default function ImageLibrary() {
   const [images, setImages] = useState(sampleImages);
   const [search, setSearch] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileTypeFilter, setFileTypeFilter] = useState("all");
@@ -71,27 +61,27 @@ export default function ImageLibrary() {
   const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
 
   // Handlers
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-  const toggleSelectAll = () => {
-    const allIds = pageItems.map((i) => i.id);
-    setSelectedIds((prev) =>
-      allIds.every((id) => prev.includes(id)) ? [] : allIds
-    );
-  };
+  // const toggleSelect = (id: string) => {
+  //   setSelectedIds((prev) =>
+  //     prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  //   );
+  // };
+  // const toggleSelectAll = () => {
+  //   const allIds = pageItems.map((i) => i.id);
+  //   setSelectedIds((prev) =>
+  //     allIds.every((id) => prev.includes(id)) ? [] : allIds
+  //   );
+  // };
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
     setPage(1);
   };
-  const handleDeleteSelected = () => {
-    if (!selectedIds.length) return;
-    setImages((prev) => prev.filter((img) => !selectedIds.includes(img.id)));
-    toast.success(`Đã xóa ${selectedIds.length} ảnh`);
-    setSelectedIds([]);
-  };
+  // const handleDeleteSelected = () => {
+  //   if (!selectedIds.length) return;
+  //   setImages((prev) => prev.filter((img) => !selectedIds.includes(img.id)));
+  //   toast.success(`Đã xóa ${selectedIds.length} ảnh`);
+  //   setSelectedIds([]);
+  // };
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
