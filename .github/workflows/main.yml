@@ -32,7 +32,7 @@ jobs:
         username: web@duocnv.top
         password: Khanh132132!!
         server-dir: /
-        local-dir: "web/out" # For Next.js build output directory
+        local-dir: "web/out/" # For Next.js build output directory
 
     # Deploy NestJS
     - name: "📦 Install dependencies for NestJS"
@@ -57,4 +57,4 @@ jobs:
         username: me@my.duocnv.top
         password: Khanh132132!!
         server-dir: /api
-        local-dir: "api/dist" # For NestJS build output directory
+        local-dir: "api/dist/" # For NestJS build output directory
