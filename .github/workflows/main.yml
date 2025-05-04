@@ -1,7 +1,6 @@
-
-
 on: push
 name: 🚀 Deploy website on push
+
 jobs:
   web-deploy:
     name: 🎉 Deploy
@@ -10,20 +9,52 @@ jobs:
     - name: 🚚 Get latest code
       uses: actions/checkout@v4
       
-    - name: "📦 Install dependencies"
-      run: npm install
+    # Deploy Next.js
+    - name: "📦 Install dependencies for Next.js"
+      run: |
+        cd web
+        npm install
 
-    - name: "🛠 Build project"
-      run: npm run build
+    - name: "🛠 Build Next.js project"
+      run: |
+        cd web
+        npm run build
     
-    - name: 📂 Verify build output
-      run: ls -R dist/
+    - name: "📂 Verify Next.js build output"
+      run: |
+        cd web
+        ls -R out/
     
-    - name: 📂 Sync files
+    - name: 📂 Sync Next.js files to cPanel
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: 103.221.223.51
+        username: web@duocnv.top
+        password: Khanh132132!!
+        server-dir: /
+        local-dir: "web/out" # For Next.js build output directory
+
+    # Deploy NestJS
+    - name: "📦 Install dependencies for NestJS"
+      run: |
+        cd api
+        npm install
+
+    - name: "🛠 Build NestJS project"
+      run: |
+        cd api
+        npm run build
+
+    - name: "📂 Verify NestJS build output"
+      run: |
+        cd api
+        ls -R dist/
+
+    - name: 📂 Sync NestJS files to cPanel
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
         server: 103.221.223.51
         username: me@my.duocnv.top
         password: Khanh132132!!
-        server-dir: /
-        local-dir: "dist/"
+        server-dir: /api
+        local-dir: "api/dist" # For NestJS build output directory

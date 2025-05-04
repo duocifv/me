@@ -1,5 +1,4 @@
 "use client";
-
 import * as React from "react";
 import {
   Dialog,
@@ -36,7 +35,7 @@ export function EditRoleDialog({ roleName }: { roleName: string }) {
     PERMISSIONS.reduce((acc, p) => {
       acc[p] = { read: false, write: false, create: false };
       return acc;
-    }, {} as any)
+    }, {} as Record<string, { read: boolean; write: boolean; create: boolean; }>)
   );
 
   const handleSelectAll = (checked: boolean) => {
@@ -47,7 +46,7 @@ export function EditRoleDialog({ roleName }: { roleName: string }) {
         { read: checked, write: checked, create: checked },
       ])
     );
-    setPerms(updated as any);
+    setPerms(updated);
   };
 
   const handlePermChange = (
@@ -123,7 +122,7 @@ export function EditRoleDialog({ roleName }: { roleName: string }) {
                             handlePermChange(perm, field, !!v)
                           }
                         />
-                        <span className="text-sm capitalize">{field}</span>
+                        <span className="text-sm capiclatalize">{field}</span>
                       </label>
                     ))}
                   </div>

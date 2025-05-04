@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,7 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
 import { FileManager } from "./table-media";
 
 // Sample data using Lorem Picsum
@@ -36,7 +35,9 @@ export default function ImageLibrary() {
   const [preview, setPreview] = useState<string | null>(null);
   const [fileTypeFilter, setFileTypeFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("modified-desc");
-
+  useEffect(()=> {
+    setImages(sampleImages)
+  },[])
   const perPage = 10;
 
   // Filter and sort
@@ -58,7 +59,7 @@ export default function ImageLibrary() {
   }, [images, search, fileTypeFilter, sortOrder]);
 
   const totalPages = Math.ceil(filtered.length / perPage);
-  const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
+  // const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
 
   // Handlers
   // const toggleSelect = (id: string) => {

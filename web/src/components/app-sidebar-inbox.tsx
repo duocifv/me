@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   ArchiveX,
-  ChevronRight,
   Command,
   File,
   Home,
@@ -27,8 +26,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Switch } from "@/components/ui/switch";
-import { AppSidebar } from "./app-sidebar";
+import { Switch } from "@/components/ui/switch";  
 import { Button } from "./ui/button";
 import Link from "next/link";
 

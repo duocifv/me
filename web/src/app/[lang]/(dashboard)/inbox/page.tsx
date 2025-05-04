@@ -1,4 +1,3 @@
-import { AppSidebar } from "@/components/app-sidebar";
 import { AppSidebarInbox } from "@/components/app-sidebar-inbox";
 import {
   Breadcrumb,

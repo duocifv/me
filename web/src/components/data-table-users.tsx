@@ -38,7 +38,6 @@ import {
 import {
   ArrowUpDown,
   CheckCircle2Icon,
-  CheckCircleIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
