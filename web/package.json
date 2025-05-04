@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npx serve@latest out",
+    "build": "next build",
+    "export": "next build && npx serve@latest out",
     "start": "next start",
     "lint": "next lint",
     "lang": "i18next-scanner"
