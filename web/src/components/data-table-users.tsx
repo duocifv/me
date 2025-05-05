@@ -9,13 +9,11 @@ import {
   closestCenter,
   useSensor,
   useSensors,
-  type DragEndEvent,
   type UniqueIdentifier,
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
   SortableContext,
-  arrayMove,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -37,21 +35,20 @@ import {
 } from "@tanstack/react-table";
 import {
   ArrowUpDown,
+  BanIcon,
   CheckCircle2Icon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
+  Clock,
   ColumnsIcon,
-  GripVerticalIcon,
-  LoaderIcon,
   MoreVerticalIcon,
   PlusIcon,
   TrendingUpIcon,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { toast } from "sonner";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
@@ -153,19 +150,27 @@ const columns: ColumnDef<UserDto>[] = [
   {
     accessorKey: "STATUS",
     header: "STATUS",
-    cell: ({ row }) => (
-      <Badge
-        variant="outline"
-        className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3"
-      >
-        {row.original.status === "active" ? (
+    cell: ({ row }) => {
+      const status = row.original.status;
+
+      const iconMap = {
+        active: (
           <CheckCircle2Icon className="text-green-500 dark:text-green-400" />
-        ) : (
-          <LoaderIcon />
-        )}
-        {row.original.status}
-      </Badge>
-    ),
+        ),
+        pending: <Clock className="text-yellow-500 dark:text-yellow-400" />,
+        blocked: <BanIcon className="text-red-500 dark:text-red-400" />,
+      };
+
+      return (
+        <Badge
+          variant="outline"
+          className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3"
+        >
+          {iconMap[status]}
+          {status}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: "email",

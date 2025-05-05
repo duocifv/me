@@ -95,11 +95,6 @@ html {
   height: 100%;
 }
 
-main {
-  padding: 20px;
-  overflow-y: auto;
-  height: calc(100vh - 40px);
-}
 
 :root {
   --radius: 0.625rem;
