@@ -4,15 +4,21 @@
     "declaration": true,
     "jsx": "react-jsx",
     "module": "ESNext",
-    "target": "ES6",
+    "resolveJsonModule": true,
+    "target": "ESNext",
     "moduleResolution": "Node",
     "baseUrl": "./",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
     "paths": {
-      "../*": ["src/*"] 
+      "../*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["src", "tests"]
+  "include": [
+    "src",
+    "tests"
+  ]
 }

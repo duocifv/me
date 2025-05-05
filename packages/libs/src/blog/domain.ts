@@ -1,6 +1,6 @@
 import { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { z } from "zod";
-import { blogListSchema, blogOptionsSchema, blogSchema } from "../blog/schema";
+import { blogListSchema, blogOptionsSchema, blogSchema } from "./schema";
 
 export type Blog = z.infer<typeof blogSchema>;
 export type BlogOptions = z.infer<typeof blogOptionsSchema>;

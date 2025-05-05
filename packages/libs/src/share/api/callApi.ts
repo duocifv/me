@@ -1,8 +1,8 @@
-
 import type { HttpMethod, ApiOpts } from "./types";
 import { makeUrl } from "./buildUrl";
 import { log } from "./logger";
 import { retryFetch } from "./retryFetch";
+import { authService } from "./authService";
 
 /**
  * Gọi API với timeout và retry, trả về kết quả theo cấu trúc:
@@ -12,18 +12,26 @@ import { retryFetch } from "./retryFetch";
 export const callApi = async <T>(
   method: HttpMethod,
   path: string,
-  { 
-    params = {}, 
-    body, 
-    headers = {}, 
-    timeout = 5000, 
-    fallback = null 
+  {
+    params = {},
+    body,
+    headers = {},
+    timeout = 5000,
+    fallback = null,
   }: ApiOpts<T> = {}
-): Promise<{ data: T | null; error: string | null; status?: number; statusText?: string }> => {
- 
+): Promise<{
+  data: T | null;
+  error: string | null;
+  status?: number;
+  statusText?: string;
+}> => {
   const url = makeUrl(path, params);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const token = authService.getToken();
+  if (token) {
+    headers = { ...headers, Authorization: `Bearer ${token}` };
+  }
 
   try {
     log.info(`Call API: ${url} [${method}]`);
@@ -45,7 +53,12 @@ export const callApi = async <T>(
       log.error(`Unknown API error: ${String(err)}`);
     }
     if (fallback !== null) {
-      return { data: fallback as T, error: errorMessage, status: 500, statusText: "Error" };
+      return {
+        data: fallback as T,
+        error: errorMessage,
+        status: 500,
+        statusText: "Error",
+      };
     }
     throw new Error(errorMessage);
   } finally {

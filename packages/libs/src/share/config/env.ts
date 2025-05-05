@@ -1,4 +1,4 @@
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
 
 // Load các biến môi trường từ file .env
 dotenv.config();
@@ -13,10 +13,10 @@ interface EnvConfig {
 
 // Cung cấp giá trị mặc định cho các biến môi trường
 const defaultConfig: EnvConfig = {
-  API_URL: 'http://localhost:8100/api', // Secret key cho JWT
-  API_KEY: '', // API Key
-  LOG_LEVEL: 'info', // Cấp độ log
-  NODE_ENV: 'development',
+  API_URL: "http://localhost:5000", // Secret key cho JWT
+  API_KEY: "", // API Key
+  LOG_LEVEL: "info", // Cấp độ log
+  NODE_ENV: "development",
 };
 
 // Trả về các giá trị từ process.env hoặc giá trị mặc định

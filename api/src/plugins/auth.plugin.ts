@@ -30,7 +30,7 @@ export const authPlugin = fp((fastify) => {
         httpOnly: true,
         sameSite: 'strict',
         secure: process.env.NODE_ENV === 'production',
-        path: '/',
+        path: '/token',
         maxAge,
         signed: true,
       });

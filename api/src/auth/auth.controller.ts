@@ -14,10 +14,8 @@ import { SignInDto, SignInSchema } from './dto/sign-in.dto';
 import { Schema } from 'src/shared/decorators/dto.decorator';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { CreateUserDto, CreateUserSchema } from 'src/user/dto/create-user.dto';
-import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { User } from 'src/user/entities/user.entity';
-import { UserDto } from 'src/user/dto/user.dto';
 import { Public } from 'src/shared/decorators/public.decorator';
 
 @Controller('auth')
@@ -69,8 +67,6 @@ export class AuthController {
   @Public()
   @Post('forgot-password')
   forgotPassword(@Body() body: any, @Req() req: any) {
-    console.log('User from JWT:', req.user);
-
     return { message: 'Reset link sent', user: req.user };
   }
 

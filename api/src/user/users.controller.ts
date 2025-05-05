@@ -7,11 +7,14 @@ import {
   Param,
   Put,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
 import { Roles } from 'src/roles/role.enum';
 import { ApiTags } from '@nestjs/swagger';
+import { GetUsersDto, GetUsersSchema } from './dto/get-users.dto';
+import { PaginationQueryParams } from 'src/shared/decorators/query-params.decorator';
 
 @ApiTags('Users - Khu vực ADMIN mới được truy cập')
 @RolesAllowed(Roles.ADMIN)
@@ -22,8 +25,16 @@ export class UsersController {
   @Get()
   // @Permissions('create:posts')
   // @Scopes('write:posts')
-  findAll() {
-    return `GET user all`;
+  @PaginationQueryParams()
+  async findAll(@Query() GetUsersDto: GetUsersDto) {
+    console.log('dto parse 1---->', GetUsersDto);
+    const parse = GetUsersSchema.parse(GetUsersDto);
+    const paginate = await this.usersService.getUsers(parse);
+    const stats = await this.usersService.getUsersWithStats();
+    return {
+      ...paginate,
+      stats,
+    };
   }
 
   @Get(':id')

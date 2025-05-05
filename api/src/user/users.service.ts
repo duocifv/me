@@ -2,18 +2,19 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Role } from 'src/roles/entities/role.entity';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { IsNull, MoreThan, Repository } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserDto, UserSchema } from './dto/user.dto';
+import { UserDto, UserListSchema, UserSchema } from './dto/user.dto';
 import { RolesService } from 'src/roles/roles.service';
 import { PermissionName } from 'src/permissions/permission.enum'; // Import PermissionName enum
 import { Roles } from 'src/roles/role.enum';
+import { PaginationService } from 'src/shared/pagination/pagination.service';
+import { GetUsersDto } from './dto/get-users.dto';
+import { UserStatsDto, UserStatsSchema } from './dto/user-stats.dto';
 
 @Injectable()
 export class UsersService {
@@ -21,6 +22,7 @@ export class UsersService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly rolesService: RolesService,
+    private readonly paginationService: PaginationService,
   ) {}
 
   private async hashToken(token: string): Promise<string> {
@@ -35,7 +37,25 @@ export class UsersService {
     return bcrypt.compare(rawToken, storedToken);
   }
 
-  // Tạo người dùng mới
+  async getUsers(dto: GetUsersDto) {
+    const { page, limit, ...filters } = dto;
+    console.log('dto 1---->', dto);
+    const qb = this.usersRepo.createQueryBuilder('user');
+    const paginate = await this.paginationService.paginate(
+      qb,
+      { page, limit },
+      '/users',
+      filters,
+      ['email'],
+    );
+    const validatedData = UserListSchema.parse(paginate.items);
+    return {
+      items: validatedData,
+      meta: paginate.meta,
+      link: paginate.links,
+    };
+  }
+
   async create(dto: CreateUserDto): Promise<UserDto> {
     const exists = await this.usersRepo.findOne({
       where: { email: dto.email },
@@ -92,5 +112,25 @@ export class UsersService {
       throw new UnauthorizedException('Invalid password');
     }
     return user;
+  }
+
+  async getUsersWithStats(): Promise<UserStatsDto> {
+    const [totalUsers, activeUsers, newUsers] = await Promise.all([
+      this.usersRepo.count({ where: { deletedAt: IsNull() } }),
+      this.usersRepo.count({ where: { isActive: true, deletedAt: IsNull() } }),
+      this.usersRepo.count({
+        where: {
+          createdAt: MoreThan(new Date(Date.now() - 24 * 60 * 60 * 1000)),
+          deletedAt: IsNull(),
+        },
+      }),
+    ]);
+
+    return UserStatsSchema.parse({
+      totalUsers,
+      activeUsers,
+      newUsers,
+      conversionRate: 0,
+    });
   }
 }

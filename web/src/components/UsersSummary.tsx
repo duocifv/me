@@ -8,51 +8,55 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, UserPlus, UserCheck, UserLock } from "lucide-react";
-
-const metrics = [
-  {
-    title: "Sessions",
-    value: "21,459",
-    change: "+29%",
-    changeType: "increase",
-    subtitle: "Total users",
-    icon: Users,
-    iconBg: "bg-indigo-100",
-    iconColor: "text-indigo-600",
-  },
-  {
-    title: "Paid Users",
-    value: "4,567",
-    change: "+18%",
-    changeType: "increase",
-    subtitle: "Last week analytics",
-    icon: UserPlus,
-    iconBg: "bg-red-100",
-    iconColor: "text-red-600",
-  },
-  {
-    title: "Active Users",
-    value: "19,860",
-    change: "-14%",
-    changeType: "decrease",
-    subtitle: "Last week analytics",
-    icon: UserCheck,
-    iconBg: "bg-green-100",
-    iconColor: "text-green-600",
-  },
-  {
-    title: "Pending Users",
-    value: "237",
-    change: "+42%",
-    changeType: "increase",
-    subtitle: "Last week analytics",
-    icon: UserLock,
-    iconBg: "bg-yellow-100",
-    iconColor: "text-yellow-600",
-  },
-];
+import { useUsers } from "@adapter/users";
 
 export function UsersSummary() {
+  const { results } = useUsers();
+  const stats = results.data?.stats ?? {
+    totalUsers: 0,
+    activeUsers: 0,
+    newUsers: 0,
+    conversionRate: 0,
+  };
+  console.log("stats", stats);
+  const metrics = [
+    {
+      title: "Total Users",
+      value: stats.totalUsers,
+      changeType: "increase",
+      subtitle: "Tổng người dùng",
+      icon: Users,
+      iconBg: "bg-indigo-100",
+      iconColor: "text-indigo-600",
+    },
+    {
+      title: "New Users",
+      value: stats.newUsers,
+      changeType: "increase",
+      subtitle: "Người dùng mới",
+      icon: UserPlus,
+      iconBg: "bg-red-100",
+      iconColor: "text-red-600",
+    },
+    {
+      title: "Active Users",
+      value: stats.activeUsers,
+      changeType: "decrease",
+      subtitle: "Đang hoạt động",
+      icon: UserCheck,
+      iconBg: "bg-green-100",
+      iconColor: "text-green-600",
+    },
+    {
+      title: "Conversion Rate",
+      value: stats.conversionRate + "%",
+      changeType: "increase",
+      subtitle: "Tỷ lệ chuyển đổi",
+      icon: UserLock,
+      iconBg: "bg-yellow-100",
+      iconColor: "text-yellow-600",
+    },
+  ];
   return (
     <div className="relative px-4">
       <Carousel>
@@ -61,7 +65,6 @@ export function UsersSummary() {
             ({
               title,
               value,
-              change,
               changeType,
               subtitle,
               icon: Icon,
@@ -79,17 +82,14 @@ export function UsersSummary() {
                         {title}
                       </p>
                       <div className="mt-1 flex items-baseline space-x-2">
-                        <span className="text-2xl font-semibold text-gray-900">
-                          {value}
-                        </span>
                         <span
-                          className={
+                          className={`text-2xl font-semibold ${
                             changeType === "increase"
-                              ? "text-sm font-medium text-green-500"
-                              : "text-sm font-medium text-red-500"
-                          }
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }`}
                         >
-                          {change}
+                          {value}
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-gray-400">{subtitle}</p>
