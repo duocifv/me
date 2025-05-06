@@ -76,7 +76,6 @@ import { useUsers } from "@adapter/users";
 
 const UsersTableActions = dynamic(() => import("./users-table-actions"), {
   ssr: false,
-  loading: () => <div>Loading...</div>,
 });
 
 const TableCellViewer = dynamic(() => import("./table-viewer"));
