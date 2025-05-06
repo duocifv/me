@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Carousel,
   CarouselContent,
@@ -76,7 +74,7 @@ const roles = [
   },
 ];
 
-export function RolesAndPermissionsSummary() {
+export default function RolesAndPermissionsSummary() {
   return (
     <div className="space-y-6">
       {/* Header + add-role button */}

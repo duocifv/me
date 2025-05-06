@@ -1,5 +1,4 @@
 "use client";
-
 import * as React from "react";
 import {
   DndContext,
@@ -43,7 +42,6 @@ import {
   Clock,
   ColumnsIcon,
   Loader2,
-  MoreVerticalIcon,
   PlusIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -53,8 +51,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -77,6 +73,11 @@ import {
 } from "@/components/ui/table";
 import { UserDto } from "@adapter/users/dto/user.dto";
 import { useUsers } from "@adapter/users";
+
+const UsersTableActions = dynamic(() => import("./users-table-actions"), {
+  ssr: false,
+  loading: () => <div>Loading...</div>,
+});
 
 const TableCellViewer = dynamic(() => import("./table-viewer"));
 const DraggableRow = dynamic(() => import("./draggable-row"));
@@ -168,28 +169,9 @@ const columns: ColumnDef<UserDto>[] = [
     cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
   },
   {
-    id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="flex size-8 text-muted-foreground data-[state=open]:bg-muted"
-            size="icon"
-          >
-            <MoreVerticalIcon />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    accessorKey: "id",
+    header: "Actions",
+    cell: ({ row }) => <UsersTableActions id={row.getValue("id")} />,
   },
 ];
 
