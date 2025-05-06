@@ -1,0 +1,7 @@
+import { z } from 'zod';
+
+export const CreateRoleSchema = z.object({
+  name: z.string().min(3, 'Name must be at least 3 characters long'),
+});
+
+export type CreateRoleDto = z.infer<typeof CreateRoleSchema>;

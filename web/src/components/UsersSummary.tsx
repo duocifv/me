@@ -11,14 +11,13 @@ import { Users, UserPlus, UserCheck, UserLock } from "lucide-react";
 import { useUsers } from "@adapter/users";
 
 export function UsersSummary() {
-  const { results } = useUsers();
-  const stats = results.data?.stats ?? {
+  const { listUsers } = useUsers();
+  const stats = listUsers.data?.stats ?? {
     totalUsers: 0,
     activeUsers: 0,
     newUsers: 0,
     conversionRate: 0,
   };
-  console.log("stats", stats);
   const metrics = [
     {
       title: "Total Users",

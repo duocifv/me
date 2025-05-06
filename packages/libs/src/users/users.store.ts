@@ -17,8 +17,8 @@ export const usersStore = create<IUserState>()(
       limit: 10,
       search: "",
       status: "pending",
-      isActive: 1,
-      isPaid: 0,
+      isActive: true,
+      isPaid: false,
     },
     alert: null,
     setFilters: (filters) =>

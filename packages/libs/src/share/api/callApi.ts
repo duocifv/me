@@ -41,7 +41,6 @@ export const callApi = async <T>(
       signal: controller.signal,
       ...(method !== "GET" && body ? { body: JSON.stringify(body) } : {}),
     };
-
     return await retryFetch<T>(url, requestOpts);
   } catch (err: unknown) {
     let errorMessage: string;

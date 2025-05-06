@@ -15,6 +15,19 @@ import { Roles } from 'src/roles/role.enum';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUsersDto, GetUsersSchema } from './dto/get-users.dto';
 import { PaginationQueryParams } from 'src/shared/decorators/query-params.decorator';
+import { Schema } from 'src/shared/decorators/dto.decorator';
+import {
+  ChangePasswordDto,
+  ChangePasswordSchema,
+} from './dto/change-password.dto';
+import {
+  UpdateProfileDto,
+  UpdateProfileSchema,
+} from './dto/update-profile.dto';
+import {
+  UpdateByAdminDto,
+  UpdateByAdminSchema,
+} from './dto/update-by-admin.dto';
 
 @ApiTags('Users - Khu vực ADMIN mới được truy cập')
 @RolesAllowed(Roles.ADMIN)
@@ -27,7 +40,6 @@ export class UsersController {
   // @Scopes('write:posts')
   @PaginationQueryParams()
   async findAll(@Query() GetUsersDto: GetUsersDto) {
-    console.log('dto parse 1---->', GetUsersDto);
     const parse = GetUsersSchema.parse(GetUsersDto);
     const paginate = await this.usersService.getUsers(parse);
     const stats = await this.usersService.getUsersWithStats();
@@ -38,8 +50,8 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return `GET user ${id}`;
+  async getUserById(@Param('id') id: string) {
+    return await this.usersService.findById(id);
   }
 
   @Post()
@@ -49,13 +61,30 @@ export class UsersController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    return { message: `User ${id} updated`, data: body };
+  @Schema(UpdateByAdminSchema)
+  async update(@Param('id') id: string, @Body() dto: UpdateByAdminDto) {
+    return await this.usersService.update(id, dto);
+  }
+
+  @Put(':id/password')
+  @Schema(ChangePasswordSchema)
+  @HttpCode(204)
+  async changePassword(
+    @Param('id') id: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.usersService.changePassword(id, dto);
+  }
+
+  @Put(':id/profile')
+  @Schema(UpdateProfileSchema)
+  async updateProfile(@Param('id') id: string, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateProfile(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id') id: string) {
-    return { message: `User ${id} deleted` };
+  async remove(@Param('id') id: string) {
+    return await this.usersService.delete(id);
   }
 }

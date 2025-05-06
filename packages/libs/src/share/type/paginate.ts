@@ -15,5 +15,4 @@ export interface IPaginationLinks {
 
 export interface IPagination {
   meta: IPaginationMeta;
-  link: IPaginationLinks;
 }

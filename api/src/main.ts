@@ -8,6 +8,7 @@ import { authPlugin } from './plugins/auth.plugin';
 import { fileManagerPlugin } from './plugins/media/media.plugin';
 import mailerPlugin from './plugins/mailer.plugin';
 import { setupSwagger } from './plugins/swagger.plugin';
+import { TypeOrmExceptionFilter } from './shared/filters/TypeOrmExceptionFilter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -19,6 +20,7 @@ async function bootstrap() {
     credentials: true,
   });
   app.enableShutdownHooks();
+  app.useGlobalFilters(new TypeOrmExceptionFilter());
   await app.register(authPlugin);
   await app.register(fileManagerPlugin);
   await app.register(mailerPlugin);

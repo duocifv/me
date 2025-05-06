@@ -1,6 +1,6 @@
-import { RefreshTokenSchema } from "src/auth/dto/refresh-token.dto";
-import { RoleSchema } from "src/roles/dto/role.dto";
 import { z } from "zod";
+import { RefreshTokenSchema } from "./refresh-token.dto";
+import { RoleSchema } from "../../roles/dto/role.dto";
 
 export const UserFullSchema = z.object({
   id: z.string(),
@@ -12,9 +12,9 @@ export const UserFullSchema = z.object({
   isPaid: z.boolean(),
   status: z.enum(["pending", "active", "blocked"]),
   lastLoginAt: z.date().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  deletedAt: z.date().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+  deletedAt: z.coerce.date().nullable(),
 });
 
 export const UserSchema = UserFullSchema.omit({

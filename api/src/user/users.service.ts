@@ -15,6 +15,9 @@ import { Roles } from 'src/roles/role.enum';
 import { PaginationService } from 'src/shared/pagination/pagination.service';
 import { GetUsersDto } from './dto/get-users.dto';
 import { UserStatsDto, UserStatsSchema } from './dto/user-stats.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateByAdminDto } from './dto/update-by-admin.dto';
 
 @Injectable()
 export class UsersService {
@@ -52,7 +55,6 @@ export class UsersService {
     return {
       items: validatedData,
       meta: paginate.meta,
-      link: paginate.links,
     };
   }
 
@@ -69,16 +71,12 @@ export class UsersService {
     const user = this.usersRepo.create({ email: dto.email, password: hash });
     const createdUser = await this.usersRepo.save(user);
 
-    // Lấy vai trò mặc định là 'USER'
     const defaultRole = await this.rolesService.findRoleByName(Roles.CUSTOMER);
-
-    // Lấy quyền của vai trò USER
     const permissions = await this.rolesService.findPermissionsByNames([
-      PermissionName.VIEW_PRODUCTS, // Ví dụ quyền xem sản phẩm
-      PermissionName.PLACE_ORDER, // Ví dụ quyền đặt hàng
+      PermissionName.VIEW_PRODUCTS,
+      PermissionName.PLACE_ORDER,
     ]);
 
-    // Gán vai trò và quyền cho người dùng
     user.roles = [defaultRole];
     await this.rolesService.assignPermissionsToRole(defaultRole, permissions);
 
@@ -87,12 +85,10 @@ export class UsersService {
     return UserSchema.parse(createdUser);
   }
 
-  // Tìm người dùng theo ID
   async findById(id: string): Promise<User> {
     return this.usersRepo.findOneOrFail({ where: { id } });
   }
 
-  // Tìm người dùng theo email
   async findByEmail(email: string): Promise<User> {
     const user = await this.usersRepo.findOne({
       where: { email },
@@ -104,7 +100,6 @@ export class UsersService {
     return user;
   }
 
-  // Xác thực người dùng
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.findByEmail(email);
     const matches = await this.compareToken(password, user.password);
@@ -132,5 +127,43 @@ export class UsersService {
       newUsers,
       conversionRate: 0,
     });
+  }
+
+  async update(id: string, dto: UpdateByAdminDto): Promise<UserDto> {
+    const user = await this.findById(id);
+    if (typeof dto.isActive === 'boolean') {
+      user.isActive = dto.isActive;
+    }
+
+    if (typeof dto.isPaid === 'boolean') {
+      user.isPaid = dto.isPaid;
+    }
+
+    if (dto.roles?.length) {
+      const roleEntities = await Promise.all(
+        dto.roles.map((name) => this.rolesService.findRoleByName(name)),
+      );
+      user.roles = roleEntities;
+    }
+    const updatedUser = await this.usersRepo.save(user);
+    return UserSchema.parse(updatedUser);
+  }
+
+  async changePassword(id: string, dto: ChangePasswordDto): Promise<void> {
+    const user = await this.findById(id);
+    user.password = await this.hashToken(dto.password);
+    await this.usersRepo.save(user);
+  }
+
+  async updateProfile(id: string, dto: UpdateProfileDto): Promise<UserDto> {
+    const user = await this.findById(id);
+    user.status = dto.status;
+    const updatedUser = await this.usersRepo.save(user);
+    return UserSchema.parse(updatedUser);
+  }
+
+  async delete(id: string): Promise<void> {
+    const user = await this.findById(id);
+    await this.usersRepo.remove(user);
   }
 }

@@ -4,16 +4,16 @@ import { PermissionName } from 'src/permissions/permission.enum'; // Import Perm
 
 @Entity('permissions')
 export class Permission {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({
     type: 'enum',
     enum: PermissionName,
-    unique: true, // Nếu bạn muốn các giá trị này không bị trùng trong DB
+    unique: true,
   })
-  name: PermissionName; // Ánh xạ trực tiếp với PermissionName enum
+  name: PermissionName;
 
   @ManyToMany(() => Role, (role) => role.permissions)
-  roles: Role[]; // Quan hệ nhiều-nhiều với Role
+  roles: Role[];
 }

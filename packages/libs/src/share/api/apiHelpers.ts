@@ -1,4 +1,3 @@
-
 import type { ApiOpts } from "./types";
 import { callApi } from "./callApi";
 import { log } from "./logger";
@@ -10,14 +9,12 @@ export async function $get<T>(
   path: string,
   params?: Record<string, any>,
   opts?: ApiOpts<T>
-): Promise<{
-  data: T;
-  error: string | null;
-}> {
+): Promise<T> {
   const { data, error, status } = await callApi<T>("GET", path, {
     params,
     ...opts,
   });
+
   // Nếu có lỗi, log và ném lỗi
   if (error) {
     log.error(`GET ${path} error:`);
@@ -29,10 +26,8 @@ export async function $get<T>(
     log.error("No data received");
     throw new Error("No data received");
   }
-  return {
-    data,
-    error,
-  };
+
+  return data;
 }
 
 /**
@@ -42,10 +37,7 @@ export async function $post<T>(
   path: string,
   body: Record<string, unknown>,
   opts?: ApiOpts<T>
-): Promise<{
-  data: T;
-  error: string | null;
-}> {
+): Promise<T> {
   const { data, error, status } = await callApi<T>("POST", path, {
     ...opts,
     body,
@@ -56,10 +48,7 @@ export async function $post<T>(
   if (data === null || data === undefined) {
     throw new Error("No data received");
   }
-  return {
-    data,
-    error,
-  };
+  return data;
 }
 
 /**
@@ -69,10 +58,7 @@ export async function $put<T>(
   path: string,
   body: Record<string, unknown>,
   opts?: ApiOpts<T>
-): Promise<{
-  data: T;
-  error: string | null;
-}>{
+): Promise<T> {
   const { data, error, status } = await callApi<T>("PUT", path, {
     ...opts,
     body,
@@ -83,10 +69,7 @@ export async function $put<T>(
   if (data === null || data === undefined) {
     throw new Error("No data received");
   }
-  return {
-    data,
-    error,
-  };
+  return data;
 }
 
 /**
@@ -100,5 +83,5 @@ export async function $del<T>(path: string, opts?: ApiOpts<T>): Promise<T> {
   if (data === null || data === undefined) {
     throw new Error("No data received");
   }
-  return data as T;
+  return data;
 }

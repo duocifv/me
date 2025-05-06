@@ -8,16 +8,8 @@ export const BasePaginateSchema = z.object({
 
 export const GetUsersSchema = BasePaginateSchema.extend({
   status: z.enum(["pending", "active", "blocked"]).optional(),
-  isActive: z.preprocess((val) => {
-    if (val === true) return 1;
-    if (val === false) return 0;
-    return val;
-  }, z.number().optional()),
-  isPaid: z.preprocess((val) => {
-    if (val === true) return 1;
-    if (val === false) return 0;
-    return val;
-  }, z.number().optional()),
+  isActive: z.boolean().optional(),
+  isPaid: z.boolean().optional(),
 });
 
 export type GetUsersDto = z.infer<typeof GetUsersSchema>;

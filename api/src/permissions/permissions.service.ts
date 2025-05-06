@@ -50,7 +50,7 @@ export class PermissionsService {
 
   // Gán quyền cho vai trò
   async assignPermissionsToRole(
-    roleId: number,
+    roleId: string,
     permissionNames: PermissionName[], // Sử dụng PermissionName enum
   ): Promise<void> {
     const role = await this.roleRepository.findOne({
