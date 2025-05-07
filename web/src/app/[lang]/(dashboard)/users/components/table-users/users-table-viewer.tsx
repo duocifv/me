@@ -36,7 +36,7 @@ export default function TableCellViewer({ item }: { item: UserDto }) {
 
   const valueRef = useRef<UpdateByAdminDto>({});
   const handleUpdateUser = () => {
-    let body = valueRef.current;
+    let body;
     if (body && Object.keys(body).length > 0) {
       body = valueRef.current;
     } else {
