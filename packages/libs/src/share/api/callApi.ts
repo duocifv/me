@@ -32,12 +32,14 @@ export const callApi = async <T>(
   if (token) {
     headers = { ...headers, Authorization: `Bearer ${token}` };
   }
-
+  if (body !== undefined && body !== null) {
+    headers = { "Content-Type": "application/json", ...headers };
+  }
   try {
     log.info(`Call API: ${url} [${method}]`);
     const requestOpts: RequestInit = {
       method,
-      headers: { "Content-Type": "application/json", ...headers },
+      headers,
       signal: controller.signal,
       ...(method !== "GET" && body ? { body: JSON.stringify(body) } : {}),
     };

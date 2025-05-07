@@ -1,7 +1,9 @@
 import dynamic from "next/dynamic";
-const UsersSummary = dynamic(() => import("@/components/UsersSummary"));
+const UsersSummary = dynamic(
+  () => import("./components/table-users/users-summary")
+);
 const DataTableUsers = dynamic(
-  () => import("@/components/table-users/data-table-users")
+  () => import("./components/table-users/users-table")
 );
 
 export default async function PageUsers() {

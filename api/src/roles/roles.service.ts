@@ -4,7 +4,7 @@ import { Repository, In } from 'typeorm';
 import { Role } from 'src/roles/entities/role.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
 import { PermissionName } from 'src/permissions/permission.enum'; // Import PermissionName
-import { Roles } from './role.enum';
+import { Roles } from './dto/role.enum';
 
 @Injectable()
 export class RolesService {

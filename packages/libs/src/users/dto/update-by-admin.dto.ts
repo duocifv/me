@@ -1,10 +1,5 @@
 import { z } from "zod";
-export enum Roles {
-  ADMIN = "ADMIN",
-  MANAGER = "MANAGER",
-  CUSTOMER = "CUSTOMER",
-  GUEST = "GUEST",
-}
+import { Roles } from "../../roles/dto/role.enum";
 
 export const UpdateByAdminSchema = z.object({
   isActive: z.boolean().optional(),

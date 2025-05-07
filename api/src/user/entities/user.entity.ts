@@ -12,8 +12,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
 } from 'typeorm';
-
-export type UserStatus = 'pending' | 'active' | 'blocked';
+import { UserStatus } from '../dto/user-status.enum';
 
 @Entity('users')
 export class User {
@@ -34,8 +33,8 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'active', 'blocked'],
-    default: 'pending',
+    enum: UserStatus,
+    default: UserStatus.pending,
   })
   status: UserStatus;
 

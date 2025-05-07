@@ -14,7 +14,7 @@ import { UpdateRoleDto, UpdateRoleSchema } from './dto/update-role.dto';
 import { IdParamDto, IdParamSchema } from './dto/Id-role.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
-import { Roles } from './role.enum';
+import { Roles } from './dto/role.enum';
 
 @ApiTags('Roles - Khu vực ADMIN mới được truy cập')
 @RolesAllowed(Roles.ADMIN)

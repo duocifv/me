@@ -11,7 +11,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto, UserListSchema, UserSchema } from './dto/user.dto';
 import { RolesService } from 'src/roles/roles.service';
 import { PermissionName } from 'src/permissions/permission.enum'; // Import PermissionName enum
-import { Roles } from 'src/roles/role.enum';
+import { Roles } from 'src/roles/dto/role.enum';
 import { PaginationService } from 'src/shared/pagination/pagination.service';
 import { GetUsersDto } from './dto/get-users.dto';
 import { UserStatsDto, UserStatsSchema } from './dto/user-stats.dto';
@@ -41,9 +41,19 @@ export class UsersService {
   }
 
   async getUsers(dto: GetUsersDto) {
-    const { page, limit, ...filters } = dto;
-    console.log('dto 1---->', dto);
-    const qb = this.usersRepo.createQueryBuilder('user');
+    const { page, limit, roles, status, ...filters } = dto;
+    const qb = this.usersRepo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.roles', 'role');
+
+    if (roles && roles.length > 0) {
+      qb.andWhere('role.name IN (:...roles)', { roles });
+    }
+
+    if (status && status.length > 0) {
+      qb.andWhere('user.status IN (:...status)', { status });
+    }
+
     const paginate = await this.paginationService.paginate(
       qb,
       { page, limit },
@@ -157,13 +167,38 @@ export class UsersService {
 
   async updateProfile(id: string, dto: UpdateProfileDto): Promise<UserDto> {
     const user = await this.findById(id);
-    user.status = dto.status;
+    if (!dto.status?.length) {
+      throw new UnauthorizedException('not found');
+    }
+    user.status = dto.status[0];
     const updatedUser = await this.usersRepo.save(user);
     return UserSchema.parse(updatedUser);
   }
 
-  async delete(id: string): Promise<void> {
+  // async delete(id: string, adminId: string): Promise<void> {
+  //   const user = await this.findById(id);
+  //   const admin = await this.findById(adminId);
+  //   if (admin.roles.some((role) => role.name === Roles.ADMIN)) {
+  //     if (user.id === admin.id) {
+  //       throw new UnauthorizedException(
+  //         'Admin cannot delete their own account',
+  //       );
+  //     }
+  //   } else {
+  //     throw new UnauthorizedException(
+  //       'You do not have permission to delete users',
+  //     );
+  //   }
+  //   await this.usersRepo.remove(user);
+  // }
+
+  async restore(id: string): Promise<UserDto> {
     const user = await this.findById(id);
-    await this.usersRepo.remove(user);
+    if (user.deletedAt) {
+      user.deletedAt = undefined;
+      const restoredUser = await this.usersRepo.save(user);
+      return UserSchema.parse(restoredUser);
+    }
+    throw new UnauthorizedException('User is not deleted');
   }
 }

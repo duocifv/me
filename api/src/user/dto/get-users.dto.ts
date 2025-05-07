@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { UserStatus } from './user-status.enum';
+import { Roles } from 'src/roles/dto/role.enum';
 
 export const BasePaginateSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -7,17 +9,34 @@ export const BasePaginateSchema = z.object({
 });
 
 export const GetUsersSchema = BasePaginateSchema.extend({
-  status: z.enum(['pending', 'active', 'blocked']).optional(),
-  isActive: z.preprocess((val) => {
-    if (val === 'true' || val === '1' || val === true) return 1;
-    if (val === 'false' || val === '0' || val === false) return 0;
-    return val;
-  }, z.number().optional()),
-  isPaid: z.preprocess((val) => {
-    if (val === 'true' || val === '1' || val === true) return 1;
-    if (val === 'false' || val === '0' || val === false) return 0;
-    return val;
-  }, z.number().optional()),
+  status: z
+    .preprocess(
+      (val) => {
+        if (typeof val === 'string') return [val];
+        return val;
+      },
+      z.array(z.nativeEnum(UserStatus)),
+    )
+    .optional(),
+
+  roles: z
+    .preprocess(
+      (val) => {
+        if (typeof val === 'string') return [val];
+        return val;
+      },
+      z.array(z.nativeEnum(Roles)),
+    )
+    .optional(),
+
+  isActive: z.preprocess(
+    (val) => (val === 'true' ? true : val === 'false' ? false : val),
+    z.boolean().optional(),
+  ),
+  isPaid: z.preprocess(
+    (val) => (val === 'true' ? true : val === 'false' ? false : val),
+    z.boolean().optional(),
+  ),
 });
 
 export type GetUsersDto = z.infer<typeof GetUsersSchema>;

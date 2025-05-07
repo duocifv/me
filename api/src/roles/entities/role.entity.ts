@@ -7,14 +7,14 @@ import {
 } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
-import { Roles } from '../role.enum';
+import { Roles } from '../dto/role.enum';
 
 @Entity('roles')
 export class Role {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, default: Roles.GUEST })
   name: Roles;
 
   @Column({ nullable: true })

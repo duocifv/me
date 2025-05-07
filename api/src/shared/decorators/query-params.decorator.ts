@@ -55,5 +55,14 @@ export function PaginationQueryParams() {
       description: 'Filter by user paid status',
       example: false,
     })(target, key, descriptor);
+
+    // Thêm query cho roles
+    ApiQuery({
+      name: 'roles',
+      required: false,
+      type: [String], // roles có thể là mảng các chuỗi
+      description: 'Filter by user roles',
+      example: ['admin', 'user'],
+    })(target, key, descriptor);
   };
 }

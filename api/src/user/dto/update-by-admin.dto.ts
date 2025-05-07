@@ -1,4 +1,4 @@
-import { Roles } from 'src/roles/role.enum';
+import { Roles } from 'src/roles/dto/role.enum';
 import { z } from 'zod';
 
 export const UpdateByAdminSchema = z.object({

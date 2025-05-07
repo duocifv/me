@@ -9,16 +9,14 @@ import { fileManagerPlugin } from './plugins/media/media.plugin';
 import mailerPlugin from './plugins/mailer.plugin';
 import { setupSwagger } from './plugins/swagger.plugin';
 import { TypeOrmExceptionFilter } from './shared/filters/TypeOrmExceptionFilter';
+import { corsConfig } from './plugins/cors.plugin';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
   );
-  app.enableCors({
-    origin: '*',
-    credentials: true,
-  });
+  app.enableCors(corsConfig);
   app.enableShutdownHooks();
   app.useGlobalFilters(new TypeOrmExceptionFilter());
   await app.register(authPlugin);

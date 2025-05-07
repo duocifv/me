@@ -22,7 +22,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { pipeline } from 'node:stream/promises';
 import { UploadFileDto } from './upload-file.dto';
 import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
-import { Roles } from 'src/roles/role.enum';
+import { Roles } from 'src/roles/dto/role.enum';
 
 @ApiTags('Media - Khu vực ADMIN mới được truy cập')
 @RolesAllowed(Roles.ADMIN)
@@ -39,13 +39,13 @@ export class FileController {
   })
   @Post('upload')
   async upload(@Req() req: FastifyRequest) {
-  const part = await req.file();
-  if(!part){
-    throw new NotFoundException('file không có'); 
+    const part = await req.file();
+    if (!part) {
+      throw new NotFoundException('file không có');
+    }
+    await req.server.fileManager.saveFile(part);
+    return { message: 'Upload thành công' };
   }
-  await req.server.fileManager.saveFile(part);
-  return { message: 'Upload thành công' };
-}
 
   @Get()
   findAll(@Req() req: FastifyRequest) {

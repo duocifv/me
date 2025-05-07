@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Roles } from './role.enum';
+import { Roles } from './dto/role.enum';
 import { ROLES_KEY } from 'src/shared/decorators/roles.decorator';
 import { UserDto } from 'src/user/dto/user.dto';
 

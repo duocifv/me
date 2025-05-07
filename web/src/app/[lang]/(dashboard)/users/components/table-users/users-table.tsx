@@ -34,26 +34,17 @@ import {
   ArrowUpDown,
   BanIcon,
   CheckCircle2Icon,
-  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
   Clock,
-  ColumnsIcon,
   Loader2,
-  PlusIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -73,12 +64,9 @@ import {
 } from "@/components/ui/table";
 import { UserDto } from "@adapter/users/dto/user.dto";
 import { useUsers } from "@adapter/users";
+import UsersFilter from "./users-filter";
 
-const UsersTableActions = dynamic(() => import("./users-table-actions"), {
-  ssr: false,
-});
-
-const TableCellViewer = dynamic(() => import("./table-viewer"));
+const TableCellViewer = dynamic(() => import("./users-table-viewer"));
 const DraggableRow = dynamic(() => import("./draggable-row"));
 
 const columns: ColumnDef<UserDto>[] = [
@@ -122,7 +110,7 @@ const columns: ColumnDef<UserDto>[] = [
     cell: ({ row }) => (
       <div className="w-32">
         <Badge variant="outline" className="px-1.5 text-muted-foreground">
-          {row.original.roles[0]?.name}
+          {row.original.roles[0]?.name ?? "GUEST"}
         </Badge>
       </div>
     ),
@@ -166,11 +154,6 @@ const columns: ColumnDef<UserDto>[] = [
       );
     },
     cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
-  },
-  {
-    accessorKey: "id",
-    header: "Actions",
-    cell: ({ row }) => <UsersTableActions id={row.getValue("id")} />,
   },
 ];
 
@@ -223,59 +206,7 @@ export default function DataTableUsers() {
 
   return (
     <div className="flex w-full flex-col justify-start gap-6 px-4 lg:px-6">
-      <div className="flex items-center justify-between ">
-        <Input
-          placeholder="Filter emails..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-        </Label>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <ColumnsIcon />
-                <span className="hidden lg:inline">Customize Columns</span>
-                <span className="lg:hidden">Columns</span>
-                <ChevronDownIcon />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
-                )
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <PlusIcon />
-            <span className="hidden lg:inline">Add Section</span>
-          </Button>
-        </div>
-      </div>
-
+      <UsersFilter table={table} />
       <div className="overflow-hidden rounded-lg border ">
         <DndContext
           collisionDetection={closestCenter}

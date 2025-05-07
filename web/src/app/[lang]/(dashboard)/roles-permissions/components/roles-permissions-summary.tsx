@@ -13,7 +13,7 @@ import {
   Settings,
   Code,
 } from "lucide-react";
-import { EditRoleDialog } from "./EditRoleDialog";
+import { EditRoleDialog } from "../../../../../components/EditRoleDialog";
 
 const roles = [
   {

@@ -8,13 +8,13 @@ import {
   Put,
   Delete,
   Query,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
-import { Roles } from 'src/roles/role.enum';
+import { Roles } from 'src/roles/dto/role.enum';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUsersDto, GetUsersSchema } from './dto/get-users.dto';
-import { PaginationQueryParams } from 'src/shared/decorators/query-params.decorator';
 import { Schema } from 'src/shared/decorators/dto.decorator';
 import {
   ChangePasswordDto,
@@ -38,10 +38,9 @@ export class UsersController {
   @Get()
   // @Permissions('create:posts')
   // @Scopes('write:posts')
-  @PaginationQueryParams()
-  async findAll(@Query() GetUsersDto: GetUsersDto) {
-    const parse = GetUsersSchema.parse(GetUsersDto);
-    const paginate = await this.usersService.getUsers(parse);
+  @Schema(GetUsersSchema, 'query')
+  async findAll(@Query() dto: GetUsersDto) {
+    const paginate = await this.usersService.getUsers(dto);
     const stats = await this.usersService.getUsersWithStats();
     return {
       ...paginate,
@@ -82,9 +81,15 @@ export class UsersController {
     return this.usersService.updateProfile(id, dto);
   }
 
+  @Put(':id/restore')
+  @HttpCode(200)
+  async restore(@Param('id') id: string) {
+    return await this.usersService.restore(id);
+  }
+
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id') id: string) {
-    return await this.usersService.delete(id);
+  remove() {
+    throw new UnauthorizedException('Admin không được phép xóa người dùng');
   }
 }

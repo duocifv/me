@@ -9,7 +9,7 @@ import {
   Body,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Roles } from 'src/roles/role.enum';
+import { Roles } from 'src/roles/dto/role.enum';
 import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
 
 @ApiTags('Permissions - Khu vực ADMIN mới được truy cập')

@@ -2,7 +2,7 @@ import { IUserListResponse } from "@adapter/users/dto/user-list.dto";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { flexRender, Row } from "@tanstack/react-table";
-import { TableCell, TableRow } from "../ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 
 export default function DraggableRow({
   row,

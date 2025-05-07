@@ -1,10 +1,9 @@
 // src/users/dto/update-profile.dto.ts
 import { z } from 'zod';
+import { UserStatus } from './user-status.enum';
 
 export const UpdateProfileSchema = z.object({
-  status: z.enum(['pending', 'active', 'blocked'], {
-    errorMap: () => ({ message: 'Trạng thái không hợp lệ' }),
-  }),
+  status: z.nativeEnum(UserStatus).array().optional(),
 });
 
 export type UpdateProfileDto = z.infer<typeof UpdateProfileSchema>;

@@ -15,14 +15,12 @@ export function useUsers() {
   const setFilters = usersStore((s) => s.setFilters);
   const queryClient = useQueryClient();
 
-  // Fetch danh sách người dùng
   const listUsers = useQuery({
     queryKey: ["users", filters],
     queryFn: () => usersApi.getAll(filters),
     placeholderData: keepPreviousData,
   });
 
-  // Tạo người dùng mới
   const createUser = useMutation({
     mutationFn: (payload: UserDto) => usersApi.create(payload),
     onSuccess: () => {
@@ -30,22 +28,21 @@ export function useUsers() {
     },
   });
 
-  // Cập nhật người dùng
   const updateUser = useMutation({
-    mutationFn: ({ id, dto }: { id: string; dto: UpdateByAdminDto }) =>
-      usersApi.update(id, dto),
+    mutationFn: ({ id, body }: { id: string; body: UpdateByAdminDto }) =>
+      usersApi.update(id, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 
   // Xóa người dùng
-  const deleteUser = useMutation({
-    mutationFn: (id: string) => usersApi.remove(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-    },
-  });
+  // const deleteUser = useMutation({
+  //   mutationFn: (id: string) => usersApi.remove(id),
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ["users"] });
+  //   },
+  // });
 
   return {
     filters,
@@ -53,6 +50,5 @@ export function useUsers() {
     listUsers,
     createUser,
     updateUser,
-    deleteUser,
   };
 }
