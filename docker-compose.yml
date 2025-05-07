@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   mysql:
-    image: mysql:5.7 # ✅ Sử dụng MySQL 5.7 thay vì 8
+    image: mysql:5.7
     container_name: mysql-db
     restart: always
     environment:
@@ -20,7 +20,7 @@ services:
     restart: always
     environment:
       PMA_HOST: mysql-db
-      MYSQL_ROOT_PASSWORD: 132132
+      MYSQL_ROOT_PASSWORD: new_password
     ports:
       - '8080:80'
 

@@ -5,13 +5,14 @@ import bcrypt from 'bcryptjs';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UserDto, UserSchema } from 'src/user/dto/user.dto';
 import { User } from 'src/user/entities/user.entity';
+import { ChangePasswordDto } from 'src/user/dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly tokensService: TokensService,
-  ) {}
+  ) { }
 
   private async compareToken(
     password: string,
@@ -77,5 +78,9 @@ export class AuthService {
       throw new UnauthorizedException('Không hợp lệ');
     }
     return this.tokensService.revokeRefreshToken(token, ipAddress);
+  }
+
+  async changePassword(id: string, dto: ChangePasswordDto) {
+    return this.usersService.changePassword(id, dto)
   }
 }

@@ -1,5 +1,6 @@
 import { $get, $post, $put, $del } from "../share/api/apiHelpers";
 import { ChangePasswordDto } from "./dto/change-password.dto";
+import { CreateUserDto } from "./dto/create-user.dto";
 import { GetUsersSchema } from "./dto/get-users.dto";
 import { UpdateByAdminDto } from "./dto/update-by-admin.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
@@ -23,7 +24,7 @@ export class UsersApi {
   }
 
   /** Tạo mới một user (admin) */
-  async create(payload: UserDto) {
+  async create(payload: CreateUserDto) {
     return await $post<UserDto>("users", payload);
   }
 

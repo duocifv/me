@@ -8,6 +8,8 @@ import {
   Delete,
   Get,
   UseGuards,
+  Put,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto, SignInSchema } from './dto/sign-in.dto';
@@ -17,10 +19,11 @@ import { CreateUserDto, CreateUserSchema } from 'src/user/dto/create-user.dto';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { User } from 'src/user/entities/user.entity';
 import { Public } from 'src/shared/decorators/public.decorator';
+import { ChangePasswordDto, ChangePasswordSchema } from 'src/user/dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Public()
   @UseGuards(LocalAuthGuard)
@@ -93,5 +96,15 @@ export class AuthController {
     return {
       message: 'hello',
     };
+  }
+
+  @Put('change-password/:id')
+  @Schema(ChangePasswordSchema)
+  @HttpCode(204)
+  async changePassword(
+    @Param('id') id: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(id, dto);
   }
 }

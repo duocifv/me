@@ -28,12 +28,13 @@ import {
   UpdateByAdminDto,
   UpdateByAdminSchema,
 } from './dto/update-by-admin.dto';
+import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
 
 @ApiTags('Users - Khu vực ADMIN mới được truy cập')
 @RolesAllowed(Roles.ADMIN)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get()
   // @Permissions('create:posts')
@@ -53,26 +54,10 @@ export class UsersController {
     return await this.usersService.findById(id);
   }
 
-  @Post()
-  @HttpCode(201)
-  create(@Body() body: any) {
-    return { message: 'User created', data: body };
-  }
-
   @Put(':id')
   @Schema(UpdateByAdminSchema)
   async update(@Param('id') id: string, @Body() dto: UpdateByAdminDto) {
     return await this.usersService.update(id, dto);
-  }
-
-  @Put(':id/password')
-  @Schema(ChangePasswordSchema)
-  @HttpCode(204)
-  async changePassword(
-    @Param('id') id: string,
-    @Body() dto: ChangePasswordDto,
-  ) {
-    return this.usersService.changePassword(id, dto);
   }
 
   @Put(':id/profile')
@@ -91,5 +76,12 @@ export class UsersController {
   @HttpCode(204)
   remove() {
     throw new UnauthorizedException('Admin không được phép xóa người dùng');
+  }
+  
+  @Post()
+  @Schema(CreateUserSchema)
+  @HttpCode(201)
+  register(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto);
   }
 }

@@ -9,6 +9,7 @@ import { usersStore } from "./users.store";
 import { usersApi } from "./users.api";
 import { UserDto } from "./dto/user.dto";
 import { UpdateByAdminDto } from "./dto/update-by-admin.dto";
+import { CreateUserDto } from "./dto/create-user.dto";
 
 export function useUsers() {
   const filters = usersStore((s) => s.filters);
@@ -22,7 +23,7 @@ export function useUsers() {
   });
 
   const createUser = useMutation({
-    mutationFn: (payload: UserDto) => usersApi.create(payload),
+    mutationFn: (payload: CreateUserDto) => usersApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },

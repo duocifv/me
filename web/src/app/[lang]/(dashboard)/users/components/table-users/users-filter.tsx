@@ -17,9 +17,10 @@ import { Button } from "@/components/ui/button";
 import { useUsers } from "@adapter/users";
 import { Roles } from "@adapter/roles/dto/role.enum";
 import { UserStatus } from "@adapter/users/dto/user-status.enum";
-import { useDebounce } from "@adapter/share/utils/useDebounce";
+import { useDebounce } from "@adapter/share/hooks/use-debounce";
 import { Table } from "@tanstack/react-table";
 import { UserDto } from "@adapter/users/dto/user.dto";
+import Link from "next/link";
 
 export default function UsersFilter({ table }: { table: Table<UserDto> }) {
   const { filters, setFilters } = useUsers();
@@ -32,7 +33,7 @@ export default function UsersFilter({ table }: { table: Table<UserDto> }) {
   const handleSortStatus = useDebounce((value: string) => {
     setFilters({ status: value !== "all" ? [value as UserStatus] : [] });
   });
-
+ 
   return (
     <div className="flex items-center justify-between ">
       <Input
@@ -111,10 +112,12 @@ export default function UsersFilter({ table }: { table: Table<UserDto> }) {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button variant="outline" size="sm">
-          <PlusIcon />
-          <span className="hidden lg:inline">Add Section</span>
-        </Button>
+        <Link href="/en/users/add">
+          <Button variant="default" size="sm">
+            <PlusIcon />
+            <span className="hidden lg:inline">Add Section</span>
+          </Button>
+        </Link>
       </div>
     </div>
   );
