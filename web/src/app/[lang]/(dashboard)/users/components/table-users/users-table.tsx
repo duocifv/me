@@ -33,6 +33,7 @@ import {
 import {
   ArrowUpDown,
   BanIcon,
+  CheckCircle,
   CheckCircle2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -40,6 +41,7 @@ import {
   ChevronsRightIcon,
   Clock,
   Loader2,
+  XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -114,6 +116,36 @@ const columns: ColumnDef<UserDto>[] = [
         </Badge>
       </div>
     ),
+  },
+  {
+    accessorKey: "VERIFIED",
+    header: "VERIFIED",
+    cell: ({ row }) => {
+      const isEmailVerified = row.original.isEmailVerified;
+      const Icon = isEmailVerified ? CheckCircle : XCircle;
+      const iconColor = isEmailVerified ? "text-green-500" : "text-red-500";
+
+      return (
+        <div className="w-16 flex items-center justify-center">
+          <Icon className={`w-4 h-4 ${iconColor}`} />
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "ENABLED",
+    header: "ENABLED",
+    cell: ({ row }) => {
+      const isActive = row.original.isActive;
+      const Icon = isActive ? CheckCircle : XCircle;
+      const iconColor = isActive ? "text-green-500" : "text-red-500";
+
+      return (
+        <div className="w-16 flex items-center justify-center">
+          <Icon className={`w-4 h-4 ${iconColor}`} />
+        </div>
+      );
+    },
   },
   {
     accessorKey: "STATUS",

@@ -11,6 +11,7 @@ export const UserFullSchema = z.object({
   isActive: z.boolean(),
   isPaid: z.boolean(),
   status: z.enum(['pending', 'active', 'blocked']),
+  isEmailVerified: z.boolean(),
   lastLoginAt: z.date().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),

@@ -25,11 +25,14 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ default: true })
+  @Column({ default: false })
   isActive: boolean;
 
   @Column({ default: false })
   isPaid: boolean;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
 
   @Column({
     type: 'enum',

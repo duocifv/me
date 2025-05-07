@@ -145,6 +145,10 @@ export class UsersService {
       user.isActive = dto.isActive;
     }
 
+    if (dto?.status) {
+      user.status = dto.status;
+    }
+
     if (typeof dto.isPaid === 'boolean') {
       user.isPaid = dto.isPaid;
     }
