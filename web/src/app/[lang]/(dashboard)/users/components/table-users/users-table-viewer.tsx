@@ -25,10 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useRef } from "react";
-import {
-  UpdateByAdminDto,
-  UpdateByAdminSchema,
-} from "@adapter/users/dto/update-by-admin.dto";
+import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
 import { useUsers } from "@adapter/users";
 import { CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -36,14 +33,21 @@ import UsersUpdate from "./users-update";
 
 export default function TableCellViewer({ item }: { item: UserDto }) {
   const { updateUser } = useUsers();
-  const parse = UpdateByAdminSchema.safeParse({ ...item });
-  const valueRef = useRef<UpdateByAdminDto>({ ...parse.data });
+
+  const valueRef = useRef<UpdateByAdminDto>({});
   const handleUpdateUser = () => {
-    if (valueRef.current === parse) return alert("cut");
+    let body = valueRef.current;
+    if (body && Object.keys(body).length > 0) {
+      body = valueRef.current;
+    } else {
+      console.log("body", body);
+      return;
+    }
+
     updateUser.mutate(
       {
         id: item.id,
-        body: valueRef.current,
+        body,
       },
       {
         onSuccess: () => {
@@ -51,6 +55,7 @@ export default function TableCellViewer({ item }: { item: UserDto }) {
             duration: 5000,
             icon: <CheckCircle className="h-5 w-5 text-green-500" />,
           });
+          valueRef.current = {};
         },
         onError: () => {
           toast.error("Thay đổi trạng thái thất bại", {
@@ -120,9 +125,7 @@ export default function TableCellViewer({ item }: { item: UserDto }) {
           <SheetFooter className="mt-auto flex gap-2 sm:flex-col sm:space-x-0">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="default" disabled={valueRef.current === parse}>
-                  Update User
-                </Button>
+                <Button variant="default">Update User</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
