@@ -29,6 +29,7 @@ import { NewsModule } from './news/news.module';
 import { RolesGuard } from './roles/roles.guard';
 import { UserRoleSeeder } from './seeder/user-role.seeder';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
+import { PermissionsGuard } from './permissions/permissions.guard';
 
 @Module({
   imports: [
@@ -78,12 +79,8 @@ import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
     },
     {
       provide: APP_GUARD,
-      useClass: RolesGuard,
+      useClass: PermissionsGuard,
     },
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: PermissionsGuard,
-    // },
   ],
 })
 export class AppModule implements OnModuleInit {
@@ -91,7 +88,7 @@ export class AppModule implements OnModuleInit {
 
   async onModuleInit() {
     if (process.env.NODE_ENV !== 'production') {
-      await this.userRoleSeeder.onModuleInit(); // Chạy seeder khi ứng dụng không phải production
+      await this.userRoleSeeder.onModuleInit();
     } else {
       console.log('Skipping seeding in production environment.');
     }

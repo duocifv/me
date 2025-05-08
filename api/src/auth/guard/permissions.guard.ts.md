@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { PERMISSIONS_KEY } from '../../shared/decorators/permissions.decorator';
+import { PERMISSIONS_KEY } from '../../permissions/permissions.decorator';
 import { SCOPES_KEY } from '../../shared/decorators/scopes.decorator';
 
 @Injectable()

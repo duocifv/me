@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ColumnsIcon, PlusIcon } from "lucide-react";
+import { ChevronDownIcon, ColumnsIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,

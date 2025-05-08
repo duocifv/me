@@ -26,6 +26,7 @@ export const authPlugin = fp((fastify) => {
     'setRefreshToken',
     function (this: FastifyReply, token: string, expiresAt: Date) {
       const maxAge = expiresAt.getTime() - Date.now();
+
       return this.setCookie('refreshToken', token, {
         httpOnly: true,
         sameSite: 'strict',

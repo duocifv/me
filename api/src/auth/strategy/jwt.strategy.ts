@@ -3,11 +3,17 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import * as fs from 'fs';
 import * as path from 'path';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
-    const publicKey = fs.readFileSync(path.resolve('certs/public.pem'), 'utf8');
+    const publicKeyPath = path.resolve('certs/public.pem');
+    if (!fs.existsSync(publicKeyPath)) {
+      throw new Error(`Public key not found at path: ${publicKeyPath}`);
+    }
+    const publicKey = fs.readFileSync(publicKeyPath, 'utf8');
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -18,8 +24,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload) {
+  validate(payload: JwtPayload): JwtPayload {
+    // In ra kiểm tra
     console.log('JWT Payload:--->', payload);
-    return { userId: payload.sub, roles: payload.roles, email: payload.email };
+
+    // Trả về nguyên payload, bao gồm permissions
+    return payload;
   }
 }

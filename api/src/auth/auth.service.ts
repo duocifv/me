@@ -3,7 +3,11 @@ import { TokensService } from './tokens.service';
 import { UsersService } from 'src/user/users.service';
 import bcrypt from 'bcryptjs';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { UserDto, UserSchema } from 'src/user/dto/user.dto';
+import {
+  UserDto,
+  UserSchema,
+  UserWithPermissionsSchema,
+} from 'src/user/dto/user.dto';
 import { User } from 'src/user/entities/user.entity';
 import { ChangePasswordDto } from 'src/user/dto/change-password.dto';
 
@@ -12,7 +16,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly tokensService: TokensService,
-  ) { }
+  ) {}
 
   private async compareToken(
     password: string,
@@ -23,6 +27,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<UserDto> {
     const user = await this.usersService.findByEmail(email);
+
     if (!user) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
@@ -30,7 +35,7 @@ export class AuthService {
     if (!match) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
-    return UserSchema.parse(user);
+    return UserWithPermissionsSchema.parse(user);
   }
 
   async register(dto: CreateUserDto): Promise<UserDto> {
@@ -81,6 +86,6 @@ export class AuthService {
   }
 
   async changePassword(id: string, dto: ChangePasswordDto) {
-    return this.usersService.changePassword(id, dto)
+    return this.usersService.changePassword(id, dto);
   }
 }

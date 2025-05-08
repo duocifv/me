@@ -11,7 +11,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
+import { RolesAllowed } from 'src/roles/roles.decorator';
 import { Roles } from 'src/roles/dto/role.enum';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUsersDto, GetUsersSchema } from './dto/get-users.dto';
@@ -34,7 +34,7 @@ import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
 @RolesAllowed(Roles.ADMIN)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Get()
   // @Permissions('create:posts')
@@ -77,7 +77,7 @@ export class UsersController {
   remove() {
     throw new UnauthorizedException('Admin không được phép xóa người dùng');
   }
-  
+
   @Post()
   @Schema(CreateUserSchema)
   @HttpCode(201)

@@ -19,11 +19,16 @@ import { CreateUserDto, CreateUserSchema } from 'src/user/dto/create-user.dto';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { User } from 'src/user/entities/user.entity';
 import { Public } from 'src/shared/decorators/public.decorator';
-import { ChangePasswordDto, ChangePasswordSchema } from 'src/user/dto/change-password.dto';
+import {
+  ChangePasswordDto,
+  ChangePasswordSchema,
+} from 'src/user/dto/change-password.dto';
+import { Permissions } from 'src/permissions/permissions.decorator';
+import { PermissionName } from 'src/permissions/permission.enum';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Public()
   @UseGuards(LocalAuthGuard)
@@ -67,17 +72,6 @@ export class AuthController {
     return { accessToken };
   }
 
-  @Public()
-  @Post('forgot-password')
-  forgotPassword(@Body() body: any, @Req() req: any) {
-    return { message: 'Reset link sent', user: req.user };
-  }
-
-  @Post('reset-password')
-  resetPassword(@Body() body: any) {
-    return { message: 'Password reset', token: body.token };
-  }
-
   @Delete('logout')
   @HttpCode(204)
   async logout(@Req() req, @Res({ passthrough: true }) res) {
@@ -90,7 +84,19 @@ export class AuthController {
     };
   }
 
+  @Public()
+  @Post('forgot-password')
+  forgotPassword(@Body() body: any, @Req() req: any) {
+    return { message: 'Reset link sent', user: req.user };
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() body: any) {
+    return { message: 'Password reset', token: body.token };
+  }
+
   @Get('me')
+  @Permissions(PermissionName.VIEW_USERS)
   @HttpCode(200)
   me(@Req() req, @Res({ passthrough: true }) res) {
     return {
@@ -100,6 +106,7 @@ export class AuthController {
 
   @Put('change-password/:id')
   @Schema(ChangePasswordSchema)
+  @Permissions(PermissionName.MANAGE_USERS)
   @HttpCode(204)
   async changePassword(
     @Param('id') id: string,

@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import { CreateRoleSchema } from "./create-role.dto";
+import { z } from "zod";
 
-export const UpdateRoleSchema = z.object({
-  name: z.string().min(3, 'Name must be at least 3 characters long'),
-});
+export const UpdateRoleSchema = CreateRoleSchema.partial();
+
 export type UpdateRoleDto = z.infer<typeof UpdateRoleSchema>;

@@ -23,22 +23,47 @@ export class UserRoleSeeder implements OnModuleInit {
 
   // Phương thức khởi tạo seeder
   async onModuleInit() {
-    await this.seedPermissions();
+    await this.seedPermissionsAndAssignToAdmin();
     await this.seedRoles();
     await this.seedAdminUser();
   }
 
   // Seeder cho Permissions
-  private async seedPermissions() {
+  private async seedPermissionsAndAssignToAdmin() {
     const permissionNames = Object.values(PermissionName);
 
+    const permissions: Permission[] = [];
+
     for (const name of permissionNames) {
-      const exist = await this.permissionRepo.findOneBy({ name });
-      if (!exist) {
-        const permission = this.permissionRepo.create({ name });
-        await this.permissionRepo.save(permission);
+      let permission = await this.permissionRepo.findOneBy({ name });
+      if (!permission) {
+        permission = this.permissionRepo.create({ name });
+        permission = await this.permissionRepo.save(permission);
         console.log(`Permission created: ${name}`);
       }
+      permissions.push(permission);
+    }
+
+    // Gán permissions cho role ADMIN
+    const adminRole = await this.roleRepo.findOne({
+      where: { name: Roles.ADMIN },
+      relations: ['permissions'],
+    });
+
+    if (adminRole) {
+      // Gộp & loại trùng
+      const merged = [
+        ...adminRole.permissions,
+        ...permissions.filter(
+          (p) =>
+            !adminRole.permissions.some((existing) => existing.id === p.id),
+        ),
+      ];
+      adminRole.permissions = merged;
+      await this.roleRepo.save(adminRole);
+      console.log('All permissions assigned to ADMIN role');
+    } else {
+      console.warn('ADMIN role not found. Cannot assign permissions.');
     }
   }
 

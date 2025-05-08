@@ -1,6 +1,5 @@
-import { z } from 'zod';
+// update-role.dto.ts
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateRoleDto } from './create-role.dto';
 
-export const UpdateRoleSchema = z.object({
-  name: z.string().min(3, 'Name must be at least 3 characters long'),
-});
-export type UpdateRoleDto = z.infer<typeof UpdateRoleSchema>;
+export class UpdateRoleDto extends PartialType(CreateRoleDto) {}

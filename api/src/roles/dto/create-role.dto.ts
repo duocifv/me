@@ -1,7 +1,23 @@
-import { z } from 'zod';
+// create-role.dto.ts
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ArrayNotEmpty,
+} from 'class-validator';
+import { Roles } from './role.enum';
 
-export const CreateRoleSchema = z.object({
-  name: z.string().min(3, 'Name must be at least 3 characters long'),
-});
+export class CreateRoleDto {
+  @IsEnum(Roles)
+  name: Roles;
 
-export type CreateRoleDto = z.infer<typeof CreateRoleSchema>;
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @ArrayNotEmpty()
+  @IsUUID('all', { each: true })
+  permissionIds?: string[];
+}

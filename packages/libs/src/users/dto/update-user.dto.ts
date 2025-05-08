@@ -1,6 +1,5 @@
-
-import { z } from 'zod';
-import { RoleSchema } from '../../roles/dto/role.dto';
+import { z } from "zod";
+import { RoleSchema } from "../../roles/dto_old/role.dto";
 
 export const UpdateByAdminUserSchema = z.object({
   isActive: z.boolean().optional(),

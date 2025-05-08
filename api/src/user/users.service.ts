@@ -9,8 +9,7 @@ import { IsNull, MoreThan, Repository } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto, UserListSchema, UserSchema } from './dto/user.dto';
-import { RolesService } from 'src/roles/roles.service';
-import { PermissionName } from 'src/permissions/permission.enum'; // Import PermissionName enum
+import { PermissionName } from 'src/permissions/permission.enum';
 import { Roles } from 'src/roles/dto/role.enum';
 import { PaginationService } from 'src/shared/pagination/pagination.service';
 import { GetUsersDto } from './dto/get-users.dto';
@@ -18,13 +17,14 @@ import { UserStatsDto, UserStatsSchema } from './dto/user-stats.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateByAdminDto } from './dto/update-by-admin.dto';
+import { RoleService } from 'src/roles/roles.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
-    private readonly rolesService: RolesService,
+    private readonly rolesService: RoleService,
     private readonly paginationService: PaginationService,
   ) {}
 
@@ -102,7 +102,7 @@ export class UsersService {
   async findByEmail(email: string): Promise<User> {
     const user = await this.usersRepo.findOne({
       where: { email },
-      relations: ['roles'],
+      relations: ['roles', 'roles.permissions'],
     });
     if (!user) {
       throw new UnauthorizedException('User not found');

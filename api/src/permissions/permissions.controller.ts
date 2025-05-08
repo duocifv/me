@@ -7,32 +7,60 @@ import {
   Delete,
   Param,
   Body,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Roles } from 'src/roles/dto/role.enum';
-import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
+import { Permissions } from 'src/permissions/permissions.decorator';
+import { PermissionName } from './permission.enum';
+import { PermissionsService } from './permissions.service';
+import { Schema } from 'src/shared/decorators/dto.decorator';
+import {
+  CreatePermissionDto,
+  CreatePermissionSchema,
+  UpdatePermissionDto,
+  UpdatePermissionSchema,
+} from './dto/permission.dto';
 
-@ApiTags('Permissions - Khu vực ADMIN mới được truy cập')
-@RolesAllowed(Roles.ADMIN)
+@ApiTags('Permissions')
 @Controller('permissions')
 export class PermissionsController {
+  constructor(private readonly permissionsService: PermissionsService) {}
+
   @Get()
+  @Permissions(PermissionName.VIEW_PERMISSIONS)
   findAll() {
-    return 'GET /api/permissions';
+    return this.permissionsService.findAll();
   }
 
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.permissionsService.findOne(id);
+  }
+
+  /** Tạo mới permission */
   @Post()
-  create(@Body() body: any) {
-    return 'POST /api/permissions';
+  @Schema(CreatePermissionSchema)
+  @Permissions(PermissionName.MANAGE_PERMISSIONS)
+  create(@Body() dto: CreatePermissionDto) {
+    return this.permissionsService.create(dto);
   }
 
+  /** Cập nhật permission */
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    return `PUT /api/permissions/${id}`;
+  @Schema(UpdatePermissionSchema)
+  @Permissions(PermissionName.MANAGE_PERMISSIONS)
+  async update(@Param('id') id: string, @Body() dto: UpdatePermissionDto) {
+    const updated = await this.permissionsService.update(id, dto);
+    if (!updated) {
+      throw new NotFoundException(`Permission with id ${id} not found`);
+    }
+    return updated;
   }
 
+  /** Xóa permission */
   @Delete(':id')
+  @Permissions(PermissionName.MANAGE_PERMISSIONS)
   remove(@Param('id') id: string) {
-    return `DELETE /api/permissions/${id}`;
+    return this.permissionsService.delete(id);
   }
 }

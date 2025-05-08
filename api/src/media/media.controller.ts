@@ -21,11 +21,10 @@ import {
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { pipeline } from 'node:stream/promises';
 import { UploadFileDto } from './upload-file.dto';
-import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
-import { Roles } from 'src/roles/dto/role.enum';
+import { PermissionName } from 'src/permissions/permission.enum';
+import { Permissions } from 'src/permissions/permissions.decorator';
 
-@ApiTags('Media - Khu vực ADMIN mới được truy cập')
-@RolesAllowed(Roles.ADMIN)
+@ApiTags('Media')
 @Controller('media')
 export class FileController {
   @HttpCode(200)
@@ -38,6 +37,7 @@ export class FileController {
     description: 'Lỗi định dạng hoặc vượt dung lượng',
   })
   @Post('upload')
+  @Permissions(PermissionName.MANAGE_MEDIA)
   async upload(@Req() req: FastifyRequest) {
     const part = await req.file();
     if (!part) {
@@ -53,6 +53,7 @@ export class FileController {
   }
 
   @Get('download/:filename')
+  @Permissions(PermissionName.VIEW_MEDIA)
   async download(
     @Param('filename') filename: string,
     @Res() res: FastifyReply,
@@ -67,17 +68,20 @@ export class FileController {
   }
 
   @Get('/:id')
+  @Permissions(PermissionName.VIEW_MEDIA)
   findOne(@Param('id') id: string) {
     return `GET /api/upload/files/${id}`;
   }
 
   @Put(':id')
+  @Permissions(PermissionName.VIEW_MEDIA)
   update(@Param('id') id: string, @Body() body: any) {
     return `PUT /api/upload/files/${id}`;
   }
 
   @Delete(':id')
   @HttpCode(204)
+  @Permissions(PermissionName.MANAGE_MEDIA)
   remove(@Param('id') id: string, @Req() req: FastifyRequest) {
     try {
       const { deleted } = req.server.fileManager.deleteFile(id);

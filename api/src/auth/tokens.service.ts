@@ -34,40 +34,52 @@ export class TokensService {
     const iss = this.cfg.token.issuer;
     const aud = this.cfg.token.audience;
     const now = Math.floor(Date.now() / 1000);
-    const accessToken = await this.jwtService.signAsync(
-      {
-        sub: user.id,
-        email: user.email,
-        iss,
-        aud,
-        roles: user.roles,
-        iat: now,
-        nbf: now,
-      },
-      {
-        privateKey: this.cfg.token.privateKey,
-        algorithm: 'RS256',
-        expiresIn: this.cfg.token.accessToken.expires,
-      },
-    );
 
+    // ✅ Gộp toàn bộ permissions từ tất cả roles
+    const permissions = user.roles
+      .flatMap((role) => role.permissions || [])
+      .map((perm) => perm.name);
+
+    // ✅ Chuẩn hóa danh sách roles để chỉ lấy name
+    const roleNames = user.roles.map((role) => role.name);
+
+    // === Access Token Payload ===
+    const accessTokenPayload = {
+      sub: user.id,
+      email: user.email,
+      roles: roleNames,
+      permissions,
+      iss,
+      aud,
+      iat: now,
+      nbf: now,
+    };
+
+    const accessToken = await this.jwtService.signAsync(accessTokenPayload, {
+      privateKey: this.cfg.token.privateKey,
+      algorithm: 'RS256',
+      expiresIn: this.cfg.token.accessToken.expires,
+    });
+
+    // === Refresh Token Payload ===
     const jti = randomUUID();
-    const refreshToken = await this.jwtService.signAsync(
-      {
-        sub: user.id,
-        jti,
-        iss,
-        aud,
-        iat: now,
-        nbf: now,
-      },
-      {
-        privateKey: this.cfg.token.privateKey,
-        algorithm: 'RS256',
-        expiresIn: this.cfg.token.refreshToken.expires,
-      },
-    );
 
+    const refreshTokenPayload = {
+      sub: user.id,
+      jti,
+      iss,
+      aud,
+      iat: now,
+      nbf: now,
+    };
+
+    const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, {
+      privateKey: this.cfg.token.privateKey,
+      algorithm: 'RS256',
+      expiresIn: this.cfg.token.refreshToken.expires,
+    });
+
+    // === Lưu vào DB ===
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     try {
@@ -80,13 +92,18 @@ export class TokensService {
           ipAddress,
         }),
       );
-    } catch {
+    } catch (error) {
+      console.error('Failed to save refresh token:', error);
       throw new InternalServerErrorException(
         'Không tạo được refresh token record',
       );
     }
 
-    return { accessToken, refreshToken, expiresAt };
+    return {
+      accessToken,
+      refreshToken,
+      expiresAt,
+    };
   }
 
   async verifyRefreshToken(

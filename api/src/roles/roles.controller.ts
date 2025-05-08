@@ -1,51 +1,54 @@
-// src/roles/roles.controller.ts
 import {
   Controller,
   Get,
   Post,
-  Put,
-  Delete,
-  Param,
   Body,
+  Param,
+  Delete,
+  Put,
 } from '@nestjs/common';
-import { CreateRoleDto, CreateRoleSchema } from './dto/create-role.dto';
-import { Schema } from 'src/shared/decorators/dto.decorator';
-import { UpdateRoleDto, UpdateRoleSchema } from './dto/update-role.dto';
-import { IdParamDto, IdParamSchema } from './dto/Id-role.dto';
-import { ApiTags } from '@nestjs/swagger';
-import { RolesAllowed } from 'src/shared/decorators/roles.decorator';
-import { Roles } from './dto/role.enum';
+import { CreateRoleDto } from './dto/create-role.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { RoleService } from './roles.service';
+import { Permissions } from 'src/permissions/permissions.decorator';
+import { PermissionName } from 'src/permissions/permission.enum';
 
-@ApiTags('Roles - Khu vực ADMIN mới được truy cập')
-@RolesAllowed(Roles.ADMIN)
 @Controller('roles')
-export class RolesController {
-  @Get()
-  findAll() {
-    return 'GET /api/roles';
-  }
+export class RoleController {
+  constructor(private readonly roleService: RoleService) {}
 
-  @Get(':id')
-  @Schema(IdParamSchema)
-  findOne(@Param('id') id: IdParamDto) {
-    return `GET /api/roles/${id}`;
-  }
-
+  /** Tạo mới role */
   @Post()
-  @Schema(CreateRoleSchema)
-  create(@Body() body: CreateRoleDto) {
-    return 'POST /api/roles';
+  @Permissions(PermissionName.MANAGE_ROLES)
+  create(@Body() dto: CreateRoleDto) {
+    return this.roleService.create(dto);
   }
 
+  /** Lấy toàn bộ roles */
+  @Get()
+  @Permissions(PermissionName.VIEW_ROLES)
+  findAll() {
+    return this.roleService.findAll();
+  }
+
+  /** Lấy chi tiết role theo ID */
+  @Get(':id')
+  @Permissions(PermissionName.VIEW_ROLES)
+  findOne(@Param('id') id: string) {
+    return this.roleService.findOne(id);
+  }
+
+  /** Cập nhật role */
   @Put(':id')
-  @Schema(UpdateRoleSchema)
-  update(@Param('id') id: string, @Body() body: UpdateRoleDto) {
-    return `PUT /api/roles/${id}`;
+  @Permissions(PermissionName.MANAGE_ROLES)
+  update(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
+    return this.roleService.update(id, dto);
   }
 
+  /** Xóa role */
   @Delete(':id')
-  @Schema(IdParamSchema)
-  remove(@Param('id') id: IdParamDto) {
-    return `DELETE /api/roles/${id}`;
+  @Permissions(PermissionName.MANAGE_ROLES)
+  remove(@Param('id') id: string) {
+    return this.roleService.remove(id);
   }
 }

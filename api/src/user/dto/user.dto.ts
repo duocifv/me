@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { RefreshTokenSchema } from 'src/auth/dto/refresh-token.dto';
-import { RoleSchema } from 'src/roles/dto/role.dto';
+import { RoleFullSchema, RolePublicSchema } from 'src/roles/dto/role.dto';
 
 export const UserFullSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   password: z.string().min(8),
   refreshTokens: z.array(RefreshTokenSchema).default([]),
-  roles: z.array(RoleSchema).default([]),
+  roles: z.array(RoleFullSchema).default([]),
   isActive: z.boolean(),
   isPaid: z.boolean(),
   status: z.enum(['pending', 'active', 'blocked']),
@@ -18,13 +18,24 @@ export const UserFullSchema = z.object({
   deletedAt: z.coerce.date().nullable(),
 });
 
+export const UserWithPermissionsSchema = UserFullSchema.omit({
+  password: true,
+  refreshTokens: true,
+  deletedAt: true,
+}).extend({
+  roles: z.array(RoleFullSchema),
+});
 export const UserSchema = UserFullSchema.omit({
   password: true,
   refreshTokens: true,
   deletedAt: true,
   lastLoginAt: true,
+}).extend({
+  roles: z.array(RolePublicSchema),
 });
 
+export type UserPrivateDto = z.infer<typeof UserFullSchema>;
 export type UserDto = z.infer<typeof UserSchema>;
 export const UserListSchema = z.array(UserSchema);
 export type UserListDto = z.infer<typeof UserListSchema>;
+export type UserWithPermissionsDto = z.infer<typeof UserWithPermissionsSchema>;

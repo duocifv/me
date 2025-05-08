@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { RefreshTokenSchema } from "./refresh-token.dto";
-import { RoleSchema } from "../../roles/dto/role.dto";
+import { RolePublicSchema } from "../../roles/dto/role.dto";
 
 export const UserFullSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   password: z.string().min(8),
   refreshTokens: z.array(RefreshTokenSchema).default([]),
-  roles: z.array(RoleSchema).default([]),
+  roles: z.array(RolePublicSchema).default([]),
   isActive: z.boolean(),
   isPaid: z.boolean(),
   status: z.enum(["pending", "active", "blocked"]),
