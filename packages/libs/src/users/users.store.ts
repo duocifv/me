@@ -17,7 +17,7 @@ export const usersStore = create<IUserState>()(
         page: 1,
         limit: 10,
         search: "",
-        isActive: true,
+        isActive: false,
         isPaid: false,
         status: [],
         roles: [],

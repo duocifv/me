@@ -29,7 +29,8 @@ import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
 import { useUsers } from "@adapter/users";
 import { CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import UsersUpdate from "./users-update";
+import dynamic from "next/dynamic";
+const UsersUpdate = dynamic(() => import("./users-update"));
 
 export default function TableCellViewer({ item }: { item: UserDto }) {
   const { updateUser } = useUsers();

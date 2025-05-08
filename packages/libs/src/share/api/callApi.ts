@@ -3,6 +3,7 @@ import { makeUrl } from "./buildUrl";
 import { log } from "./logger";
 import { retryFetch } from "./retryFetch";
 import { authService } from "./authService";
+import { ErrorRespose, zodValidation } from "./Error";
 
 /**
  * Gọi API với timeout và retry, trả về kết quả theo cấu trúc:
@@ -21,9 +22,10 @@ export const callApi = async <T>(
   }: ApiOpts<T> = {}
 ): Promise<{
   data: T | null;
-  error: string | null;
+  error: ErrorRespose | null;
   status?: number;
   statusText?: string;
+  failed?: zodValidation;
 }> => {
   const url = makeUrl(path, params);
   const controller = new AbortController();
@@ -45,23 +47,31 @@ export const callApi = async <T>(
     };
     return await retryFetch<T>(url, requestOpts);
   } catch (err: unknown) {
-    let errorMessage: string;
+    let errorResponse: ErrorRespose = {
+      message: "",
+      statusCode: 500,
+    };
     if (err instanceof Error) {
-      errorMessage = err.message;
-      log.error(`API error: ${errorMessage}`);
+      errorResponse = JSON.parse(err.message);
+      log.error(`API error: ${errorResponse}`);
     } else {
-      errorMessage = "Unknown API error";
+      errorResponse["message"] = "Unknown API error";
       log.error(`Unknown API error: ${String(err)}`);
     }
     if (fallback !== null) {
       return {
         data: fallback as T,
-        error: errorMessage,
+        error: errorResponse.message,
         status: 500,
         statusText: "Error",
       };
     }
-    throw new Error(errorMessage);
+    console.log("errorResponse=-=====", errorResponse);
+    return {
+      data: null,
+      error: errorResponse.message,
+      status: errorResponse.statusCode,
+    };
   } finally {
     clearTimeout(timeoutId);
   }

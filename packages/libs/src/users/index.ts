@@ -7,17 +7,23 @@ import {
 } from "@tanstack/react-query";
 import { usersStore } from "./users.store";
 import { usersApi } from "./users.api";
-import { UserDto } from "./dto/user.dto";
 import { UpdateByAdminDto } from "./dto/update-by-admin.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
+import { useShallow } from "zustand/shallow";
+import { useMemo } from "react";
 
 export function useUsers() {
-  const filters = usersStore((s) => s.filters);
-  const setFilters = usersStore((s) => s.setFilters);
+  const { filters, setFilters } = usersStore(
+    useShallow((state) => ({
+      filters: state.filters,
+      setFilters: state.setFilters,
+    }))
+  );
   const queryClient = useQueryClient();
+  const memoizedFilters = useMemo(() => filters, [filters]);
 
   const listUsers = useQuery({
-    queryKey: ["users", filters],
+    queryKey: ["users", memoizedFilters],
     queryFn: () => usersApi.getAll(filters),
     placeholderData: keepPreviousData,
   });

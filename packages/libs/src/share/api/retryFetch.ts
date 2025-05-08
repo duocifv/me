@@ -1,3 +1,4 @@
+import { ErrorRespose } from "./Error";
 import { log } from "./logger";
 
 const delayRetry = (attempt: number, baseDelay: number) =>
@@ -21,7 +22,7 @@ export const retryFetch = async <T>(
   attempt = 1
 ): Promise<{
   data: T | null;
-  error: string | null;
+  error: ErrorRespose | null;
   status: number;
   statusText: string;
 }> => {
@@ -58,11 +59,7 @@ export const retryFetch = async <T>(
       const errors = await res.json();
       return {
         data: null,
-        error: `Đã xảy ra lỗi HTTP khi tải dữ liệu:\n${JSON.stringify(
-          errors,
-          null,
-          2
-        )}`,
+        error: errors,
         status: res.status,
         statusText: res.statusText,
       };

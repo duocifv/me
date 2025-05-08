@@ -31,19 +31,17 @@
       ],
       "@adapter/*": [
         "../packages/libs/src/*"
-      ],
+      ]
     }
   },
   "include": [
-    "next-env.d.ts",
-    "../packages/libs/src/**/*.tsx",
-    "../packages/libs/src/**/*.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "src/middleware.ts_md",
     "../packages/adapter/src/share/utils/resouce.tsx___",
-    "src/components/blog-route/blog_detail_route.tsx.nmd"
+    "../packages/libs/src/**/*.ts",
+    "../packages/libs/src/**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

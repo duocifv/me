@@ -1,6 +1,7 @@
 import type { ApiOpts } from "./types";
 import { callApi } from "./callApi";
 import { log } from "./logger";
+import { ApiError } from "./Error";
 
 /**
  * GET request: Nếu thành công trả về dữ liệu kiểu T, nếu có lỗi thì ném lỗi.
@@ -15,10 +16,8 @@ export async function $get<T>(
     ...opts,
   });
 
-  // Nếu có lỗi, log và ném lỗi
   if (error) {
-    log.error(`GET ${path} error:`);
-    throw new Error(`HTTP ${status} - ${error}`);
+    throw new ApiError(error.message, status);
   }
 
   // Nếu không có dữ liệu
@@ -38,15 +37,15 @@ export async function $post<T>(
   body: Record<string, unknown>,
   opts?: ApiOpts<T>
 ): Promise<T> {
-  const { data, error, status } = await callApi<T>("POST", path, {
+  const { data, error, status, statusText } = await callApi<T>("POST", path, {
     ...opts,
     body,
   });
   if (error) {
-    throw new Error(`HTTP ${status} - ${error}`);
+    throw new ApiError(error.message, status);
   }
   if (data === null || data === undefined) {
-    throw new Error("No data received");
+    throw new ApiError("No data received", status);
   }
   return data;
 }
@@ -64,7 +63,7 @@ export async function $put<T>(
     body,
   });
   if (error) {
-    throw new Error(`HTTP ${status} - ${error}`);
+    throw new ApiError(error.message, status);
   }
   if (data === null || data === undefined) {
     throw new Error("No data received");
@@ -78,7 +77,7 @@ export async function $put<T>(
 export async function $del<T>(path: string, opts?: ApiOpts<T>): Promise<T> {
   const { data, error, status } = await callApi<T>("DELETE", path, opts);
   if (error) {
-    throw new Error(`HTTP ${status} - ${error}`);
+    throw new ApiError(error.message, status);
   }
   if (data === null || data === undefined) {
     throw new Error("No data received");
