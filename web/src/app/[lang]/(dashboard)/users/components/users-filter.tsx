@@ -14,8 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useUsers } from "@adapter/users";
-import { Roles } from "@adapter/roles/dto/role.enum";
+import { useUsers } from "@adapter/users/users";
+import { Roles } from "@adapter/roles/dto/roles.enum";
 import { UserStatus } from "@adapter/users/dto/user-status.enum";
 import { useDebounce } from "@adapter/share/hooks/use-debounce";
 import { Table } from "@tanstack/react-table";

@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormWrapper } from "@adapter/share/components/FormWrapper";
-import { useUsers } from "@adapter/users";
+import { useUsers } from "@adapter/users/users";
 import {
   CreateUserDto,
   CreateUserSchema,

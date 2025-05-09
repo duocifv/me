@@ -65,7 +65,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UserDto } from "@adapter/users/dto/user.dto";
-import { useUsers } from "@adapter/users";
+import { useUsers } from "@adapter/users/users";
 
 const UsersFilter = dynamic(() => import("./users-filter"));
 const TableCellViewer = dynamic(() => import("./users-table-viewer"));

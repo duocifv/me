@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useRef } from "react";
 import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
-import { useUsers } from "@adapter/users";
+import { useUsers } from "@adapter/users/users";
 import { CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";

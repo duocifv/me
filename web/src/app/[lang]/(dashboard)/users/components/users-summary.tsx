@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, UserPlus, UserCheck, UserLock } from "lucide-react";
-import { useUsers } from "@adapter/users";
+import { useUsers } from "@adapter/users/users";
 
 export default function UsersSummary() {
   const { listUsers } = useUsers();

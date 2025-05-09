@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { RefreshTokenSchema } from "./refresh-token.dto";
-import { RolePublicSchema } from "../../roles/dto/role.dto";
+import { RolePublicSchema } from "../../roles/dto/roles.dto";
 
 export const UserFullSchema = z.object({
   id: z.string(),

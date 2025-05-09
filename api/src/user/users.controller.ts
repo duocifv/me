@@ -9,6 +9,7 @@ import {
   Delete,
   Query,
   UnauthorizedException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesAllowed } from 'src/roles/roles.decorator';
@@ -50,33 +51,39 @@ export class UsersController {
   }
 
   @Get(':id')
-  async getUserById(@Param('id') id: string) {
+  async getUserById(@Param('id', new ParseUUIDPipe()) id: string) {
     return await this.usersService.findById(id);
   }
 
   @Put(':id')
   @Schema(UpdateByAdminSchema)
-  async update(@Param('id') id: string, @Body() dto: UpdateByAdminDto) {
+  async update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateByAdminDto,
+  ) {
     return await this.usersService.update(id, dto);
   }
 
   @Put(':id/profile')
   @Schema(UpdateProfileSchema)
-  async updateProfile(@Param('id') id: string, @Body() dto: UpdateProfileDto) {
+  async updateProfile(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateProfileDto,
+  ) {
     return this.usersService.updateProfile(id, dto);
   }
 
   @Put(':id/restore')
   @HttpCode(200)
-  async restore(@Param('id') id: string) {
+  async restore(@Param('id', new ParseUUIDPipe()) id: string) {
     return await this.usersService.restore(id);
   }
 
-  @Delete(':id')
-  @HttpCode(204)
-  remove() {
-    throw new UnauthorizedException('Admin không được phép xóa người dùng');
-  }
+  // @Delete(':id')
+  // @HttpCode(204)
+  // remove() {
+  //   throw new UnauthorizedException('Admin không được phép xóa người dùng');
+  // }
 
   @Post()
   @Schema(CreateUserSchema)

@@ -1,4 +1,5 @@
 "use client";
+
 import * as React from "react";
 import {
   Dialog,
@@ -12,56 +13,81 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from "@adapter/permissions/permissions";
+import { RoleDto } from "@adapter/roles/dto/roles.dto";
+import { useEffect, useState } from "react";
 
-const PERMISSIONS = [
-  "User Management",
-  "Content Management",
-  "Disputes Management",
-  "Database Management",
-  "Financial Management",
-  "Reporting",
-  "API Control",
-  "Repository Management",
-  "Payroll",
-];
+type PermissionGroup = {
+  label: string;
+  read: boolean;
+  write: boolean;
+  readId?: string;
+  writeId?: string;
+};
 
-export function EditRoleDialog({ roleName }: { roleName: string }) {
-  const [open, setOpen] = React.useState(false);
-  const [name, setName] = React.useState(roleName);
-  const [selectAll, setSelectAll] = React.useState(false);
-  const [perms, setPerms] = React.useState<
-    Record<string, { read: boolean; write: boolean; create: boolean }>
-  >(() =>
-    PERMISSIONS.reduce((acc, p) => {
-      acc[p] = { read: false, write: false, create: false };
-      return acc;
-    }, {} as Record<string, { read: boolean; write: boolean; create: boolean; }>)
-  );
+export function EditRoleDialog(role: RoleDto) {
+  const { permissions } = usePermissions(role);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(role.name);
+  const [selectAll, setSelectAll] = useState(false);
+  const [perms, setPerms] = useState<PermissionGroup[]>([]);
+  const prevOpen = React.useRef(false);
+  console.log("permissions role:", permissions);
+
+  // Đồng bộ perms mỗi khi dialog mở
+  useEffect(() => {
+    if (open && !prevOpen.current) {
+      setName(role.name);
+      setPerms(permissions);
+
+      const allSelected =
+        permissions.length > 0 && permissions.every((p) => p.read && p.write);
+      setSelectAll(allSelected);
+    }
+    prevOpen.current = open;
+  }, [open, permissions, role.name]);
 
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
-    const updated = Object.fromEntries(
-      PERMISSIONS.map((p) => [
-        p,
-        { read: checked, write: checked, create: checked },
-      ])
-    );
+    const updated = perms.map((perm) => ({
+      ...perm,
+      read: checked,
+      write: checked,
+    }));
     setPerms(updated);
   };
 
   const handlePermChange = (
-    key: string,
-    field: keyof (typeof perms)[string],
-    checked: boolean
+    index: number,
+    field: "read" | "write",
+    value: boolean
   ) => {
-    setPerms((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], [field]: checked },
-    }));
+    setPerms((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+
+    // Cập nhật lại selectAll nếu cần
+    const updated = [...perms];
+    updated[index] = { ...updated[index], [field]: value };
+    const allChecked = updated.every((p) => p.read && p.write);
+    setSelectAll(allChecked);
   };
 
   const handleSubmit = () => {
-    // TODO: save name and perms
+    const selectedPermissionIds = perms.flatMap((perm) => {
+      const ids: string[] = [];
+      if (perm.read && perm.readId) ids.push(perm.readId);
+      if (perm.write && perm.writeId) ids.push(perm.writeId);
+      return ids;
+    });
+
+    console.log("Submit role:", {
+      name,
+      permissions: selectedPermissionIds,
+    });
+
     setOpen(false);
   };
 
@@ -69,12 +95,12 @@ export function EditRoleDialog({ roleName }: { roleName: string }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Edit {roleName}
+          Edit
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Edit Role</DialogTitle>
+          <DialogTitle>Edit Role {role.name}</DialogTitle>
           <DialogDescription>Set role permissions</DialogDescription>
         </DialogHeader>
 
@@ -104,25 +130,25 @@ export function EditRoleDialog({ roleName }: { roleName: string }) {
             </div>
 
             <div className="space-y-2">
-              {PERMISSIONS.map((perm) => (
+              {perms.map((perm, index) => (
                 <div
-                  key={perm}
+                  key={index}
                   className="flex items-center justify-between py-2 border-b last:border-b-0"
                 >
-                  <span className="text-sm">{perm}</span>
+                  <span className="text-sm">{perm.label}</span>
                   <div className="flex space-x-4">
-                    {(["read", "write", "create"] as const).map((field) => (
+                    {(["read", "write"] as const).map((field) => (
                       <label
                         key={field}
                         className="flex items-center space-x-1"
                       >
                         <Checkbox
-                          checked={perms[perm][field]}
-                          onCheckedChange={(v) =>
-                            handlePermChange(perm, field, !!v)
+                          checked={perm[field]}
+                          onCheckedChange={(value) =>
+                            handlePermChange(index, field, !!value)
                           }
                         />
-                        <span className="text-sm capiclatalize">{field}</span>
+                        <span className="text-sm capitalize">{field}</span>
                       </label>
                     ))}
                   </div>

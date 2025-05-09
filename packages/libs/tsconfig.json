@@ -9,7 +9,8 @@
     "moduleResolution": "Node",
     "baseUrl": "./",
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    // "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "strict": true,
     "paths": {
       "../*": [

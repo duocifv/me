@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { UserStatus } from "./user-status.enum";
-import { Roles } from "../../roles/dto/role.enum";
+import { Roles } from "../../roles/dto/roles.enum";
 
 export const BasePaginateSchema = z.object({
   page: z.coerce.number().int().positive().default(1),

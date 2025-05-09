@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { Roles } from './role.enum';
+import { z } from "zod";
+import { Roles } from "./roles.enum";
 
 export const RoleFullSchema = z.object({
   id: z.string(),
@@ -10,7 +10,7 @@ export const RoleFullSchema = z.object({
       z.object({
         id: z.string(),
         name: z.string(),
-      }),
+      })
     )
     .default([]),
   users: z
@@ -18,7 +18,7 @@ export const RoleFullSchema = z.object({
       z.object({
         id: z.string(),
         email: z.string(),
-      }),
+      })
     )
     .default([]),
 });

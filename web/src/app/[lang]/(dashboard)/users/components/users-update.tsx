@@ -10,7 +10,7 @@ import { UserStatus } from "@adapter/users/dto/user-status.enum";
 import { Label } from "@/components/ui/label";
 import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
 import { RefObject } from "react";
-import { Roles } from "@adapter/roles/dto/role.enum";
+import { Roles } from "@adapter/roles/dto/roles.enum";
 
 type Props = {
   item: UserDto;

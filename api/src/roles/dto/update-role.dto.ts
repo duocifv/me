@@ -1,5 +1,8 @@
 // update-role.dto.ts
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateRoleDto } from './create-role.dto';
+import { z } from 'zod';
 
-export class UpdateRoleDto extends PartialType(CreateRoleDto) {}
+export const UpdateRoleSchema = z.object({
+  permissions: z.array(z.string().uuid()).optional(),
+});
+
+export type UpdateRoleDto = z.infer<typeof UpdateRoleSchema>;

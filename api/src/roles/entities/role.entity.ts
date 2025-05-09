@@ -24,7 +24,7 @@ export class Role {
     cascade: true,
   })
   @JoinTable({
-    name: 'role_permissions', // tên bảng trung gian
+    name: 'role_permissions',
     joinColumn: {
       name: 'role_id',
       referencedColumnName: 'id',
