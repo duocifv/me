@@ -14,6 +14,7 @@ export interface ApiOpts<T> {
   headers?: Record<string, string>;
   timeout?: number;
   fallback?: T | null;
+  credentials?: RequestCredentials
 }
 
 /**

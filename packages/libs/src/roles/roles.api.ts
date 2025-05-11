@@ -1,22 +1,23 @@
-// src/roles/roles.api.ts
-import { $get, $put } from "../share/api/apiHelpers";
+
 import { UpdateRoleDto } from "./dto/update-role.dto";
-import { RoleDto, RoleFullDto, RoleListSchema } from "./dto/roles.dto";
+import { RoleDto, RoleFullDto } from "./dto/roles.dto";
+import { api, ApiClient } from "../share/api/apiClient";
 
 export class RolesApi {
+  constructor(
+    private readonly api: ApiClient
+  ) { }
   async getAll() {
-    return await $get<RoleFullDto[]>("roles");
+    return await this.api.get<RoleFullDto[]>("roles");
   }
 
-  /** Lấy chi tiết một role theo ID */
   async getById(id: string) {
-    return await $get<RoleDto>(`roles/${id}`);
+    return await this.api.get<RoleDto>(`roles/${id}`);
   }
 
-  /** Cập nhật một role */
   async update(id: string, dto: UpdateRoleDto) {
-    return await $put<RoleDto>(`roles/${id}`, dto);
+    return await this.api.put<RoleDto>(`roles/${id}`, dto);
   }
 }
 
-export const rolesApi = new RolesApi();
+export const rolesApi = new RolesApi(api);

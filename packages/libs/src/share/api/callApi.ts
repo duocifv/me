@@ -2,7 +2,6 @@ import type { HttpMethod, ApiOpts } from "./types";
 import { makeUrl } from "./buildUrl";
 import { log } from "./logger";
 import { retryFetch } from "./retryFetch";
-import { authService } from "./authService";
 import { ErrorRespose, zodValidation } from "./Error";
 
 /**
@@ -19,6 +18,7 @@ export const callApi = async <T>(
     headers = {},
     timeout = 5000,
     fallback = null,
+    credentials = "same-origin",
   }: ApiOpts<T> = {}
 ): Promise<{
   data: T | null;
@@ -30,10 +30,7 @@ export const callApi = async <T>(
   const url = makeUrl(path, params);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-  const token = authService.getToken();
-  if (token) {
-    headers = { ...headers, Authorization: `Bearer ${token}` };
-  }
+
   if (body !== undefined && body !== null) {
     headers = { "Content-Type": "application/json", ...headers };
   }
@@ -43,6 +40,7 @@ export const callApi = async <T>(
       method,
       headers,
       signal: controller.signal,
+      credentials,
       ...(method !== "GET" && body ? { body: JSON.stringify(body) } : {}),
     };
     return await retryFetch<T>(url, requestOpts);

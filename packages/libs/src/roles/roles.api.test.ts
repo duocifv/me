@@ -1,5 +1,5 @@
 import { RolesApi } from "./roles.api";
-import { $get, $put } from "../share/api/apiHelpers";
+import { $get, $put } from "../share/api/apiClient";
 import { RoleDto, RoleFullDto, RoleListSchema } from "./dto/roles.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { Roles } from "./dto/roles.enum";

@@ -5,7 +5,7 @@ jest.mock("../share/api/apiHelpers", () => ({
   $del: jest.fn(),
 }));
 
-import { $get, $put, $del } from "../share/api/apiHelpers";
+import { $get, $put, $del } from "../share/api/apiClient";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { GetUsersSchema } from "./dto/get-users.dto";
 import { UpdateByAdminDto } from "./dto/update-by-admin.dto";

@@ -1,19 +1,18 @@
-import { $get } from "../share/api/apiHelpers";
-import {
-  PermissionDto,
-  PermissionListDto,
-  PermissionListSchema,
-} from "./dto/permission.dto";
+import { RoleDto, RoleFullDto } from "../roles/dto/roles.dto";
+import { UpdateRoleDto } from "../roles/dto/update-role.dto";
+import { api } from "../share/api/apiClient";
 
-export class PermissionsApi {
-  async getAll() {
-    const data = await $get<PermissionListDto>("permissions");
-    return PermissionListSchema.parse(data);
-  }
-
-  async getById(id: string) {
-    return await $get<PermissionDto>(`permissions/${id}`);
-  }
+export async function getAllRoles(): Promise<RoleFullDto[]> {
+  return api.get<RoleFullDto[]>("roles");
 }
 
-export const permissionsApi = new PermissionsApi();
+export async function getRoleById(id: string): Promise<RoleDto> {
+  return api.get<RoleDto>(`roles/${id}`);
+}
+
+export async function updateRole(
+  id: string,
+  dto: UpdateRoleDto
+): Promise<RoleDto> {
+  return api.put<RoleDto>(`roles/${id}`, dto);
+}

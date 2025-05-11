@@ -1,9 +1,11 @@
-import { GalleryVerticalEnd } from "lucide-react"
+import { CheckCircle, GalleryVerticalEnd, XCircle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FormWrapper } from "@adapter/share/components/FormWrapper"
+import { toast } from "sonner"
 
 export function LoginForm({
   className,
@@ -31,33 +33,87 @@ export function LoginForm({
               </a>
             </div>
           </div>
+
+
+
           <div className="flex flex-col gap-6">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
-                <Input id="password" type="password" required />
-              </div>
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
+
+
+            <FormWrapper<any>
+              schema={any}
+              defaultValues={{ email: "", password: "" }}
+              onSubmit={(value, control) => {
+                createUser.mutate(value, {
+                  onSuccess: () => {
+                    toast.success("Tạo tài khoản thành công", {
+                      duration: 5000,
+                      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+                    });
+                    control.reset();
+                  },
+                  onError: (err) => {
+                    toast.error(err.message, {
+                      duration: 5000,
+                      icon: <XCircle className="h-5 w-5 text-red-500" />,
+                    });
+                  },
+                });
+              }}
+            >
+              {(control) => (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      {...control.register("email")}
+                    />
+                    {control.formState.errors.email && (
+                      <p className="text-red-500 mt-2 text-sm  leading-none">
+                        {control.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
+
+
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="password">Password</Label>
+                      <a
+                        href="#"
+                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                      >
+                        Forgot your password?
+                      </a>
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        {...control.register("email")}
+                      />
+                      {control.formState.errors.email && (
+                        <p className="text-red-500 mt-2 text-sm  leading-none">
+                          {control.formState.errors.email.message}
+                        </p>
+                      )}
+                    </div>
+
+                  </div>
+
+
+                  <Button type="submit" className="w-full">
+                    Login
+                  </Button>
+                </>
+              )}
+            </FormWrapper>
+
+
+
+
+
           </div>
-          
+
           <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
             <span className="relative z-10 bg-background px-2 text-muted-foreground">
               Or
@@ -83,7 +139,7 @@ export function LoginForm({
               Continue with Google
             </Button>
           </div>
-         
+
         </div>
       </form>
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary  ">
