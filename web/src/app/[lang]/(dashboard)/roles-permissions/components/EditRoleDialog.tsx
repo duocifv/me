@@ -26,26 +26,27 @@ type PermissionGroup = {
 };
 
 export function EditRoleDialog(role: RoleDto) {
-  const { permissions } = usePermissions(role);
+  const {     permissionsList,
+ } = usePermissions(role.permissions);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(role.name);
   const [selectAll, setSelectAll] = useState(false);
   const [perms, setPerms] = useState<PermissionGroup[]>([]);
   const prevOpen = React.useRef(false);
-  console.log("permissions role:", permissions);
+  console.log("permissions role:", permissionsList);
 
   // Đồng bộ perms mỗi khi dialog mở
   useEffect(() => {
     if (open && !prevOpen.current) {
       setName(role.name);
-      setPerms(permissions);
+      setPerms(permissionsList);
 
       const allSelected =
-        permissions.length > 0 && permissions.every((p) => p.read && p.write);
+        permissionsList.length > 0 && permissionsList.every((p) => p.read && p.write);
       setSelectAll(allSelected);
     }
     prevOpen.current = open;
-  }, [open, permissions, role.name]);
+  }, [open, permissionsList, role.name]);
 
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
@@ -130,9 +131,9 @@ export function EditRoleDialog(role: RoleDto) {
             </div>
 
             <div className="space-y-2">
-              {perms.map((perm, index) => (
+              {permissionsList.map((perm, id) => (
                 <div
-                  key={index}
+                  key={id}
                   className="flex items-center justify-between py-2 border-b last:border-b-0"
                 >
                   <span className="text-sm">{perm.label}</span>
@@ -143,9 +144,9 @@ export function EditRoleDialog(role: RoleDto) {
                         className="flex items-center space-x-1"
                       >
                         <Checkbox
-                          checked={perm[field]}
+                          defaultChecked={perm[field]}
                           onCheckedChange={(value) =>
-                            handlePermChange(index, field, !!value)
+                            handlePermChange(id, field, !!value)
                           }
                         />
                         <span className="text-sm capitalize">{field}</span>

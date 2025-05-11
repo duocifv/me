@@ -49,8 +49,6 @@ const roles: Role[] = [
 
 export default function RolesAndPermissionsSummary() {
   const { rolesList } = useRoles();
-   const { permissions } = usePermissions();
-  console.log("rolesList", rolesList.data);
   return (
     <div className="space-y-6">
       {/* Header + add-role button */}
