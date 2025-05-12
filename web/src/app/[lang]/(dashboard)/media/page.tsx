@@ -1,11 +1,11 @@
-import React from "react";
+import React, { Suspense } from "react";
 import ImageLibrary from "@/components/MediaLibrary";
 import { SiteHeader } from "@/components/site-header";
 import { MediaSummary } from "@/components/MediaSummary";
 
 export default function MediaImagesPage() {
   return (
-    <>
+    <Suspense>
       <SiteHeader value="Media Library" />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
@@ -15,6 +15,6 @@ export default function MediaImagesPage() {
           </div>
         </div>
       </div>
-    </>
+    </Suspense>
   );
 }

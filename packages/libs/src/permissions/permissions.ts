@@ -1,9 +1,9 @@
 "use client";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { permissionsApi } from "./permissions.api";
 import { Permissions, permissionsStore } from "./permissions.store";
 import { initPermissionMap } from "./permission.utils";
+import { permissionsService } from "./permissions.service";
 
 export function usePermissions(user_role: Permissions[]) {
   const setPermissions = permissionsStore((state) => state.setPermissions);
@@ -13,7 +13,7 @@ export function usePermissions(user_role: Permissions[]) {
 
   const result = useQuery({
     queryKey: ["permissions"],
-    queryFn: () => permissionsApi.getAll(),
+    queryFn: () => permissionsService.findAll(),
     enabled: shouldFetch,
   });
 
@@ -23,7 +23,6 @@ export function usePermissions(user_role: Permissions[]) {
     }
   }, [result.data, result.isSuccess, permissions]);
 
- 
   const permissionsList = initPermissionMap(result.data ?? [], user_role);
 
   return {

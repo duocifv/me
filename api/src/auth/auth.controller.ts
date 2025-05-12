@@ -10,6 +10,7 @@ import {
   UseGuards,
   Put,
   Param,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto, SignInSchema } from './dto/sign-in.dto';
@@ -22,19 +23,19 @@ import { Public } from 'src/shared/decorators/public.decorator';
 import {
   ChangePasswordDto,
   ChangePasswordSchema,
-} from 'src/user/dto/change-password.dto';
-import { Permissions } from 'src/permissions/permissions.decorator';
-import { PermissionName } from 'src/permissions/permission.enum';
+} from 'src/auth/dto/change-password.dto';
+import { MeSchema } from './dto/login.dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @UseGuards(LocalAuthGuard)
   @Post('login')
-  @HttpCode(200)
   @Schema(SignInSchema)
+  @UseGuards(LocalAuthGuard)
+  @HttpCode(200)
   async login(
     @Body() dto: SignInDto,
     @Res({ passthrough: true }) res: FastifyReply,
@@ -75,10 +76,10 @@ export class AuthController {
   @Delete('logout')
   @HttpCode(204)
   async logout(@Req() req, @Res({ passthrough: true }) res) {
-    const token = req.cookies?.refreshToken;
+    const value = req.getRefreshToken();
     const ipAddress = req.getIpAddress();
-    await this.authService.logout(token, ipAddress);
-    res.clearCookie('refreshToken', { path: '/' });
+    await this.authService.logout(value, ipAddress);
+    res.clearRefreshToken();
     return {
       message: 'Đã đăng xuất',
     };
@@ -96,17 +97,22 @@ export class AuthController {
   }
 
   @Get('me')
-  @Permissions(PermissionName.VIEW_USERS)
+  // @Permissions(PermissionName.VIEW_USERS)
   @HttpCode(200)
   me(@Req() req, @Res({ passthrough: true }) res) {
-    return {
-      message: 'hello',
-    };
+    const user = req.user as JwtPayload;
+    if (!user) {
+      throw new UnauthorizedException('User is not logged in');
+    }
+    return MeSchema.parse({
+      id: user.sub,
+      email: user.email,
+      role: user.roles,
+    });
   }
 
   @Put('change-password/:id')
   @Schema(ChangePasswordSchema)
-  @Permissions(PermissionName.MANAGE_USERS)
   @HttpCode(204)
   async changePassword(
     @Param('id') id: string,

@@ -1,12 +1,16 @@
 import dynamic from "next/dynamic";
-const DataTableUsers = dynamic(
-  () => import("../users/components/users-table")
-);
+import RolesAndPermissionsSummary from "./components/roles-permissions-summary";
+import { Suspense } from "react";
+import ErrorBoundary from "@/share/ErrorBoundary";
+const DataTableUsers = dynamic(() => import("../users/components/users-table"));
 
 export default async function PageRolesAndPermissions() {
   return (
-    <>
-      <DataTableUsers />
-    </>
+    <Suspense>
+      <ErrorBoundary>
+        <RolesAndPermissionsSummary />
+        <DataTableUsers />
+      </ErrorBoundary>
+    </Suspense>
   );
 }

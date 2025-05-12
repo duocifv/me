@@ -1,4 +1,4 @@
-import { ErrorRespose } from "./Error";
+import { ErrorRespose } from "./error";
 import { log } from "./logger";
 
 const delayRetry = (attempt: number, baseDelay: number) =>
@@ -12,7 +12,7 @@ const delayRetry = (attempt: number, baseDelay: number) =>
 /**
  * Thực hiện fetch với cơ chế retry (exponential backoff + jitter).
  * Trả về kết quả theo cấu trúc: { data, error, status, statusText }.
- * Lưu ý: error là string đã được "sanitized" để hiển thị trong UI.
+ * Lưu ý: error là object dạng ErrorRespose (để hiển thị hợp lệ cho UI).
  */
 export const retryFetch = async <T>(
   url: string,
@@ -27,81 +27,88 @@ export const retryFetch = async <T>(
   statusText: string;
 }> => {
   try {
+    console.log("urlurlurlurlurlurlurlurlurlurlurlurlurlurlurlurlurlurl", url);
     const res = await fetch(url, opts);
+    const status = res.status;
+    const statusText = res.statusText;
 
-    // Nếu trạng thái 204 (No Content), trả về dữ liệu rỗng
-    if (res.status === 204) {
+    // Nếu không có nội dung (204)
+    if (status === 204) {
       return {
         data: {} as T,
         error: null,
-        status: res.status,
-        statusText: res.statusText,
-      };
-    }
-    // Nếu trạng thái 404, trả về null
-    if (res.status === 404) {
-      return {
-        data: null,
-        error: `Not Found`,
-        status: res.status,
-        statusText: res.statusText,
-      };
-    }
-    // Nếu không OK, thử retry cho các trạng thái có thể recover (429, 500, 503)
-    if (!res.ok) {
-      if ([429, 500, 503].includes(res.status) && attempt <= maxRetries) {
-        log.warn(
-          `HTTP ${res.status}: Đang thử lại lần ${attempt}/${maxRetries}`
-        );
-        await delayRetry(attempt, baseDelay);
-        return retryFetch<T>(url, opts, maxRetries, baseDelay, attempt + 1);
-      }
-      const errors = await res.json();
-      return {
-        data: null,
-        error: errors,
-        status: res.status,
-        statusText: res.statusText,
+        status,
+        statusText,
       };
     }
 
-    // Nếu thành công, parse JSON
-    const resData = await res.json();
+    let resData: any = null;
+    try {
+      resData = await res.json();
+    } catch {
+      resData = null;
+    }
+
     const actualData = resData?.data ?? resData;
-    log.ok("200 - OK");
-    return {
-      data: actualData,
-      error: res.ok ? null : resData?.message || res.statusText,
-      status: res.status,
-      statusText: res.statusText,
-    };
-  } catch (err) {
-    if (err instanceof Error) {
-      if (err.name === "AbortError") {
-        return {
-          data: null,
-          error: "Yêu cầu đã bị hủy, vui lòng thử lại sau.",
-          status: 408,
-          statusText: "Request Timeout",
-        };
-      }
-      if (attempt <= maxRetries) {
-        log.warn(
-          `Error: ${err.message}. Đang thử lại lần ${attempt}/${maxRetries}`
-        );
+
+    if (!res.ok) {
+      // Retry nếu status nằm trong danh sách có thể recover
+      const retryableStatus = [429, 500, 502, 503, 504];
+      if (retryableStatus.includes(status) && attempt <= maxRetries) {
+        log.warn(`HTTP ${status}: Đang thử lại lần ${attempt}/${maxRetries}`);
         await delayRetry(attempt, baseDelay);
         return retryFetch<T>(url, opts, maxRetries, baseDelay, attempt + 1);
       }
+
+      const error: ErrorRespose = {
+        message: resData?.message || "Lỗi từ máy chủ",
+        errors: resData?.errors || null,
+        statusCode: status,
+      };
+
       return {
         data: null,
-        error: err.message,
-        status: 500,
-        statusText: "Error",
+        error,
+        status,
+        statusText,
       };
     }
+
+    // Thành công
+    log.ok(`${status} - OK`);
+    return {
+      data: actualData,
+      error: null,
+      status,
+      statusText,
+    };
+  } catch (err: any) {
+    if (err.name === "AbortError") {
+      return {
+        data: null,
+        error: {
+          message: "Yêu cầu đã bị hủy, vui lòng thử lại sau.",
+          statusCode: 408,
+        },
+        status: 408,
+        statusText: "Request Timeout",
+      };
+    }
+
+    if (attempt <= maxRetries) {
+      log.warn(
+        `Lỗi: ${err.message}. Đang thử lại lần ${attempt}/${maxRetries}`
+      );
+      await delayRetry(attempt, baseDelay);
+      return retryFetch<T>(url, opts, maxRetries, baseDelay, attempt + 1);
+    }
+
     return {
       data: null,
-      error: "Lỗi không xác định khi tải dữ liệu",
+      error: {
+        message: err.message || "Lỗi không xác định khi tải dữ liệu",
+        statusCode: 500,
+      },
       status: 500,
       statusText: "Error",
     };

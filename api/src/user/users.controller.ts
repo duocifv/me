@@ -6,9 +6,7 @@ import {
   Get,
   Param,
   Put,
-  Delete,
   Query,
-  UnauthorizedException,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -17,10 +15,6 @@ import { Roles } from 'src/roles/dto/role.enum';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUsersDto, GetUsersSchema } from './dto/get-users.dto';
 import { Schema } from 'src/shared/decorators/dto.decorator';
-import {
-  ChangePasswordDto,
-  ChangePasswordSchema,
-} from './dto/change-password.dto';
 import {
   UpdateProfileDto,
   UpdateProfileSchema,

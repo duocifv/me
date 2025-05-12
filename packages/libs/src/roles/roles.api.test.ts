@@ -1,4 +1,4 @@
-import { RolesApi } from "./roles.api";
+import { RolesApi } from "./roles.service";
 import { $get, $put } from "../share/api/apiClient";
 import { RoleDto, RoleFullDto, RoleListSchema } from "./dto/roles.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";

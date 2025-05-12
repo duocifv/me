@@ -11,7 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { NavUser } from "@/components/nav-user";
+import { NavUser } from "@/app/[lang]/(dashboard)/components/nav-user";
 import { Label } from "@/components/ui/label";
 import {
   Sidebar,
@@ -26,7 +26,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Switch } from "@/components/ui/switch";  
+import { Switch } from "@/components/ui/switch";
 import { Button } from "./ui/button";
 import Link from "next/link";
 

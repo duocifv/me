@@ -31,7 +31,7 @@ export const authPlugin = fp((fastify) => {
         httpOnly: true,
         sameSite: 'strict',
         secure: process.env.NODE_ENV === 'production',
-        path: '/token',
+        path: 'auth/token',
         maxAge,
         signed: true,
       });
@@ -51,6 +51,12 @@ export const authPlugin = fp((fastify) => {
     return value;
   });
 
+  fastify.decorateReply('clearRefreshToken', function (this: FastifyReply) {
+    return this.clearCookie('refreshToken', {
+      path: 'auth/token',
+      signed: true,
+    });
+  });
   fastify.decorateRequest(
     'getIpAddress',
     function (this: FastifyRequest): string {

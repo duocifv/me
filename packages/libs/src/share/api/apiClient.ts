@@ -1,9 +1,19 @@
 import type { HttpMethod, ApiOpts } from "./types";
 import { callApi } from "./callApi";
-import { ApiError, ErrorRespose } from "./Error";
+import { ApiError } from "./error";
 
 export class ApiClient {
   private accessToken: string | null = null;
+  private refreshPromise: Promise<void> | null = null;
+  private readonly prefix: string;
+
+  constructor(prefix: string = "") {
+    this.prefix = prefix.trim().replace(/^\/+|\/+$/g, "");
+  }
+
+  private fullPath(path: string): string {
+    return this.prefix ? `${this.prefix}/${path}` : path;
+  }
 
   setToken(token: string): void {
     this.accessToken = token;
@@ -14,70 +24,121 @@ export class ApiClient {
   }
 
   hasToken(): boolean {
-    return this.accessToken !== null;
+    return !!this.accessToken;
+  }
+
+  /**
+   * Refresh access token (singleton promise to dedupe concurrent calls).
+   */
+  private refreshToken(): Promise<void> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = (async () => {
+        try {
+          const { data, error, status } = await callApi<{
+            accessToken: string;
+          }>("POST", "auth/token", { credentials: "include" });
+
+          if (status === 401) {
+            // refresh token invalid or expired
+            this.clearToken();
+            throw new ApiError("RefreshExpired", 401, "RefreshExpired");
+          }
+
+          if (error || !data) {
+            this.clearToken();
+            throw new ApiError(
+              error?.message || "Refresh token failed",
+              error?.statusCode || status || 500,
+              "RefreshError"
+            );
+          }
+
+          this.setToken(data.accessToken);
+        } catch (error) {
+          this.clearToken();
+          throw error;
+        }
+      })();
+
+      this.refreshPromise.finally(() => {
+        this.refreshPromise = null;
+      });
+    }
+
+    return this.refreshPromise;
   }
 
   private async request<T>(
     method: HttpMethod,
     path: string,
-    opts: ApiOpts<T>= {}
+    opts: ApiOpts<T> = {},
+    isRetry = false
   ): Promise<T> {
-    if (!this.accessToken) {
-      throw new ApiError("No access token — please login", 401, "AuthError");
-    }
-
+    const fullPath = this.fullPath(path);
     const headers = {
       ...(opts.headers || {}),
-      Authorization: `Bearer ${this.accessToken}`,
+      ...(this.accessToken
+        ? { Authorization: `Bearer ${this.accessToken}` }
+        : {}),
     };
 
-    const callOpts = {
-      ...opts,
-      headers,
-    };
+    const callOpts = { ...opts, headers };
+    const { data, error, status } = await callApi<T>(
+      method,
+      fullPath,
+      callOpts
+    );
 
-    let res = await callApi<T>(method, path, callOpts);
-    let { data, error, status } = res;
-
-    if (status === 401) {
-      const refreshRes = await callApi<void>("POST", "/auth/token", {
-        credentials: "include",
-      });
-      if (refreshRes.error) {
-        this.clearToken();
-        throw new ApiError(refreshRes.error.message, refreshRes.error.statusCode, "RefreshError");
-      }
-      // Retry lần nữa
-      res = await callApi<T>(method, path, callOpts);
-      data = res.data;
-      error = res.error;
-      status = res.status as number;
+    if (status === 401 && !isRetry) {
+      await this.refreshToken();
+      return this.request(method, path, opts, true);
     }
 
     if (error) {
-      const errResp = error as ErrorRespose;
-      throw new ApiError(errResp.message, errResp.statusCode, "ApiError");
+      throw new ApiError(
+        error.message,
+        error.statusCode,
+        status === 401 ? "Unauthorized" : "ApiError"
+      );
     }
+
     if (data == null) {
-      throw new ApiError("No data received", status, "ApiError");
+      throw new ApiError("Empty response", status || 500, "NoData");
     }
+
     return data;
   }
 
-  get<T>(path: string, params?: Record<string, any>, opts?: ApiOpts<T>): Promise<T> {
+  async get<T>(
+    path: string,
+    params?: Record<string, any>,
+    opts?: ApiOpts<T>
+  ): Promise<T> {
     return this.request<T>("GET", path, { ...opts, params });
   }
 
-  post<T>(path: string, body: Record<string, unknown>, opts?: ApiOpts<T>): Promise<T> {
+  async post<T>(
+    path: string,
+    body: Record<string, unknown>,
+    opts?: ApiOpts<T>
+  ): Promise<T> {
     return this.request<T>("POST", path, { ...opts, body });
   }
 
-  put<T>(path: string, body: Record<string, unknown>, opts?: ApiOpts<T>): Promise<T> {
+  async put<T>(
+    path: string,
+    body: Record<string, unknown>,
+    opts?: ApiOpts<T>
+  ): Promise<T> {
     return this.request<T>("PUT", path, { ...opts, body });
   }
 
-  delete<T>(path: string, opts?: ApiOpts<T>): Promise<T> {
-    return this.request<T>("DELETE", path, opts || {});
+  async delete<T>(path: string, opts?: ApiOpts<T>): Promise<T> {
+    return this.request<T>("DELETE", path, opts);
+  }
+
+  group(prefix: string) {
+    return new ApiClient(prefix);
   }
 }
 

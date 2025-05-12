@@ -12,7 +12,7 @@ import { UpdateByAdminDto } from "./dto/update-by-admin.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { IUserListResponse } from "./dto/user-list.dto";
 import { UserDto, UserListDto } from "./dto/user.dto";
-import { UsersApi } from "./users.api";
+import { UsersApi } from "./users.service";
 
 describe("UsersApi", () => {
   let api: UsersApi;

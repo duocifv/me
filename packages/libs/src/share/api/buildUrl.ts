@@ -20,7 +20,9 @@ import { $config } from "../config/env";
  * makeUrl('users', { page: 1, roles: ['ADMIN', 'MANAGER'] });
  */
 export const makeUrl = (path: string, params?: ReqParams): string => {
-  const base = `${$config.API_URL}/${path}`;
+  const baseUrl = $config.API_URL.replace(/\/+$/g, "");
+  const cleanPath = path.trim().replace(/^\/+|\/+$/g, "");
+  const base = cleanPath ? `${baseUrl}/${cleanPath}` : baseUrl;
   if (!params || Object.keys(params).length === 0) return base;
 
   const searchParams = new URLSearchParams();

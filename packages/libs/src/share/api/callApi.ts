@@ -2,12 +2,12 @@ import type { HttpMethod, ApiOpts } from "./types";
 import { makeUrl } from "./buildUrl";
 import { log } from "./logger";
 import { retryFetch } from "./retryFetch";
-import { ErrorRespose, zodValidation } from "./Error";
+import { ErrorRespose, zodValidation } from "./error";
 
 /**
  * Gọi API với timeout và retry, trả về kết quả theo cấu trúc:
  * { data, error, status, statusText }
- * Lưu ý: error là string để đảm bảo tính serializable cho UI.
+ * Lưu ý: error là object để đảm bảo UI có thể xử lý lỗi hợp lệ.
  */
 export const callApi = async <T>(
   method: HttpMethod,
@@ -34,8 +34,10 @@ export const callApi = async <T>(
   if (body !== undefined && body !== null) {
     headers = { "Content-Type": "application/json", ...headers };
   }
+
   try {
     log.info(`Call API: ${url} [${method}]`);
+
     const requestOpts: RequestInit = {
       method,
       headers,
@@ -43,32 +45,47 @@ export const callApi = async <T>(
       credentials,
       ...(method !== "GET" && body ? { body: JSON.stringify(body) } : {}),
     };
+
     return await retryFetch<T>(url, requestOpts);
   } catch (err: unknown) {
     let errorResponse: ErrorRespose = {
-      message: "",
+      message: "Unknown error",
       statusCode: 500,
     };
+
     if (err instanceof Error) {
-      errorResponse = JSON.parse(err.message);
-      log.error(`API error: ${errorResponse}`);
+      try {
+        const parsed = JSON.parse(err.message);
+        errorResponse = {
+          message: parsed.message || err.message,
+          errors: parsed.errors,
+          statusCode: parsed.statusCode || 500,
+        };
+      } catch {
+        errorResponse = {
+          message: err.message,
+          statusCode: 500,
+        };
+      }
+      log.error(`API error: ${err.message}`);
     } else {
-      errorResponse["message"] = "Unknown API error";
       log.error(`Unknown API error: ${String(err)}`);
     }
+
     if (fallback !== null) {
       return {
         data: fallback as T,
-        error: errorResponse.message,
-        status: 500,
+        error: errorResponse,
+        status: errorResponse.statusCode,
         statusText: "Error",
       };
     }
-    console.log("errorResponse=-=====", errorResponse);
+
     return {
       data: null,
-      error: errorResponse.message,
+      error: errorResponse,
       status: errorResponse.statusCode,
+      statusText: "Error",
     };
   } finally {
     clearTimeout(timeoutId);

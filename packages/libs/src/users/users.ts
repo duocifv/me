@@ -6,11 +6,11 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { usersStore } from "./users.store";
-import { usersApi } from "./users.api";
 import { UpdateByAdminDto } from "./dto/update-by-admin.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { useShallow } from "zustand/shallow";
 import { useMemo } from "react";
+import { userService } from "./users.service";
 
 export function useUsers() {
   const { filters, setFilters } = usersStore(
@@ -24,12 +24,12 @@ export function useUsers() {
 
   const listUsers = useQuery({
     queryKey: ["users", memoizedFilters],
-    queryFn: () => usersApi.getAll(filters),
+    queryFn: () => userService.getAllUsers(filters),
     placeholderData: keepPreviousData,
   });
 
   const createUser = useMutation({
-    mutationFn: (payload: CreateUserDto) => usersApi.create(payload),
+    mutationFn: (dto: CreateUserDto) => userService.createUser(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
@@ -37,19 +37,11 @@ export function useUsers() {
 
   const updateUser = useMutation({
     mutationFn: ({ id, body }: { id: string; body: UpdateByAdminDto }) =>
-      usersApi.update(id, body),
+      userService.updateUser(id, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
-
-  // Xóa người dùng
-  // const deleteUser = useMutation({
-  //   mutationFn: (id: string) => usersApi.remove(id),
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({ queryKey: ["users"] });
-  //   },
-  // });
 
   return {
     filters,

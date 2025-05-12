@@ -14,7 +14,7 @@ import { Roles } from 'src/roles/dto/role.enum';
 import { PaginationService } from 'src/shared/pagination/pagination.service';
 import { GetUsersDto } from './dto/get-users.dto';
 import { UserStatsDto, UserStatsSchema } from './dto/user-stats.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
+import { ChangePasswordDto } from '../auth/dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateByAdminDto } from './dto/update-by-admin.dto';
 import { RoleService } from 'src/roles/roles.service';

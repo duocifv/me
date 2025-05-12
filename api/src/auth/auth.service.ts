@@ -9,7 +9,7 @@ import {
   UserWithPermissionsSchema,
 } from 'src/user/dto/user.dto';
 import { User } from 'src/user/entities/user.entity';
-import { ChangePasswordDto } from 'src/user/dto/change-password.dto';
+import { ChangePasswordDto } from 'src/auth/dto/change-password.dto';
 
 @Injectable()
 export class AuthService {

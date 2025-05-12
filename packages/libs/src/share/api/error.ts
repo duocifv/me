@@ -1,11 +1,11 @@
 export class ApiError extends Error {
-  status: number;
-  type: string;
-
-  constructor(message: string, status = 500, type = "ApiError") {
+  constructor(
+    public message: string,
+    public statusCode: number,
+    public name: string = "ApiError"
+  ) {
     super(message);
-    this.status = status;
-    this.type = type;
+    this.name = name;
   }
 }
 
@@ -14,6 +14,7 @@ export interface ErrorRespose {
   errors?: zodValidation[] | string;
   statusCode: number;
 }
+
 export type zodValidation = {
   field: string;
   message: string;

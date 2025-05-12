@@ -1,5 +1,4 @@
 "use client";
-
 import * as React from "react";
 import {
   Dialog,
@@ -26,10 +25,9 @@ type PermissionGroup = {
 };
 
 export function EditRoleDialog(role: RoleDto) {
-  const {     permissionsList,
- } = usePermissions(role.permissions);
+  const { permissionsList } = usePermissions(role.permissions);
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState(role.name);
+  const [name, setName] = useState<string>(role.name);
   const [selectAll, setSelectAll] = useState(false);
   const [perms, setPerms] = useState<PermissionGroup[]>([]);
   const prevOpen = React.useRef(false);
@@ -42,7 +40,8 @@ export function EditRoleDialog(role: RoleDto) {
       setPerms(permissionsList);
 
       const allSelected =
-        permissionsList.length > 0 && permissionsList.every((p) => p.read && p.write);
+        permissionsList.length > 0 &&
+        permissionsList.every((p) => p.read && p.write);
       setSelectAll(allSelected);
     }
     prevOpen.current = open;

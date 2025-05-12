@@ -34,14 +34,11 @@ export class TokensService {
     const iss = this.cfg.token.issuer;
     const aud = this.cfg.token.audience;
     const now = Math.floor(Date.now() / 1000);
-
-    // ✅ Gộp toàn bộ permissions từ tất cả roles
-    const permissions = user.roles
+    const roles = Array.isArray(user.roles) ? user.roles : [];
+    const permissions = roles
       .flatMap((role) => role.permissions || [])
       .map((perm) => perm.name);
-
-    // ✅ Chuẩn hóa danh sách roles để chỉ lấy name
-    const roleNames = user.roles.map((role) => role.name);
+    const roleNames = roles.map((role) => role.name);
 
     // === Access Token Payload ===
     const accessTokenPayload = {
@@ -117,7 +114,10 @@ export class TokensService {
         publicKey: this.cfg.token.publicKey,
         algorithms: ['RS256'],
       });
-    } catch {
+    } catch (err: any) {
+      if (err.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Refresh token đã hết hạn');
+      }
       throw new UnauthorizedException(
         'Refresh token không hợp lệ hoặc đã hết hạn',
       );

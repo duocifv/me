@@ -7,11 +7,9 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, UserPlus, Settings, LucideProps } from "lucide-react";
-import { EditRoleDialog } from "./EditRoleDialog";
+import { EditRoleDialog } from "./rdit-role-dialog";
 import { useRoles } from "@adapter/roles/roles";
 import { ForwardRefExoticComponent } from "react";
-import { permissionsStore } from "@adapter/permissions/permissions.store";
-import { usePermissions } from "@adapter/permissions/permissions";
 
 type Role = {
   name: "ADMIN" | "CUSTOMER" | "MANAGER" | "GUEST";
@@ -50,45 +48,45 @@ const roles: Role[] = [
 export default function RolesAndPermissionsSummary() {
   const { rolesList } = useRoles();
   return (
-    <div className="space-y-6">
-      {/* Header + add-role button */}
-      <div className="flex justify-between items-center px-4 lg:px-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Roles and Permissions</h1>
-          <p className="text-sm text-gray-500">
-            Dashboard &gt; Role Management &amp; Permission
-          </p>
+    rolesList.isSuccess && (
+      <div className="space-y-6">
+        {/* Header + add-role button */}
+        <div className="flex justify-between items-center px-4 lg:px-6">
+          <div>
+            <h1 className="text-2xl font-semibold">Roles and Permissions</h1>
+            <p className="text-sm text-gray-500">
+              Dashboard &gt; Role Management &amp; Permission
+            </p>
+          </div>
+          <Button>+ Add New Role</Button>
         </div>
-        <Button>+ Add New Role</Button>
-      </div>
 
-      {/* Carousel of role-cards */}
-      <div className="relative px-4 lg:px-6">
-        <Carousel>
-          <CarouselContent className="flex -ml-4">
-            {rolesList.data?.map((role) => {
-              const {
-                name = role.name,
-                icon: Icon = UserPlus,
-                color = "bg-gray-100 text-gray-600",
-                userCount = 0,
-              } = roles.find((r) => r.name === role.name) ?? {};
+        {/* Carousel of role-cards */}
+        <div className="relative px-4 lg:px-6">
+          <Carousel>
+            <CarouselContent className="flex -ml-4">
+              {rolesList.data?.map((role) => {
+                const {
+                  name = role.name,
+                  icon: Icon = UserPlus,
+                  color = "bg-gray-100 text-gray-600",
+                } = roles.find((r) => r.name === role.name) ?? {};
 
-              return (
-                <CarouselItem
-                  key={role.id}
-                  className="pl-4 basis-3/4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5"
-                >
-                  <Card className="border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-150">
-                    <CardContent className="space-y-3 p-4">
-                      <div className="flex justify-between items-center">
-                        <div className={`p-2 rounded ${color}`}>
-                          <Icon className="h-5 w-5" />
+                return (
+                  <CarouselItem
+                    key={role.id}
+                    className="pl-4 basis-3/4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5"
+                  >
+                    <Card className="border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-150">
+                      <CardContent className="space-y-3 p-4">
+                        <div className="flex justify-between items-center">
+                          <div className={`p-2 rounded ${color}`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <EditRoleDialog {...role} />
                         </div>
-                        <EditRoleDialog {...role} />
-                      </div>
-                      <h2 className="text-lg font-medium">{name}</h2>
-                      {/* <div className="flex items-center space-x-2">
+                        <h2 className="text-lg font-medium">{name}</h2>
+                        {/* <div className="flex items-center space-x-2">
                         {avatars.slice(0, 4).map((a) => (
                           <img
                             key={a}
@@ -100,15 +98,16 @@ export default function RolesAndPermissionsSummary() {
                           Total {userCount} users
                         </span>
                       </div> */}
-                      {/* EditRoleDialog replaces static button */}
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              );
-            })}
-          </CarouselContent>
-        </Carousel>
+                        {/* EditRoleDialog replaces static button */}
+                      </CardContent>
+                    </Card>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+          </Carousel>
+        </div>
       </div>
-    </div>
+    )
   );
 }
