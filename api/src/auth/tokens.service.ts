@@ -25,7 +25,7 @@ export class TokensService {
 
   async generateTokenPair(
     user: User,
-    ipAddress: string,
+    deviceInfo: string,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -86,7 +86,7 @@ export class TokensService {
           user,
           expiresAt,
           usageCount: 0,
-          ipAddress,
+          deviceInfo,
         }),
       );
     } catch (error) {
@@ -105,16 +105,18 @@ export class TokensService {
 
   async verifyRefreshToken(
     token: string,
-    ipAddress: string,
+    deviceInfo: string,
   ): Promise<RefreshTokenPayload> {
     let payload: RefreshTokenPayload;
-
     try {
       payload = this.jwtService.verify<RefreshTokenPayload>(token, {
         publicKey: this.cfg.token.publicKey,
         algorithms: ['RS256'],
       });
+      console.log("tokentokentoken",payload)
+      
     } catch (err: any) {
+      console.log("err ------>", err)
       if (err.name === 'TokenExpiredError') {
         throw new UnauthorizedException('Refresh token đã hết hạn');
       }
@@ -129,7 +131,7 @@ export class TokensService {
       );
     }
 
-    if (stored.ipAddress !== ipAddress) {
+    if (stored.deviceInfo !== deviceInfo) {
       throw new UnauthorizedException('Địa chỉ IP không hợp lệ');
     }
 
@@ -139,7 +141,7 @@ export class TokensService {
   async rotateRefreshToken(
     oldJti: string,
     user: User,
-    ipAddress: string,
+    deviceInfo: string,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -161,7 +163,7 @@ export class TokensService {
       throw new UnauthorizedException('Refresh token vượt giới hạn sử dụng');
     }
 
-    if (rt.ipAddress !== ipAddress) {
+    if (rt.deviceInfo !== deviceInfo) {
       throw new UnauthorizedException('Địa chỉ IP không hợp lệ');
     }
 
@@ -170,11 +172,11 @@ export class TokensService {
 
     await this.rtRepo.delete({ id: oldJti });
 
-    return this.generateTokenPair(user, ipAddress);
+    return this.generateTokenPair(user, deviceInfo);
   }
 
-  async revokeRefreshToken(token: string, ipAddress: string): Promise<void> {
-    const { jti } = await this.verifyRefreshToken(token, ipAddress);
+  async revokeRefreshToken(token: string, deviceInfo: string): Promise<void> {
+    const { jti } = await this.verifyRefreshToken(token, deviceInfo);
     await this.rtRepo.delete({ id: jti });
   }
 }

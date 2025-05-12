@@ -45,18 +45,18 @@ export class AuthService {
 
   async signIn(
     user: User,
-    ipAddress: string,
+    deviceInfo: string,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
     expiresAt: Date;
   }> {
-    return await this.tokensService.generateTokenPair(user, ipAddress);
+    return await this.tokensService.generateTokenPair(user, deviceInfo);
   }
 
   async refreshTokens(
     token: string,
-    ipAddress: string,
+    deviceInfo: string,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -64,7 +64,7 @@ export class AuthService {
   }> {
     const payload = await this.tokensService.verifyRefreshToken(
       token,
-      ipAddress,
+      deviceInfo,
     );
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
@@ -74,15 +74,15 @@ export class AuthService {
     return await this.tokensService.rotateRefreshToken(
       payload.jti,
       user,
-      ipAddress,
+      deviceInfo,
     );
   }
 
-  async logout(token?: string, ipAddress?: string): Promise<void> {
-    if (!token || !ipAddress) {
+  async logout(token?: string, deviceInfo?: string): Promise<void> {
+    if (!token || !deviceInfo) {
       throw new UnauthorizedException('Không hợp lệ');
     }
-    return this.tokensService.revokeRefreshToken(token, ipAddress);
+    return this.tokensService.revokeRefreshToken(token, deviceInfo);
   }
 
   async changePassword(id: string, dto: ChangePasswordDto) {

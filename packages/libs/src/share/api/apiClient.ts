@@ -19,7 +19,7 @@ export class ApiClient {
     this.accessToken = token;
   }
 
-  clearToken(): void {
+  private clearToken(): void {
     this.accessToken = null;
   }
 
@@ -90,9 +90,13 @@ export class ApiClient {
     );
 
     if (status === 401 && !isRetry) {
-      await this.refreshToken();
-      return this.request(method, path, opts, true);
-    }
+  try {
+    await this.refreshToken();
+    return this.request(method, path, opts, true);
+  } catch {
+    throw new ApiError("RefreshFailed", 401, "RefreshFailed");
+  }
+}
 
     if (error) {
       throw new ApiError(
@@ -137,6 +141,9 @@ export class ApiClient {
     return this.request<T>("DELETE", path, opts);
   }
 
+  async patch<T>(path: string, body: any, opts?: ApiOpts<T>) {
+  return this.request<T>("PATCH", path, { ...opts, body });
+}
   group(prefix: string) {
     return new ApiClient(prefix);
   }

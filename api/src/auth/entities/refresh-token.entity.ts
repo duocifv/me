@@ -4,12 +4,12 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
 @Entity()
 export class RefreshToken {
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid')  
   id: string;
 
   @ManyToOne(() => User, (user) => user.refreshTokens, { onDelete: 'CASCADE' })
@@ -25,7 +25,7 @@ export class RefreshToken {
   revoked: boolean;
 
   @Column({ nullable: true })
-  ipAddress: string;
+  deviceInfo: string; 
 
   @CreateDateColumn()
   createdAt: Date;

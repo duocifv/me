@@ -25,14 +25,14 @@ export function useAuth() {
   }, [getMe.isSuccess]);
 
   useEffect(() => {
-    if (!loggedIn && getMe.isError) {
+    if (getMe.isError) {
       const error = getMe.error.message;
-      if (error === "RefreshExpired") {
+      if (!loggedIn && error === "RefreshFailed") {
         setUser(null);
         setLogin(false);
       }
     }
-  }, [getMe.isError, getMe.error]);
+  }, [loggedIn, getMe.error]);
 
   const login = useMutation({
     mutationFn: (dto: SignInDto) => authService.login(dto),

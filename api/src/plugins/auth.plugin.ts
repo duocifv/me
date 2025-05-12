@@ -2,17 +2,16 @@ import fp from 'fastify-plugin';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import { UnauthorizedException } from '@nestjs/common';
+import { UAParser } from 'ua-parser-js';
 
 declare module 'fastify' {
   interface FastifyReply {
     setRefreshToken(refreshToken: string, expiresAt: Date): this;
   }
   interface FastifyRequest {
-    getRefreshToken(): string;
-  }
-  interface FastifyRequest {
     getIpAddress(): string;
     getRefreshToken(): string;
+    getDeviceInfo(): string;
   }
 }
 
@@ -25,13 +24,13 @@ export const authPlugin = fp((fastify) => {
   fastify.decorateReply(
     'setRefreshToken',
     function (this: FastifyReply, token: string, expiresAt: Date) {
-      const maxAge = expiresAt.getTime() - Date.now();
-
+     const maxAge = Math.floor((expiresAt.getTime() - Date.now()) / 1000); 
+     
       return this.setCookie('refreshToken', token, {
         httpOnly: true,
-        sameSite: 'strict',
+        sameSite: 'none',
         secure: process.env.NODE_ENV === 'production',
-        path: 'auth/token',
+        path: '/',
         maxAge,
         signed: true,
       });
@@ -53,7 +52,7 @@ export const authPlugin = fp((fastify) => {
 
   fastify.decorateReply('clearRefreshToken', function (this: FastifyReply) {
     return this.clearCookie('refreshToken', {
-      path: 'auth/token',
+      path: '/',
       signed: true,
     });
   });
@@ -70,4 +69,11 @@ export const authPlugin = fp((fastify) => {
       return ipAddress;
     },
   );
+  fastify.decorateRequest('getDeviceInfo', function (this: FastifyRequest): string {
+    const userAgent = this.headers['user-agent'] || '';
+    const parser = new UAParser();
+    parser.setUA(userAgent);
+    const result = parser.getResult();
+    return `${result.browser.name} on ${result.os.name}`;
+  });
 });

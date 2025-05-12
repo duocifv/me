@@ -41,10 +41,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: FastifyReply,
     @Req() req: FastifyRequest,
   ) {
-    const ipAddress = req.getIpAddress();
+   const deviceInfo = req.getDeviceInfo();
     const user = req.user as User;
     const { accessToken, refreshToken, expiresAt } =
-      await this.authService.signIn(user, ipAddress);
+      await this.authService.signIn(user, deviceInfo);
     res.setRefreshToken(refreshToken, expiresAt);
     return { accessToken };
   }
@@ -64,10 +64,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
     const value = req.getRefreshToken();
-    const ipAddress = req.getIpAddress();
+    const deviceInfo = req.getDeviceInfo();
 
     const { accessToken, refreshToken, expiresAt } =
-      await this.authService.refreshTokens(value, ipAddress);
+      await this.authService.refreshTokens(value, deviceInfo);
 
     res.setRefreshToken(refreshToken, expiresAt);
     return { accessToken };
@@ -77,8 +77,8 @@ export class AuthController {
   @HttpCode(204)
   async logout(@Req() req, @Res({ passthrough: true }) res) {
     const value = req.getRefreshToken();
-    const ipAddress = req.getIpAddress();
-    await this.authService.logout(value, ipAddress);
+    const deviceInfo = req.getDeviceInfo();
+    await this.authService.logout(value, deviceInfo);
     res.clearRefreshToken();
     return {
       message: 'Đã đăng xuất',

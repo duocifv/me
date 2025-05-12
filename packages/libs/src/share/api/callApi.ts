@@ -18,7 +18,7 @@ export const callApi = async <T>(
     headers = {},
     timeout = 5000,
     fallback = null,
-    credentials = "same-origin",
+    credentials = "include",
   }: ApiOpts<T> = {}
 ): Promise<{
   data: T | null;
