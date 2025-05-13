@@ -12,7 +12,7 @@ import {
   Param,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { SignInDto, SignInSchema } from './dto/sign-in.dto';
 import { Schema } from 'src/shared/decorators/dto.decorator';
 import { FastifyReply, FastifyRequest } from 'fastify';
@@ -41,11 +41,13 @@ export class AuthController {
     @Res({ passthrough: true }) res: FastifyReply,
     @Req() req: FastifyRequest,
   ) {
-   const deviceInfo = req.getDeviceInfo();
+    const deviceInfo = req.getCookieDeviceInfo();
     const user = req.user as User;
     const { accessToken, refreshToken, expiresAt } =
       await this.authService.signIn(user, deviceInfo);
-    res.setRefreshToken(refreshToken, expiresAt);
+
+    console.log('refreshToken', refreshToken);
+    res.setCookieRefreshToken(refreshToken, expiresAt);
     return { accessToken };
   }
 
@@ -63,23 +65,23 @@ export class AuthController {
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
-    const value = req.getRefreshToken();
-    const deviceInfo = req.getDeviceInfo();
+    const value = req.getCookieRefreshToken();
+    const deviceInfo = req.getCookieDeviceInfo();
 
     const { accessToken, refreshToken, expiresAt } =
       await this.authService.refreshTokens(value, deviceInfo);
 
-    res.setRefreshToken(refreshToken, expiresAt);
+    res.setCookieRefreshToken(refreshToken, expiresAt);
     return { accessToken };
   }
 
   @Delete('logout')
   @HttpCode(204)
   async logout(@Req() req, @Res({ passthrough: true }) res) {
-    const value = req.getRefreshToken();
-    const deviceInfo = req.getDeviceInfo();
+    const value = req.getCookieRefreshToken();
+    const deviceInfo = req.getCookieDeviceInfo();
     await this.authService.logout(value, deviceInfo);
-    res.clearRefreshToken();
+    res.clearCookieRefreshToken();
     return {
       message: 'Đã đăng xuất',
     };

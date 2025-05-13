@@ -27,7 +27,6 @@ export const retryFetch = async <T>(
   statusText: string;
 }> => {
   try {
-    console.log("urlurlurlurlurlurlurlurlurlurlurlurlurlurlurlurlurlurl", url);
     const res = await fetch(url, opts);
     const status = res.status;
     const statusText = res.statusText;

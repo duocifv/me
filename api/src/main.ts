@@ -16,10 +16,10 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
-  // await app.enableCors(corsConfig);
+  // await app.enableCors(corsConfig);x
+  app.enableShutdownHooks();
+  app.useGlobalFilters(new TypeOrmExceptionFilter());
   await cors(app);
-  await app.enableShutdownHooks();
-  await app.useGlobalFilters(new TypeOrmExceptionFilter());
   await app.register(authPlugin);
   await app.register(fileManagerPlugin);
   await app.register(mailerPlugin);

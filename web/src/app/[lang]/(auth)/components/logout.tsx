@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 export default function Logout() {
   const { logout } = useAuth();
 
-  // Chỉ chạy alert một lần khi logout.isSuccess lần đầu trở thành true
   useEffect(() => {
     if (logout.isSuccess) {
       alert("Đăng xuất thành công!");

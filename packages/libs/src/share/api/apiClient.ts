@@ -8,11 +8,13 @@ export class ApiClient {
   private readonly prefix: string;
 
   constructor(prefix: string = "") {
+    // Trim and remove extra slashes
     this.prefix = prefix.trim().replace(/^\/+|\/+$/g, "");
   }
 
   private fullPath(path: string): string {
-    return this.prefix ? `${this.prefix}/${path}` : path;
+    // Join prefix and path cleanly, avoiding duplicate slashes
+    return [this.prefix, path].filter(Boolean).join("/").replace(/\/+/g, "/");
   }
 
   setToken(token: string): void {
@@ -39,12 +41,11 @@ export class ApiClient {
           }>("POST", "auth/token", { credentials: "include" });
 
           if (status === 401) {
-            // refresh token invalid or expired
             this.clearToken();
             throw new ApiError("RefreshExpired", 401, "RefreshExpired");
           }
 
-          if (error || !data) {
+          if (error || !data?.accessToken) {
             this.clearToken();
             throw new ApiError(
               error?.message || "Refresh token failed",
@@ -54,9 +55,9 @@ export class ApiClient {
           }
 
           this.setToken(data.accessToken);
-        } catch (error) {
+        } catch (err: any) {
           this.clearToken();
-          throw error;
+          throw err;
         }
       })();
 
@@ -74,7 +75,7 @@ export class ApiClient {
     opts: ApiOpts<T> = {},
     isRetry = false
   ): Promise<T> {
-    const fullPath = this.fullPath(path);
+    const url = this.fullPath(path);
     const headers = {
       ...(opts.headers || {}),
       ...(this.accessToken
@@ -82,26 +83,28 @@ export class ApiClient {
         : {}),
     };
 
-    const callOpts = { ...opts, headers };
-    const { data, error, status } = await callApi<T>(
-      method,
-      fullPath,
-      callOpts
-    );
+    const callOpts: ApiOpts<T> = {
+      ...opts,
+      headers,
+    };
+
+    const { data, error, status } = await callApi<T>(method, url, callOpts);
 
     if (status === 401 && !isRetry) {
-  try {
-    await this.refreshToken();
-    return this.request(method, path, opts, true);
-  } catch {
-    throw new ApiError("RefreshFailed", 401, "RefreshFailed");
-  }
-}
+      try {
+        await this.refreshToken();
+        const cookies = document.cookie;
+        console.log("cookies------->", cookies);
+        return this.request(method, path, opts, true);
+      } catch {
+        throw new ApiError("RefreshFailed", 401, "RefreshFailed");
+      }
+    }
 
     if (error) {
       throw new ApiError(
-        error.message,
-        error.statusCode,
+        error?.message || "API error",
+        error?.statusCode || status || 500,
         status === 401 ? "Unauthorized" : "ApiError"
       );
     }
@@ -141,11 +144,22 @@ export class ApiClient {
     return this.request<T>("DELETE", path, opts);
   }
 
-  async patch<T>(path: string, body: any, opts?: ApiOpts<T>) {
-  return this.request<T>("PATCH", path, { ...opts, body });
-}
-  group(prefix: string) {
-    return new ApiClient(prefix);
+  async patch<T>(path: string, body: any, opts?: ApiOpts<T>): Promise<T> {
+    return this.request<T>("PATCH", path, { ...opts, body });
+  }
+
+  /**
+   * Creates a namespaced client that shares the current access token
+   */
+  group(prefix: string): ApiClient {
+    const namespace = prefix.trim().replace(/^\/+|\/+$/g, "");
+    const client = new ApiClient(
+      this.prefix ? `${this.prefix}/${namespace}` : namespace
+    );
+    if (this.accessToken) {
+      client.setToken(this.accessToken);
+    }
+    return client;
   }
 }
 

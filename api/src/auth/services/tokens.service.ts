@@ -5,12 +5,13 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
-import { RefreshToken } from './entities/refresh-token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
-import { RefreshTokenPayload } from './dto/sign-in.dto';
 import { User } from 'src/user/entities/user.entity';
 import { AppConfigService } from 'src/shared/config/config.service';
+import { RefreshToken } from '../entities/refresh-token.entity';
+import { RefreshTokenPayload } from '../dto/refresh-token.dto';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class TokensService {
@@ -31,8 +32,13 @@ export class TokensService {
     refreshToken: string;
     expiresAt: Date;
   }> {
-    const iss = this.cfg.token.issuer;
-    const aud = this.cfg.token.audience;
+    const {
+      issuer: iss,
+      audience: aud,
+      accessToken,
+      refreshToken,
+      privateKey,
+    } = this.cfg.token;
     const now = Math.floor(Date.now() / 1000);
     const roles = Array.isArray(user.roles) ? user.roles : [];
     const permissions = roles
@@ -40,8 +46,8 @@ export class TokensService {
       .map((perm) => perm.name);
     const roleNames = roles.map((role) => role.name);
 
-    // === Access Token Payload ===
-    const accessTokenPayload = {
+    // === Access Token ===
+    const accessTokenPayload: JwtPayload = {
       sub: user.id,
       email: user.email,
       roles: roleNames,
@@ -52,16 +58,19 @@ export class TokensService {
       nbf: now,
     };
 
-    const accessToken = await this.jwtService.signAsync(accessTokenPayload, {
-      privateKey: this.cfg.token.privateKey,
-      algorithm: 'RS256',
-      expiresIn: this.cfg.token.accessToken.expires,
-    });
+    const signedAccessToken = await this.jwtService.signAsync(
+      accessTokenPayload,
+      {
+        privateKey,
+        algorithm: 'RS256',
+        expiresIn: accessToken.expires,
+      },
+    );
 
-    // === Refresh Token Payload ===
+    // === Refresh Token ===
     const jti = randomUUID();
 
-    const refreshTokenPayload = {
+    const refreshTokenPayload: RefreshTokenPayload = {
       sub: user.id,
       jti,
       iss,
@@ -70,14 +79,15 @@ export class TokensService {
       nbf: now,
     };
 
-    const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, {
-      privateKey: this.cfg.token.privateKey,
-      algorithm: 'RS256',
-      expiresIn: this.cfg.token.refreshToken.expires,
-    });
-
-    // === Lưu vào DB ===
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const signedRefreshToken = await this.jwtService.signAsync(
+      refreshTokenPayload,
+      {
+        privateKey,
+        algorithm: 'RS256',
+        expiresIn: refreshToken.expires,
+      },
+    );
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 ngày
 
     try {
       await this.rtRepo.save(
@@ -97,8 +107,8 @@ export class TokensService {
     }
 
     return {
-      accessToken,
-      refreshToken,
+      accessToken: signedAccessToken,
+      refreshToken: signedRefreshToken,
       expiresAt,
     };
   }
@@ -109,22 +119,26 @@ export class TokensService {
   ): Promise<RefreshTokenPayload> {
     let payload: RefreshTokenPayload;
     try {
-      payload = this.jwtService.verify<RefreshTokenPayload>(token, {
+      payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(token, {
         publicKey: this.cfg.token.publicKey,
         algorithms: ['RS256'],
       });
-      console.log("tokentokentoken",payload)
-      
     } catch (err: any) {
-      console.log("err ------>", err)
       if (err.name === 'TokenExpiredError') {
         throw new UnauthorizedException('Refresh token đã hết hạn');
       }
+
       throw new UnauthorizedException(
         'Refresh token không hợp lệ hoặc đã hết hạn',
       );
     }
+
+    if (!payload?.jti) {
+      throw new UnauthorizedException('Refresh token không hợp lệ');
+    }
+
     const stored = await this.rtRepo.findOneBy({ id: payload.jti });
+
     if (!stored) {
       throw new UnauthorizedException(
         'Refresh token không tồn tại hoặc đã bị thu hồi',
@@ -132,7 +146,7 @@ export class TokensService {
     }
 
     if (stored.deviceInfo !== deviceInfo) {
-      throw new UnauthorizedException('Địa chỉ IP không hợp lệ');
+      throw new UnauthorizedException('Thiết bị không hợp lệ');
     }
 
     return payload;

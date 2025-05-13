@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthService } from './auth.service';
-import { TokensService } from './tokens.service';
+import { AuthService } from './services/auth.service';
+import { TokensService } from './services/tokens.service';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { AuthController } from './auth.controller';
 import { UsersModule } from 'src/user/users.module';
@@ -22,7 +22,11 @@ import { AppConfigService } from 'src/shared/config/config.service';
       inject: [AppConfigService],
       useFactory: (cfg: AppConfigService) => ({
         privateKey: cfg.jwtConfig.privateKey,
+        publicKey: cfg.jwtConfig.publicKey,
         signOptions: cfg.jwtConfig.signOptions,
+        verifyOptions: {
+          algorithms: ['RS256'],
+        },
       }),
     }),
   ],

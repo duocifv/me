@@ -12,7 +12,9 @@ class AuthService {
   private authApi = api.group("auth");
 
   async login(dto: SignInDto): Promise<LoginDto> {
-    const res = await this.authApi.post<LoginDto>("login", dto);
+    const res = await this.authApi.post<LoginDto>("login", dto, {
+      credentials: "include",
+    });
     if (res.accessToken) {
       this.authApi.setToken(res.accessToken);
     }
@@ -31,12 +33,14 @@ class AuthService {
     return this.authApi.post<void>("change-password", { data });
   }
 
-  async getMe(): Promise<MeDto> {
+  async getMe(): Promise<MeDto | null> {
     return this.authApi.get<MeDto>("me");
   }
 
   async logout(): Promise<void> {
-    return this.authApi.delete<void>("logout", { credentials: "include" });
+    return await this.authApi.delete<void>("logout", {
+      credentials: "include",
+    });
   }
 }
 

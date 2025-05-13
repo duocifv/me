@@ -3,11 +3,7 @@ import { TokensService } from './tokens.service';
 import { UsersService } from 'src/user/users.service';
 import bcrypt from 'bcryptjs';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import {
-  UserDto,
-  UserSchema,
-  UserWithPermissionsSchema,
-} from 'src/user/dto/user.dto';
+import { UserDto, UserWithPermissionsSchema } from 'src/user/dto/user.dto';
 import { User } from 'src/user/entities/user.entity';
 import { ChangePasswordDto } from 'src/auth/dto/change-password.dto';
 
@@ -66,6 +62,7 @@ export class AuthService {
       token,
       deviceInfo,
     );
+    console.log('payload', payload, token, deviceInfo);
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException('Người dùng không tồn tại');

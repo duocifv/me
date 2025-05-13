@@ -13,13 +13,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new Error(`Public key not found at path: ${publicKeyPath}`);
     }
     const publicKey = fs.readFileSync(publicKeyPath, 'utf8');
+    const issuer = process.env.JWT_ISSUER;
+    const audience = process.env.JWT_AUDIENCE;
+
+    if (!issuer || !audience) {
+      throw new Error('Missing JWT issuer or audience environment variables');
+    }
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: publicKey,
-      issuer: process.env.JWT_ISSUER!,
-      audience: process.env.JWT_AUDIENCE!,
+      issuer,
+      audience,
       algorithms: ['RS256'],
     });
   }
