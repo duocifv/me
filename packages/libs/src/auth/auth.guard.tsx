@@ -36,13 +36,36 @@ export function AuthGuard({
     }
   }, [user, isSuccess, data, loggedIn]);
 
-  if (loggedIn === null && hydrated === false) {
-    return null;
-  }
+  // if (loggedIn === null && hydrated === false) {
+  //   setTimeout(()=>{
 
-  if (loggedIn) {
+  //   })
+  // }
+   const [hydrationDone, setHydrationDone] = useState(false);
+
+   useEffect(() => {
+    (async () => {
+      await waitForHydration();
+      setHydrationDone(true);
+    })();
+  }, []);
+
+  // if (!hydrationDone) {
+  //   return <p>Đang tải…</p>;
+  // }
+
+  if (hydrationDone && loggedIn) {
     return <>{children}</>;
   }
 
-  return <>{fallback}</>;
+  return hydrationDone && <>{fallback}</>;
+}
+
+
+
+export async function waitForHydration(): Promise<void> {
+  // nếu chưa hydrate thì gọi rehydrate()
+  if (!useAuthStore.persist.hasHydrated()) {
+    await useAuthStore.persist.rehydrate();
+  }
 }
