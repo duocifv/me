@@ -1,5 +1,5 @@
 "use client";
-
+import _ from "lodash";
 import { useUsers } from "@adapter/users/users";
 import { useUsersStore } from "@adapter/users/users.store";
 import { useEffect } from "react";
@@ -12,6 +12,9 @@ export function UsersLoader() {
   useEffect(() => {
     if (isSuccess && data) {
       setData(data);
+      //  if (!_.isEqual(prevData, data)) {
+        
+      // }
     }
   }, [isSuccess]);
   if (isLoading) {
