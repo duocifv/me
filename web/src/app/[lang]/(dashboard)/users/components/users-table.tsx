@@ -46,7 +46,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -66,10 +65,13 @@ import {
 } from "@/components/ui/table";
 import { UserDto } from "@adapter/users/dto/user.dto";
 import { useUsers } from "@adapter/users/users";
+import { IUserListResponseSchema } from "@adapter/users/dto/user-list.dto";
+import { useUsersStore } from "@adapter/users/users.store";
+// import { useUsersStore } from "@adapter/users/users.store";
 
-const UsersFilter = dynamic(() => import("./users-filter"));
-const TableCellViewer = dynamic(() => import("./users-table-viewer"));
-const DraggableRow = dynamic(() => import("./draggable-row"));
+// const UsersFilter = dynamic(() => import("./users-filter"));
+// const TableCellViewer = dynamic(() => import("./users-table-viewer"));
+// const DraggableRow = dynamic(() => import("./draggable-row"));
 
 const columns: ColumnDef<UserDto>[] = [
   {
@@ -102,7 +104,8 @@ const columns: ColumnDef<UserDto>[] = [
     accessorKey: "USER",
     header: "USER",
     cell: ({ row }) => {
-      return <TableCellViewer item={row.original} />;
+      // return <TableCellViewer item={row.original} />;
+      return <div>TableCellViewer</div>;
     },
     enableHiding: false,
   },
@@ -189,11 +192,18 @@ const columns: ColumnDef<UserDto>[] = [
   },
 ];
 
+let render = 0;
+
 export default function DataTableUsers() {
-  const { listUsers, filters, setFilters } = useUsers();
-  const currentPage = listUsers.data?.meta.currentPage ?? 1;
-  const totalPages = listUsers.data?.meta.totalPages ?? 1;
-  const meta = listUsers?.data?.meta;
+  const filters = useUsersStore((s) => s.filters);
+  const users = useUsersStore((s) => s.data);
+  
+  const isLoading = false;
+  const currentPage = users?.meta.currentPage ?? 1;
+  const totalPages = users?.meta.totalPages ?? 1;
+  const meta = users?.meta;
+  render++;
+  console.log("component  re-render", render, users);
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -209,12 +219,12 @@ export default function DataTableUsers() {
     useSensor(KeyboardSensor, {})
   );
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => listUsers.data?.items.map(({ id }) => id) || [],
-    [listUsers.data]
+    () => users?.items.map(({ id }) => id) || [],
+    [users]
   );
 
   const table = useReactTable({
-    data: listUsers.data?.items ?? [],
+    data: users?.items ?? [],
     columns,
     state: {
       sorting,
@@ -238,7 +248,7 @@ export default function DataTableUsers() {
 
   return (
     <div className="flex w-full flex-col justify-start gap-6 px-4 lg:px-6">
-      <UsersFilter table={table} />
+      {/* <UsersFilter /> */}
       <div className="overflow-hidden rounded-lg border ">
         <DndContext
           collisionDetection={closestCenter}
@@ -266,7 +276,7 @@ export default function DataTableUsers() {
               ))}
             </TableHeader>
             <TableBody className="**:data-[slot=table-cell]:first:w-8">
-              {listUsers.isLoading ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
@@ -281,7 +291,8 @@ export default function DataTableUsers() {
                   strategy={verticalListSortingStrategy}
                 >
                   {table.getRowModel().rows.map((row) => (
-                    <DraggableRow key={row.id} row={row} />
+                    // <DraggableRow key={row.id} row={row} />
+                    <div key={row.id}>DraggableRow</div>
                   ))}
                 </SortableContext>
               ) : (
@@ -300,8 +311,7 @@ export default function DataTableUsers() {
       </div>
       <div className="flex items-center justify-between px-4">
         <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-          {listUsers.data?.meta.itemCount} of {listUsers.data?.meta.totalItems}{" "}
-          row(s) selected.
+          {users?.meta.itemCount} of {users?.meta.totalItems} row(s) selected.
         </div>
         <div className="flex w-full items-center gap-8 lg:w-fit">
           <div className="hidden items-center gap-2 lg:flex">
@@ -311,7 +321,7 @@ export default function DataTableUsers() {
             <Select
               value={`${filters.limit}`}
               onValueChange={(value) => {
-                setFilters({ limit: Number(value) });
+                // setFilters({ limit: Number(value) });
               }}
             >
               <SelectTrigger className="w-20" id="rows-per-page">
@@ -333,7 +343,7 @@ export default function DataTableUsers() {
             <Button
               variant="outline"
               className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => setFilters({ page: 1 })}
+              // onClick={() => setFilters({ page: 1 })}
               disabled={currentPage <= 1}
             >
               <span className="sr-only">Go to first page</span>
@@ -343,7 +353,7 @@ export default function DataTableUsers() {
               variant="outline"
               className="size-8"
               size="icon"
-              onClick={() => setFilters({ page: (meta?.currentPage ?? 1) - 1 })}
+              // onClick={() => setFilters({ page: (meta?.currentPage ?? 1) - 1 })}
               disabled={currentPage <= 1}
             >
               <span className="sr-only">Go to previous page</span>
@@ -353,7 +363,7 @@ export default function DataTableUsers() {
               variant="outline"
               className="size-8"
               size="icon"
-              onClick={() => setFilters({ page: currentPage + 1 })}
+              // onClick={() => setFilters({ page: currentPage + 1 })}
               disabled={currentPage >= totalPages}
             >
               <span className="sr-only">Go to next page</span>
@@ -363,7 +373,7 @@ export default function DataTableUsers() {
               variant="outline"
               className="hidden size-8 lg:flex"
               size="icon"
-              onClick={() => setFilters({ page: totalPages })}
+              // onClick={() => setFilters({ page: totalPages })}
               disabled={currentPage >= totalPages}
             >
               <span className="sr-only">Go to last page</span>

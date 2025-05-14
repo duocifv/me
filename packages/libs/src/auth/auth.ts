@@ -1,18 +1,16 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SignInDto } from "./dto/sign-in.dto";
-import { useAuthStore } from "./auth.store";
 import { authService } from "./auth.service";
+import { useAuthStore } from "./auth.store";
 
 export function useAuth() {
   const queryClient = useQueryClient();
-  const setLogin = useAuthStore((s) => s.setLogin);
-  const setUser = useAuthStore((s) => s.setUser);
 
   const login = useMutation({
     mutationFn: (dto: SignInDto) => authService.login(dto),
     onSuccess: () => {
-      setLogin(true);
+      useAuthStore.setState({ loggedIn: true });
     },
   });
 
@@ -26,8 +24,7 @@ export function useAuth() {
   const logout = useMutation({
     mutationFn: () => authService.logout(),
     onSuccess: () => {
-      setLogin(false);
-      setUser(null);
+      useAuthStore.setState({ loggedIn: false, user: null });
     },
   });
 
@@ -43,5 +40,8 @@ export function useAuth() {
     register,
     logout,
     changePassword,
+    // state accessors (không dùng cho UI reactivity)
+    // getLogin: () => useAuthStore.getState().loggedIn,
+    // getUser: () => useAuthStore.getState().user,
   };
 }

@@ -58,7 +58,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Logout from "../../(auth)/components/logout";
+import Logout from "./logout";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
@@ -260,9 +260,7 @@ export function NavUser() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction>
-                    <Logout />
-                  </AlertDialogAction>
+                  <Logout />
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

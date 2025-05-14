@@ -41,7 +41,6 @@ export default function TableCellViewer({ item }: { item: UserDto }) {
     if (body && Object.keys(body).length > 0) {
       body = valueRef.current;
     } else {
-      console.log("body", body);
       return;
     }
 

@@ -25,6 +25,7 @@ const UsersAddDialog = dynamic(() => import("./users-add"));
 
 export default function UsersFilter({ table }: { table: Table<UserDto> }) {
   const { filters, setFilters } = useUsers();
+
   const handleSearch = useDebounce((search: string) => {
     setFilters({ search });
   });

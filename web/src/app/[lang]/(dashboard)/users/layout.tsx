@@ -1,6 +1,7 @@
 import { SiteHeader } from "@/components/site-header";
 import type { Metadata } from "next";
 import { ReactNode } from "react";
+import { UsersLoader } from "./components/users-loader";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -14,6 +15,7 @@ export default async function UserLayout({
 }>) {
   return (
     <>
+      
       <SiteHeader value="Users" />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">

@@ -2,7 +2,7 @@ import type { HttpMethod, ApiOpts } from "./types";
 import { makeUrl } from "./buildUrl";
 import { log } from "./logger";
 import { retryFetch } from "./retryFetch";
-import { ErrorRespose, zodValidation } from "./error";
+import { ErrorRespose, zodValidation } from "./errorHandler";
 
 /**
  * Gọi API với timeout và retry, trả về kết quả theo cấu trúc:

@@ -1,4 +1,4 @@
-import { ErrorRespose } from "./error";
+import { ErrorRespose } from "./errorHandler";
 import { log } from "./logger";
 
 const delayRetry = (attempt: number, baseDelay: number) =>

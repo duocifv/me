@@ -1,6 +1,6 @@
 import type { HttpMethod, ApiOpts } from "./types";
 import { callApi } from "./callApi";
-import { ApiError } from "./error";
+import { ApiError, errorHandler } from "./errorHandler";
 
 export class ApiClient {
   private accessToken: string | null = null;
@@ -42,7 +42,9 @@ export class ApiClient {
 
           if (status === 401) {
             this.clearToken();
-            throw new ApiError("RefreshExpired", 401, "RefreshExpired");
+            const err = new ApiError("RefreshExpired", 401, "RefreshExpired");
+            errorHandler.handle(err);
+            return;
           }
 
           if (error || !data?.accessToken) {
@@ -57,7 +59,9 @@ export class ApiClient {
           this.setToken(data.accessToken);
         } catch (err: any) {
           this.clearToken();
-          throw err;
+          if (!(err instanceof ApiError && err.name === "RefreshExpired")) {
+            throw err;
+          }
         }
       })();
 
@@ -93,11 +97,15 @@ export class ApiClient {
     if (status === 401 && !isRetry) {
       try {
         await this.refreshToken();
-        const cookies = document.cookie;
-        console.log("cookies------->", cookies);
         return this.request(method, path, opts, true);
-      } catch {
-        throw new ApiError("RefreshFailed", 401, "RefreshFailed");
+      } catch (err) {
+        if (err instanceof ApiError && err.name === "RefreshExpired") {
+          return Promise.reject(undefined as unknown as T);
+        }
+        if (errorHandler.handle(err)) {
+          return Promise.reject(undefined as unknown as T);
+        }
+        throw err;
       }
     }
 

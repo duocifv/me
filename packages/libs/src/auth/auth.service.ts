@@ -1,5 +1,5 @@
 import { api } from "../share/api/apiClient"; // Đảm bảo import ApiClient đã được cấu hình
-import { ApiError } from "../share/api/error";
+import { ApiError } from "../share/api/errorHandler";
 import { UserDto } from "../users/dto/user.dto";
 import {
   ChangePasswordDto,
