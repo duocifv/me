@@ -15,16 +15,15 @@ class UserService {
 
   async getAllUsers(query: unknown = {}): Promise<IUserListResponse> {
     const params = GetUsersSchema.parse(query);
-    const data = await this.usersApi.get<IUserListResponse>("", { params });
-    return IUserListResponseSchema.parse(data);
+    return await this.usersApi.get<IUserListResponse>("", { params });
   }
 
   async getUserById(id: string): Promise<UserDto> {
     return this.usersApi.get<UserDto>(`${id}`);
   }
 
-  async createUser(payload: CreateUserDto): Promise<UserDto> {
-    return this.usersApi.post<UserDto>("", payload);
+  async createUser(dto: CreateUserDto): Promise<UserDto> {
+    return this.usersApi.post<UserDto>("", dto);
   }
 
   async updateUser(id: string, dto: UpdateByAdminDto): Promise<UserDto> {

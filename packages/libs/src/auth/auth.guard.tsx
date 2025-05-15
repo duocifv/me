@@ -14,17 +14,8 @@ export function AuthGuard({
   fallback: React.ReactNode;
 }) {
   const loggedIn = useAuthStore((s) => s.loggedIn);
-  const user = useAuthStore((s) => s.user);
   const [hydrationDone, setHydrationDone] = useState(false);
   const setLogin = useAuthStore((s) => s.setLogin);
-  const setUser = useAuthStore((s) => s.setUser);
-
-  const { data, isSuccess, isError } = useQuery({
-    queryKey: ["me"],
-    queryFn: () => authService.getMe(),
-    enabled: loggedIn === true && !user,
-    retry: false,
-  });
 
   useEffect(() => {
     (async () => {
@@ -46,18 +37,28 @@ export function AuthGuard({
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-    if (isSuccess && data) {
-      setUser(data);
-    }
-    if (isError) {
-      setUser(null);
-    }
-  }, [user, data, isSuccess, isError]);
-
   if (hydrationDone && loggedIn) {
-    return <>{children}</>;
+    return <AuthenticatedApp>{children}</AuthenticatedApp>;
   }
 
   return hydrationDone && <>{fallback}</>;
+}
+
+function AuthenticatedApp({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+
+  const { data, isSuccess, isError } = useQuery({
+    queryKey: ["me", user?.email],
+    queryFn: () => authService.getMe(),
+    enabled: user === null,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (isSuccess && data) setUser(data);
+    if (isError) setUser(null);
+  }, [isSuccess, isError, data, setUser]);
+
+  return <>{children}</>;
 }

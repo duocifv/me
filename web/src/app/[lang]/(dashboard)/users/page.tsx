@@ -7,8 +7,8 @@ const DataTableUsers = dynamic(() => import("./components/users-table"));
 export default async function PageUsers() {
   return (
     <Suspense>
-      <UsersLoader />
-      {/* <UsersSummary /> */}
+      <UsersLoader />;
+      <UsersSummary />
       <DataTableUsers />
     </Suspense>
   );

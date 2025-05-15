@@ -1,5 +1,5 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useUsers } from "./users";
+import { useUsers } from "./users.api.";
 import { createTanstackProvider } from "../share/provider/testTanstack";
 import { usersApi } from "./users.service";
 import { UpdateByAdminDto } from "./dto/update-by-admin.dto";

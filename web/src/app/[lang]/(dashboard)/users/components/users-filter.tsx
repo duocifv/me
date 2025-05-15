@@ -14,41 +14,48 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useUsers } from "@adapter/users/users";
 import { Roles } from "@adapter/roles/dto/roles.enum";
 import { UserStatus } from "@adapter/users/dto/user-status.enum";
 import { useDebounce } from "@adapter/share/hooks/use-debounce";
 import { Table } from "@tanstack/react-table";
 import { UserDto } from "@adapter/users/dto/user.dto";
 import dynamic from "next/dynamic";
-const UsersAddDialog = dynamic(() => import("./users-add"));
+import { useUsersStore } from "@adapter/users/users.store";
+import { GetUsersDto, GetUsersSchema } from "@adapter/users/dto/get-users.dto";
+import { UserSearch } from "./user-search";
+
+const UsersAddDialog = dynamic(() => import("./users-add/users-add"));
 
 export default function UsersFilter({ table }: { table: Table<UserDto> }) {
-  const { filters, setFilters } = useUsers();
+  const filters = useUsersStore((s) => s.filters);
+  const setFilters = useUsersStore((s) => s.setFilters);
 
-  const handleSearch = useDebounce((search: string) => {
-    setFilters({ search });
-  });
-  const handleSortRoles = useDebounce((value: string) => {
-    setFilters({ roles: value !== "all" ? [value as Roles] : [] });
-  });
-  const handleSortStatus = useDebounce((value: string) => {
-    setFilters({ status: value !== "all" ? [value as UserStatus] : [] });
-  });
+  const handleFilters = useDebounce((partial: Partial<GetUsersDto>) => {
+    const merged = { ...filters, ...partial };
+    const parsed = GetUsersSchema.safeParse(merged);
+    if (parsed.success) {
+      setFilters(parsed.data);
+    } else {
+      console.warn("Invalid filter:", parsed.error.errors);
+    }
+  }, 300);
+
+  const onRoleChange = (val: string) => {
+    handleFilters({ roles: val === "all" ? [] : [val as Roles] });
+  };
+
+  const onStatusChange = (val: string) => {
+    handleFilters({ status: val === "all" ? [] : [val as UserStatus] });
+  };
 
   return (
     <div className="flex items-center justify-between ">
-      <Input
-        placeholder="Filter emails..."
-        defaultValue={""}
-        onChange={({ target }) => handleSearch(target.value)}
-        className="max-w-sm"
-      />
+      <UserSearch />
       <div className="flex items-center gap-2">
         {/* Role Filter */}
         <Select
           value={filters.roles?.[0] ?? "all"}
-          onValueChange={(value) => handleSortRoles(value)}
+          onValueChange={(value) => onRoleChange(value)}
         >
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Filter Role" />
@@ -66,7 +73,7 @@ export default function UsersFilter({ table }: { table: Table<UserDto> }) {
         {/* Status Filter */}
         <Select
           value={filters.status?.[0] ?? "all"}
-          onValueChange={(value) => handleSortStatus(value)}
+          onValueChange={(value) => onStatusChange(value)}
         >
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Filter Status" />

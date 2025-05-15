@@ -31,7 +31,7 @@ export const UserSchema = UserFullSchema.omit({
   deletedAt: true,
   lastLoginAt: true,
 }).extend({
-  roles: z.array(RolePublicSchema),
+  roles: z.array(RolePublicSchema).optional(),
 });
 
 export type UserPrivateDto = z.infer<typeof UserFullSchema>;

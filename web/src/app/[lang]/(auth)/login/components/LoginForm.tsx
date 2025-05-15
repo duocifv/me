@@ -1,39 +1,17 @@
 "use client";
-import { CheckCircle, XCircle } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormWrapper } from "@adapter/share/components/FormWrapper";
-import { toast } from "sonner";
-import { useAuth } from "@adapter/auth/auth";
 import { SignInDto, SignInSchema } from "@adapter/auth/dto/sign-in.dto";
 import { Card, CardContent } from "@/components/ui/card";
+import { LoginSubmit } from "./submit/login-submit";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const { login } = useAuth();
-
-  const handleLogin = (value: SignInDto) => {
-    login.mutate(value, {
-      onSuccess: () => {
-        toast.success("Đăng nhập thành công", {
-          duration: 5000,
-          icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-        });
-      },
-      onError: (err) => {
-        console.log("err", err);
-        toast.error(err.message, {
-          duration: 5000,
-          icon: <XCircle className="h-5 w-5 text-red-500" />,
-        });
-      },
-    });
-  };
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden">
@@ -49,9 +27,8 @@ export function LoginForm({
               <FormWrapper<SignInDto>
                 schema={SignInSchema}
                 defaultValues={{ email: "", password: "" }}
-                onSubmit={handleLogin}
               >
-                {({ register, formState }) => (
+                {(from) => (
                   <>
                     <div className="grid gap-2">
                       <Label htmlFor="email">Email</Label>
@@ -60,11 +37,11 @@ export function LoginForm({
                           id="email"
                           type="email"
                           placeholder="you@example.com"
-                          {...register("email")}
+                          {...from.register("email")}
                         />
-                        {formState.errors.email && (
+                        {from.formState.errors.email && (
                           <span className="text-red-500 top-[115%] text-sm leading-none absolute">
-                            {formState.errors.email.message}
+                            {from.formState.errors.email.message}
                           </span>
                         )}
                       </div>
@@ -85,21 +62,15 @@ export function LoginForm({
                           id="password"
                           type="password"
                           placeholder="••••••••"
-                          {...register("password")}
+                          {...from.register("password")}
                         />
-                        {formState.errors.password && (
+                        {from.formState.errors.password && (
                           <span className="text-red-500 top-[115%] text-sm leading-none absolute">
-                            {formState.errors.password.message}
+                            {from.formState.errors.password.message}
                           </span>
                         )}
                       </div>
-                      <Button
-                        type="submit"
-                        className="w-full mt-6"
-                        formNoValidate
-                      >
-                        Login
-                      </Button>
+                      <LoginSubmit {...from} />
                       <div className="relative my-4 text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                         <span className="relative z-10 bg-background px-2 text-muted-foreground">
                           Or continue with

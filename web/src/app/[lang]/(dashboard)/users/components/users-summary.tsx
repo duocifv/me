@@ -8,16 +8,10 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, UserPlus, UserCheck, UserLock } from "lucide-react";
-import { useUsers } from "@adapter/users/users";
+import { useUsersStore } from "@adapter/users/users.store";
 
 export default function UsersSummary() {
-  const { listUsers } = useUsers();
-  const stats = listUsers.data?.stats ?? {
-    totalUsers: 0,
-    activeUsers: 0,
-    newUsers: 0,
-    conversionRate: 0,
-  };
+  const {stats } = useUsersStore((s) => s.data);
   const metrics = [
     {
       title: "Total Users",

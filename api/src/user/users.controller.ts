@@ -15,15 +15,14 @@ import { Roles } from 'src/roles/dto/role.enum';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUsersDto, GetUsersSchema } from './dto/get-users.dto';
 import { Schema } from 'src/shared/decorators/dto.decorator';
-import {
-  UpdateProfileDto,
-  UpdateProfileSchema,
-} from './dto/update-profile.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import {
   UpdateByAdminDto,
   UpdateByAdminSchema,
 } from './dto/update-by-admin.dto';
 import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
+import { ZodBody } from 'src/shared/decorators/zod-body.decorator';
+import { ZodQuery } from 'src/shared/decorators/zod-query.decorator';
 
 @ApiTags('Users - Khu vực ADMIN mới được truy cập')
 @RolesAllowed(Roles.ADMIN)
@@ -34,8 +33,8 @@ export class UsersController {
   @Get()
   // @Permissions('create:posts')
   // @Scopes('write:posts')
-  @Schema(GetUsersSchema, 'query')
-  async findAll(@Query() dto: GetUsersDto) {
+  async findAll(@ZodQuery(GetUsersSchema) dto: GetUsersDto) {
+    console.log('findAll 1', dto);
     const paginate = await this.usersService.getUsers(dto);
     const stats = await this.usersService.getUsersWithStats();
     return {
@@ -50,16 +49,15 @@ export class UsersController {
   }
 
   @Put(':id')
-  @Schema(UpdateByAdminSchema)
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: UpdateByAdminDto,
+    @ZodBody(UpdateByAdminSchema) dto: UpdateByAdminDto,
   ) {
+    console.log('dtodtodtodto 1', dto);
     return await this.usersService.update(id, dto);
   }
 
   @Put(':id/profile')
-  @Schema(UpdateProfileSchema)
   async updateProfile(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateProfileDto,
@@ -80,9 +78,8 @@ export class UsersController {
   // }
 
   @Post()
-  @Schema(CreateUserSchema)
   @HttpCode(201)
-  register(@Body() dto: CreateUserDto) {
+  register(@ZodBody(CreateUserSchema) dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
 }

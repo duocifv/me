@@ -4,44 +4,45 @@ import { SignInDto } from "./dto/sign-in.dto";
 import { authService } from "./auth.service";
 import { useAuthStore } from "./auth.store";
 
-export function useAuth() {
-  const queryClient = useQueryClient();
-
-  const login = useMutation({
+export function useAuthLoginMutation() {
+  return useMutation({
     mutationFn: (dto: SignInDto) => authService.login(dto),
     onSuccess: () => {
       useAuthStore.setState({ loggedIn: true });
     },
   });
+}
 
-  const register = useMutation({
+export function useAuthRegisterMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: (dto: SignInDto) => authService.register(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["register"] });
     },
   });
-
-  const logout = useMutation({
+}
+export function useAuthLogoutMutation() {
+  const queryClient = useQueryClient();
+  const setLogout = useAuthStore((s) => s.setLogout);
+  return useMutation({
     mutationFn: () => authService.logout(),
-    onSuccess: () => {
-      useAuthStore.setState({ loggedIn: false, user: null });
+    onSuccess: async () => {
+      await queryClient.cancelQueries();
+      queryClient.removeQueries();
+      queryClient.getQueryCache().clear();
+      queryClient.getMutationCache().clear();
+      setLogout();
     },
   });
+}
 
-  const changePassword = useMutation({
+export function useAuthChangePasswordMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: (dto: SignInDto) => authService.changePassword(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["register"] });
     },
   });
-
-  return {
-    login,
-    register,
-    logout,
-    changePassword,
-    // state accessors (không dùng cho UI reactivity)
-    // getLogin: () => useAuthStore.getState().loggedIn,
-    // getUser: () => useAuthStore.getState().user,
-  };
 }

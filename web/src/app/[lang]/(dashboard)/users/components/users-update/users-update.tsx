@@ -45,7 +45,7 @@ export default function UsersUpdate({ item, valueRef }: Props) {
         <Select
           defaultValue={item.status}
           onValueChange={(status: UserStatus) => {
-            valueRef.current.status = status;
+            valueRef.current.status = [status];
           }}
         >
           <SelectTrigger id="type" className="w-full">

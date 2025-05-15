@@ -1,10 +1,11 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { devtools } from "zustand/middleware";
 
 import { MeDto } from "./dto/login.dto";
+import { api } from "../share/api/apiClient";
 
 type AuthState = {
   loggedIn: boolean | null;
@@ -25,16 +26,24 @@ export const useAuthStore = create<AuthState>()(
         hydrated: false,
         setLogin: (loggedIn) => set({ loggedIn }),
         setUser: (user) => set({ user }),
-        setLogout: () => set({ loggedIn: false, user: null }),
+        setLogout: () => {
+          api.clearToken();
+          set({ loggedIn: false, user: null });
+        },
         setHydrated: (v) => set({ hydrated: v }),
       }),
       {
         name: "auth-store",
         skipHydration: true,
-        partialize: (state) => ({ loggedIn: state.loggedIn }),
+        partialize: (state) => ({
+          loggedIn: state.loggedIn,
+        }),
         onRehydrateStorage: () => (state) => {
-          state?.setHydrated(true);
+          if (state) {
+            state.setHydrated(true);
+          }
         },
+        storage: createJSONStorage(() => localStorage),
       }
     ),
     { name: "AuthStore" }

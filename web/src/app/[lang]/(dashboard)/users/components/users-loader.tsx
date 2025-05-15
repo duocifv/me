@@ -1,27 +1,25 @@
 "use client";
-import _ from "lodash";
-import { useUsers } from "@adapter/users/users";
-import { useUsersStore } from "@adapter/users/users.store";
+import { useUsersQuery } from "@adapter/users/users.api.";
 import { useEffect } from "react";
-import { useShallow } from "zustand/react/shallow";
+import isEqual from "lodash/isEqual";
+import { useUsersStore } from "@adapter/users/users.store";
 
 export function UsersLoader() {
-  const { listUsers } = useUsers();
-  const setData = useUsersStore(useShallow((s) => s.setData));
-  const { isLoading, error, isSuccess, data } = listUsers;
+  const { isLoading, error, isSuccess, data } = useUsersQuery();
   useEffect(() => {
     if (isSuccess && data) {
-      setData(data);
-      //  if (!_.isEqual(prevData, data)) {
-        
-      // }
+      const storeData = useUsersStore.getState().data;
+      if (!isEqual(storeData, data)) {
+        useUsersStore.setState({ data });
+      }
     }
-  }, [isSuccess]);
+  }, [data, isSuccess]);
+
   if (isLoading) {
-    return <>Loading....</>;
+    return <>Loading…</>;
   }
   if (error) {
-    return <>Error....{error.message}</>;
+    return <>Error… {error.message}</>;
   }
 
   return null;

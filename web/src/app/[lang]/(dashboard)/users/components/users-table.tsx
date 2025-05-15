@@ -40,7 +40,6 @@ import {
   ChevronsLeftIcon,
   ChevronsRightIcon,
   Clock,
-  Loader2,
   XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -64,14 +63,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UserDto } from "@adapter/users/dto/user.dto";
-import { useUsers } from "@adapter/users/users";
-import { IUserListResponseSchema } from "@adapter/users/dto/user-list.dto";
 import { useUsersStore } from "@adapter/users/users.store";
-// import { useUsersStore } from "@adapter/users/users.store";
+import { UsersLoader } from "./users-loader";
 
-// const UsersFilter = dynamic(() => import("./users-filter"));
-// const TableCellViewer = dynamic(() => import("./users-table-viewer"));
-// const DraggableRow = dynamic(() => import("./draggable-row"));
+const UsersFilter = dynamic(() => import("./users-filter"));
+const TableCellViewer = dynamic(() => import("./users-update/users-cell"));
+const DraggableRow = dynamic(() => import("./draggable-row"));
 
 const columns: ColumnDef<UserDto>[] = [
   {
@@ -104,8 +101,7 @@ const columns: ColumnDef<UserDto>[] = [
     accessorKey: "USER",
     header: "USER",
     cell: ({ row }) => {
-      // return <TableCellViewer item={row.original} />;
-      return <div>TableCellViewer</div>;
+      return <TableCellViewer item={row.original} />;
     },
     enableHiding: false,
   },
@@ -142,7 +138,6 @@ const columns: ColumnDef<UserDto>[] = [
       const isActive = row.original.isActive;
       const Icon = isActive ? CheckCircle : XCircle;
       const iconColor = isActive ? "text-green-500" : "text-red-500";
-
       return (
         <div className="w-16 flex items-center justify-center">
           <Icon className={`w-4 h-4 ${iconColor}`} />
@@ -196,12 +191,11 @@ let render = 0;
 
 export default function DataTableUsers() {
   const filters = useUsersStore((s) => s.filters);
+  const setFilters = useUsersStore((s) => s.setFilters);
   const users = useUsersStore((s) => s.data);
-  
-  const isLoading = false;
-  const currentPage = users?.meta.currentPage ?? 1;
-  const totalPages = users?.meta.totalPages ?? 1;
-  const meta = users?.meta;
+  const currentPage = users.meta.currentPage;
+  const totalPages = users.meta.totalPages;
+  const meta = users.meta;
   render++;
   console.log("component  re-render", render, users);
 
@@ -248,7 +242,7 @@ export default function DataTableUsers() {
 
   return (
     <div className="flex w-full flex-col justify-start gap-6 px-4 lg:px-6">
-      {/* <UsersFilter /> */}
+      <UsersFilter table={table} />
       <div className="overflow-hidden rounded-lg border ">
         <DndContext
           collisionDetection={closestCenter}
@@ -276,23 +270,13 @@ export default function DataTableUsers() {
               ))}
             </TableHeader>
             <TableBody className="**:data-[slot=table-cell]:first:w-8">
-              {isLoading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="bg-white h-[529px]"
-                  >
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
-              ) : table.getRowModel().rows?.length ? (
+              {table.getRowModel().rows?.length ? (
                 <SortableContext
                   items={dataIds}
                   strategy={verticalListSortingStrategy}
                 >
                   {table.getRowModel().rows.map((row) => (
-                    // <DraggableRow key={row.id} row={row} />
-                    <div key={row.id}>DraggableRow</div>
+                    <DraggableRow key={row.id} row={row} />
                   ))}
                 </SortableContext>
               ) : (
@@ -321,7 +305,7 @@ export default function DataTableUsers() {
             <Select
               value={`${filters.limit}`}
               onValueChange={(value) => {
-                // setFilters({ limit: Number(value) });
+                setFilters({ limit: Number(value) });
               }}
             >
               <SelectTrigger className="w-20" id="rows-per-page">
@@ -343,7 +327,7 @@ export default function DataTableUsers() {
             <Button
               variant="outline"
               className="hidden h-8 w-8 p-0 lg:flex"
-              // onClick={() => setFilters({ page: 1 })}
+              onClick={() => setFilters({ page: 1 })}
               disabled={currentPage <= 1}
             >
               <span className="sr-only">Go to first page</span>
@@ -353,7 +337,7 @@ export default function DataTableUsers() {
               variant="outline"
               className="size-8"
               size="icon"
-              // onClick={() => setFilters({ page: (meta?.currentPage ?? 1) - 1 })}
+              onClick={() => setFilters({ page: (meta?.currentPage ?? 1) - 1 })}
               disabled={currentPage <= 1}
             >
               <span className="sr-only">Go to previous page</span>
@@ -363,7 +347,7 @@ export default function DataTableUsers() {
               variant="outline"
               className="size-8"
               size="icon"
-              // onClick={() => setFilters({ page: currentPage + 1 })}
+              onClick={() => setFilters({ page: currentPage + 1 })}
               disabled={currentPage >= totalPages}
             >
               <span className="sr-only">Go to next page</span>
@@ -373,7 +357,7 @@ export default function DataTableUsers() {
               variant="outline"
               className="hidden size-8 lg:flex"
               size="icon"
-              // onClick={() => setFilters({ page: totalPages })}
+              onClick={() => setFilters({ page: totalPages })}
               disabled={currentPage >= totalPages}
             >
               <span className="sr-only">Go to last page</span>

@@ -35,11 +35,6 @@ export const useUsersStore = create<IUserState>()(
       filters: {
         page: 1,
         limit: 10,
-        search: "",
-        isActive: false,
-        isPaid: false,
-        status: [],
-        roles: [],
       },
       setData: (data) => set({ data }),
       setFilters: (patch: Partial<GetUsersDto>) =>

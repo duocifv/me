@@ -46,8 +46,7 @@ export const authPlugin = fp((fastify: FastifyInstance) => {
     'setCookieRefreshToken',
     function (this: FastifyReply, token: string, expiresAt: Date) {
       const maxAge = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
-      // console.log('maxAge', maxAge);
-      // this.clearCookie('refreshToken22', { ...cookieOptions, maxAge: 0 });
+      this.clearCookie('refreshToken22', { ...cookieOptions, maxAge: 0 });
       return this.setCookie('refreshToken22', encodeURIComponent(token), {
         ...cookieOptions,
         maxAge,
@@ -71,11 +70,9 @@ export const authPlugin = fp((fastify: FastifyInstance) => {
     'getCookieRefreshToken',
     function (this: FastifyRequest) {
       const raw = this.cookies?.refreshToken22;
-      console.log('getCookieRefreshToken', raw);
       if (!raw) {
         throw new UnauthorizedException('Missing refresh token cookie');
       }
-      // decode URI component
       return decodeURIComponent(raw);
     },
   );

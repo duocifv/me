@@ -1,45 +1,43 @@
-import { ReqParams } from "./types";
 import { $config } from "../config/env";
+import { ReqParams } from "./types";
 
-/**
- * Builds a full API URL combining the base URL, endpoint path, and optional query parameters.
- *
- * - Skips any null or undefined values.
- * - Omits empty arrays or empty objects.
- * - Supports primitive types (string, number, boolean), arrays of primitives, and nested objects.
- *
- * @param {string} path - The endpoint path relative to the API base (e.g., 'users').
- * @param {ReqParams} [params] - An object containing query parameters to encode.
- *   - If a value is a primitive, it is appended directly.
- *   - If a value is an array, each element is appended as a separate key (only if array length > 0).
- *   - If a value is an object, it is JSON.stringified (only if object has keys).
- * @returns {string} The complete URL, including the query string if parameters exist.
- *
- * @example
- * // build: https://api.example.com/users?page=1&roles=ADMIN&roles=MANAGER
- * makeUrl('users', { page: 1, roles: ['ADMIN', 'MANAGER'] });
- */
 export const makeUrl = (path: string, params?: ReqParams): string => {
+  // nếu front-end đóng gói object trong 'params', hãy lấy luôn cái bên trong
+  let realParams = params as any;
+  if (realParams && typeof realParams === "object" && "params" in realParams) {
+    realParams = realParams.params;
+  }
+
   const baseUrl = $config.API_URL.replace(/\/+$/g, "");
   const cleanPath = path.trim().replace(/^\/+|\/+$/g, "");
   const base = cleanPath ? `${baseUrl}/${cleanPath}` : baseUrl;
-  if (!params || Object.keys(params).length === 0) return base;
+
+  if (!realParams || Object.keys(realParams).length === 0) {
+    return base;
+  }
 
   const searchParams = new URLSearchParams();
 
-  Object.entries(params).forEach(([key, value]) => {
+  Object.entries(realParams).forEach(([key, value]) => {
     if (value == null) return;
 
-    if (Array.isArray(value) && value.length > 0) {
-      value.forEach((v) => searchParams.append(key, String(v)));
-    } else if (typeof value === "object") {
-      if (Object.keys(value).length === 0) return;
-      searchParams.append(key, JSON.stringify(value));
-    } else {
-      searchParams.append(key, String(value));
+    if (Array.isArray(value)) {
+      value.forEach((v) => {
+        if (["string", "number", "boolean"].includes(typeof v)) {
+          searchParams.append(key, String(v));
+        }
+      });
+      return;
     }
+
+    if (["string", "number", "boolean"].includes(typeof value)) {
+      searchParams.append(key, String(value));
+      return;
+    }
+
+    // các object con khác bỏ qua
   });
 
-  const queryString = searchParams.toString();
-  return `${base}?${queryString}`;
+  const qs = searchParams.toString();
+  return qs ? `${base}?${qs}` : base;
 };

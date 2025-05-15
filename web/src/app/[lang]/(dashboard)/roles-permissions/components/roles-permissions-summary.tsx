@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, UserPlus, Settings, LucideProps } from "lucide-react";
 import { EditRoleDialog } from "./rdit-role-dialog";
-import { useRoles } from "@adapter/roles/roles";
+import { useRolesQuery } from "@adapter/roles/roles";
 import { ForwardRefExoticComponent } from "react";
 
 type Role = {
@@ -46,9 +46,9 @@ const roles: Role[] = [
 ];
 
 export default function RolesAndPermissionsSummary() {
-  const { rolesList } = useRoles();
+  const { data = [], isSuccess } = useRolesQuery();
   return (
-    rolesList.isSuccess && (
+    isSuccess && (
       <div className="space-y-6">
         {/* Header + add-role button */}
         <div className="flex justify-between items-center px-4 lg:px-6">
@@ -65,7 +65,7 @@ export default function RolesAndPermissionsSummary() {
         <div className="relative px-4 lg:px-6">
           <Carousel>
             <CarouselContent className="flex -ml-4">
-              {rolesList.data?.map((role) => {
+              {data.map((role) => {
                 const {
                   name = role.name,
                   icon: Icon = UserPlus,

@@ -16,7 +16,7 @@ class AuthService {
       credentials: "include",
     });
     if (res.accessToken) {
-      this.authApi.setToken(res.accessToken);
+      api.setToken(res.accessToken);
     }
     return res;
   }
@@ -38,7 +38,8 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
-    return await this.authApi.delete<void>("logout", {
+    api.clearToken();
+    return this.authApi.delete<void>("logout", {
       credentials: "include",
     });
   }

@@ -25,48 +25,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useRef } from "react";
-import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
-import { useUsers } from "@adapter/users/users";
-import { CheckCircle, XCircle } from "lucide-react";
-import { toast } from "sonner";
 import dynamic from "next/dynamic";
+import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
+import { UpdateUserSubmit } from "./update-user-submit";
 const UsersUpdate = dynamic(() => import("./users-update"));
 
 export default function TableCellViewer({ item }: { item: UserDto }) {
-  const { updateUser } = useUsers();
-
   const valueRef = useRef<UpdateByAdminDto>({});
-  const handleUpdateUser = () => {
-    let body = valueRef.current;
-    if (body && Object.keys(body).length > 0) {
-      body = valueRef.current;
-    } else {
-      return;
-    }
-
-    updateUser.mutate(
-      {
-        id: item.id,
-        body,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Thay đổi trạng thái thành công", {
-            duration: 5000,
-            icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-          });
-          valueRef.current = {};
-        },
-        onError: () => {
-          toast.error("Thay đổi trạng thái thất bại", {
-            duration: 5000,
-            icon: <XCircle className="h-5 w-5 text-red-500" />,
-          });
-        },
-      }
-    );
-  };
-
   return (
     <>
       <Sheet>
@@ -138,9 +103,7 @@ export default function TableCellViewer({ item }: { item: UserDto }) {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleUpdateUser}>
-                    Xác nhận
-                  </AlertDialogAction>
+                  <UpdateUserSubmit valueRef={valueRef} id={item.id} />
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

@@ -2,129 +2,141 @@ import type { HttpMethod, ApiOpts } from "./types";
 import { callApi } from "./callApi";
 import { ApiError, errorHandler } from "./errorHandler";
 
+/**
+ * A robust API client with built-in token handling, refresh logic,
+ * and namespace support for grouped endpoints.
+ */
 export class ApiClient {
   private accessToken: string | null = null;
   private refreshPromise: Promise<void> | null = null;
   private readonly prefix: string;
 
   constructor(prefix: string = "") {
-    // Trim and remove extra slashes
-    this.prefix = prefix.trim().replace(/^\/+|\/+$/g, "");
+    // Normalize prefix (remove leading/trailing slashes)
+    this.prefix = prefix.replace(/^\/+|\/+$/g, "");
   }
 
-  private fullPath(path: string): string {
-    // Join prefix and path cleanly, avoiding duplicate slashes
-    return [this.prefix, path].filter(Boolean).join("/").replace(/\/+/g, "/");
-  }
-
+  /** Sets the current access token in memory */
   setToken(token: string): void {
     this.accessToken = token;
   }
 
-  private clearToken(): void {
+  /** Clears the current access token */
+  clearToken(): void {
     this.accessToken = null;
   }
 
+  /** Checks if an access token is present */
   hasToken(): boolean {
-    return !!this.accessToken;
+    return Boolean(this.accessToken);
+  }
+
+  /** Constructs full URL by joining prefix and path cleanly */
+  private buildUrl(path: string): string {
+    const url = [this.prefix, path].filter(Boolean).join("/");
+    return url.replace(/\/\/+/, "/");
   }
 
   /**
-   * Refresh access token (singleton promise to dedupe concurrent calls).
+   * Refreshes the access token using a singleton promise to avoid
+   * concurrent refresh requests.
    */
-  private refreshToken(): Promise<void> {
+  private async refreshToken(): Promise<void> {
     if (!this.refreshPromise) {
       this.refreshPromise = (async () => {
         try {
           const { data, error, status } = await callApi<{
             accessToken: string;
-          }>("POST", "auth/token", { credentials: "include" });
-
-          if (status === 401) {
-            this.clearToken();
-            const err = new ApiError("RefreshExpired", 401, "RefreshExpired");
-            errorHandler.handle(err);
-            return;
-          }
+          }>("POST", this.buildUrl("auth/token2"), { credentials: "include" });
 
           if (error || !data?.accessToken) {
-            this.clearToken();
-            throw new ApiError(
-              error?.message || "Refresh token failed",
-              error?.statusCode || status || 500,
-              "RefreshError"
-            );
+            throw new ApiError("RefreshExpired", 401, "RefreshExpired");
           }
 
           this.setToken(data.accessToken);
         } catch (err: any) {
           this.clearToken();
-          if (!(err instanceof ApiError && err.name === "RefreshExpired")) {
+          if (err instanceof ApiError && err.name === "RefreshExpired") {
+            errorHandler.handle(err);
+          } else {
             throw err;
           }
+        } finally {
+          this.refreshPromise = null;
         }
       })();
-
-      this.refreshPromise.finally(() => {
-        this.refreshPromise = null;
-      });
     }
 
     return this.refreshPromise;
   }
 
+  /**
+   * Internal request handler that injects token, handles errors,
+   * and retries once after refreshing token if unauthorized.
+   */
   private async request<T>(
     method: HttpMethod,
     path: string,
     opts: ApiOpts<T> = {},
-    isRetry = false
+    retry = true
   ): Promise<T> {
-    const url = this.fullPath(path);
+    console.log("this.accessToken", this.accessToken);
+    const url = this.buildUrl(path);
     const headers = {
-      ...(opts.headers || {}),
+      ...opts.headers,
       ...(this.accessToken
         ? { Authorization: `Bearer ${this.accessToken}` }
         : {}),
     };
 
-    const callOpts: ApiOpts<T> = {
+    const { data, error, status } = await callApi<T>(method, url, {
       ...opts,
       headers,
-    };
+    });
 
-    const { data, error, status } = await callApi<T>(method, url, callOpts);
-
-    if (status === 401 && !isRetry) {
-      try {
-        await this.refreshToken();
-        return this.request(method, path, opts, true);
-      } catch (err) {
-        if (err instanceof ApiError && err.name === "RefreshExpired") {
-          return Promise.reject(undefined as unknown as T);
-        }
-        if (errorHandler.handle(err)) {
-          return Promise.reject(undefined as unknown as T);
-        }
-        throw err;
-      }
+    // Handle expired token: refresh and retry once
+    if (status === 401 && retry) {
+      await this.refreshToken();
+      return this.request(method, path, opts, false);
     }
 
     if (error) {
       throw new ApiError(
-        error?.message || "API error",
-        error?.statusCode || status || 500,
+        error.message || "API error",
+        error.statusCode ?? status ?? 500,
         status === 401 ? "Unauthorized" : "ApiError"
       );
     }
 
     if (data == null) {
-      throw new ApiError("Empty response", status || 500, "NoData");
+      throw new ApiError("Empty response", status ?? 500, "NoData");
     }
 
     return data;
   }
 
-  async get<T>(
+  /**
+   * Creates a namespaced ApiClient that shares the same token and methods.
+   */
+  group(prefix: string): ApiClient {
+    const namespace = prefix.replace(/^\/+|\/+$/g, "");
+    const client = new ApiClient(this.buildUrl(namespace));
+
+    // Share token state and methods
+    Object.defineProperty(client, "accessToken", {
+      get: () => this.accessToken,
+      set: (val: string | null) => {
+        this.accessToken = val;
+      },
+    });
+    client.setToken = this.setToken.bind(this);
+    client.clearToken = this.clearToken.bind(this);
+
+    return client;
+  }
+
+  // Public HTTP methods
+  get<T>(
     path: string,
     params?: Record<string, any>,
     opts?: ApiOpts<T>
@@ -132,43 +144,24 @@ export class ApiClient {
     return this.request<T>("GET", path, { ...opts, params });
   }
 
-  async post<T>(
-    path: string,
-    body: Record<string, unknown>,
-    opts?: ApiOpts<T>
-  ): Promise<T> {
+  post<T>(path: string, body?: any, opts?: ApiOpts<T>): Promise<T> {
     return this.request<T>("POST", path, { ...opts, body });
   }
 
-  async put<T>(
-    path: string,
-    body: Record<string, unknown>,
-    opts?: ApiOpts<T>
-  ): Promise<T> {
+  put<T>(path: string, body?: any, opts?: ApiOpts<T>): Promise<T> {
     return this.request<T>("PUT", path, { ...opts, body });
   }
 
-  async delete<T>(path: string, opts?: ApiOpts<T>): Promise<T> {
-    return this.request<T>("DELETE", path, opts);
-  }
-
-  async patch<T>(path: string, body: any, opts?: ApiOpts<T>): Promise<T> {
+  patch<T>(path: string, body?: any, opts?: ApiOpts<T>): Promise<T> {
     return this.request<T>("PATCH", path, { ...opts, body });
   }
 
-  /**
-   * Creates a namespaced client that shares the current access token
-   */
-  group(prefix: string): ApiClient {
-    const namespace = prefix.trim().replace(/^\/+|\/+$/g, "");
-    const client = new ApiClient(
-      this.prefix ? `${this.prefix}/${namespace}` : namespace
-    );
-    if (this.accessToken) {
-      client.setToken(this.accessToken);
-    }
-    return client;
+  delete<T>(path: string, opts?: ApiOpts<T>): Promise<T> {
+    return this.request<T>("DELETE", path, opts);
   }
 }
 
+/**
+ * Singleton instance of ApiClient; use this for all API calls.
+ */
 export const api = new ApiClient();

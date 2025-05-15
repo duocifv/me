@@ -12,14 +12,12 @@ import { ZodSchema } from "zod";
 export interface FormWrapperProps<T extends FieldValues> {
   schema: ZodSchema<T>;
   defaultValues: DefaultValues<T>;
-  onSubmit: (data: T, methods: UseFormReturn<T>) => void;
   children: (methods: UseFormReturn<T>) => ReactNode;
 }
 
 export function FormWrapper<T extends FieldValues>({
   schema,
   defaultValues,
-  onSubmit,
   children,
 }: FormWrapperProps<T>) {
   const methods = useForm<T>({
@@ -27,13 +25,9 @@ export function FormWrapper<T extends FieldValues>({
     defaultValues,
   });
 
-  const handleSubmit = methods.handleSubmit((data) => {
-    onSubmit(data, methods);
-  });
-
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit}>{children(methods)}</form>
+      <form>{children(methods)}</form>
     </FormProvider>
   );
 }

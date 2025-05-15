@@ -45,8 +45,6 @@ export class AuthController {
     const user = req.user as User;
     const { accessToken, refreshToken, expiresAt } =
       await this.authService.signIn(user, deviceInfo);
-
-    console.log('refreshToken', refreshToken);
     res.setCookieRefreshToken(refreshToken, expiresAt);
     return { accessToken };
   }

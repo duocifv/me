@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { IsNull, MoreThan, Repository } from 'typeorm';
+import { IsNull, Like, MoreThan, Repository } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto, UserListSchema, UserSchema } from './dto/user.dto';
@@ -28,6 +28,10 @@ export class UsersService {
     private readonly paginationService: PaginationService,
   ) {}
 
+  private escapeLike(str: string): string {
+    return str.replace(/'/g, "''").replace(/([\\%_])/g, '\\$1');
+  }
+
   private async hashToken(token: string): Promise<string> {
     const saltRounds = 10;
     return bcrypt.hash(token, saltRounds);
@@ -41,13 +45,23 @@ export class UsersService {
   }
 
   async getUsers(dto: GetUsersDto) {
-    const { page, limit, roles, status, ...filters } = dto;
+    const { page, limit, roles, status, search, ...filters } = dto;
+
     const qb = this.usersRepo
       .createQueryBuilder('user')
-      .leftJoinAndSelect('user.roles', 'role');
+      .leftJoinAndSelect('user.roles', 'role')
+      .where('user.deleted_at IS NULL');
 
     if (roles && roles.length > 0) {
       qb.andWhere('role.name IN (:...roles)', { roles });
+    }
+
+    if (search) {
+      const safe = this.escapeLike(search.trim().toLowerCase());
+      console.log('safe', safe);
+      qb.andWhere(`LOWER(user.email) LIKE :search`, {
+        search: `%${safe}%`,
+      });
     }
 
     if (status && status.length > 0) {
@@ -61,6 +75,7 @@ export class UsersService {
       filters,
       ['email'],
     );
+
     const validatedData = UserListSchema.parse(paginate.items);
     return {
       items: validatedData,
@@ -144,13 +159,12 @@ export class UsersService {
     if (typeof dto.isActive === 'boolean') {
       user.isActive = dto.isActive;
     }
-
-    if (dto?.status) {
-      user.status = dto.status;
-    }
-
     if (typeof dto.isPaid === 'boolean') {
       user.isPaid = dto.isPaid;
+    }
+
+    if (dto.status?.length) {
+      user.status = dto.status[0];
     }
 
     if (dto.roles?.length) {
@@ -159,6 +173,7 @@ export class UsersService {
       );
       user.roles = roleEntities;
     }
+    console.log('dtodtodtodto---->22', dto, user);
     const updatedUser = await this.usersRepo.save(user);
     return UserSchema.parse(updatedUser);
   }
