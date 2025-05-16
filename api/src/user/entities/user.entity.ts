@@ -40,10 +40,10 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   lockedUntil: Date | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   resetPasswordToken: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   resetPasswordExpires: Date | null;
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)

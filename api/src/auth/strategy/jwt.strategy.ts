@@ -3,19 +3,13 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import * as fs from 'fs';
 import * as path from 'path';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { JwtPayload } from '../interfaces/jwt-payload.type';
 import { UsersService } from 'src/user/users.service';
-import { PermissionsService } from 'src/permissions/permissions.service';
 import { User } from 'src/user/entities/user.entity';
-import { Permission } from 'src/permissions/entities/permission.entity';
-import { JwtStrategyType } from '../interfaces/jwt.strategy.type';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private readonly userService: UsersService,
-    private readonly permissionService: PermissionsService,
-  ) {
+  constructor(private readonly userService: UsersService) {
     const publicKeyPath = path.resolve('certs/public.pem');
     if (!fs.existsSync(publicKeyPath)) {
       throw new Error(`Public key not found at path: ${publicKeyPath}`);
@@ -39,7 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<User> {
-    const user = await this.userService.findBySub(payload.sub);
+    const user = await this.userService.findById(payload.sub);
     console.log('ping---->', user);
     if (!user) {
       throw new UnauthorizedException();

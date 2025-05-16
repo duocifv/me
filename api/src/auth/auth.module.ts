@@ -13,10 +13,11 @@ import { CoreModule } from 'src/shared/core.module';
 import { AppConfigService } from 'src/shared/config/config.service';
 import { PermissionsModule } from 'src/permissions/permissions.module';
 import { AccountSecurityService } from './services/account-security.service';
+import { User } from 'src/user/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RefreshToken]),
+    TypeOrmModule.forFeature([User, RefreshToken]),
     UsersModule,
     PassportModule,
     PermissionsModule,
@@ -42,6 +43,6 @@ import { AccountSecurityService } from './services/account-security.service';
     JwtService,
     LocalStrategy,
   ],
-  exports: [AuthService, JwtStrategy],
+  exports: [AuthService, AccountSecurityService, JwtStrategy],
 })
 export class AuthModule {}

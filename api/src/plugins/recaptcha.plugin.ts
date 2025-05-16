@@ -6,6 +6,12 @@ interface RecaptchaVerifyResponse {
   hostname?: string;
   'error-codes'?: string[];
 }
+// Extend interfaces
+declare module 'fastify' {
+  interface FastifyRequest {
+    verifyRecaptcha(): string;
+  }
+}
 
 export const recaptchaPlugin = (app) => {
   const secretKey = process.env.RECAPTCHA_SECRET;
