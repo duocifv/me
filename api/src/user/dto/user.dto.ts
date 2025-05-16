@@ -8,11 +8,8 @@ export const UserFullSchema = z.object({
   password: z.string().min(8),
   refreshTokens: z.array(RefreshTokenSchema).default([]),
   roles: z.array(RoleFullSchema).default([]),
-  isActive: z.boolean(),
   isPaid: z.boolean(),
   status: z.enum(['pending', 'active', 'blocked']),
-  isEmailVerified: z.boolean(),
-  lastLoginAt: z.date().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   deletedAt: z.coerce.date().nullable(),
@@ -29,7 +26,6 @@ export const UserSchema = UserFullSchema.omit({
   password: true,
   refreshTokens: true,
   deletedAt: true,
-  lastLoginAt: true,
 }).extend({
   roles: z.array(RolePublicSchema).optional(),
 });

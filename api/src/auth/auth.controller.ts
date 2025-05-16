@@ -43,7 +43,7 @@ export class AuthController {
 
   @Public()
   @DeviceHeader()
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 15, ttl: 60000 } })
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @HttpCode(200)

@@ -71,11 +71,16 @@ export class AuthService {
     return bcrypt.compare(plainPassword, hashedPassword);
   }
 
+  async fakeDelay() {
+    return new Promise((resolve) => setTimeout(resolve, 500)); // delay 500ms
+  }
+
   // Xác thực user với email và password, trả về user đã parse theo schema
   async validateUser(dto: SignInDto): Promise<UserDto> {
     const { email, password, captchaToken } = dto;
     const user = await this.usersService.findByEmail(email);
     if (!user) {
+      await this.fakeDelay();
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
@@ -98,11 +103,13 @@ export class AuthService {
     // So mật khẩu
     const isPasswordValid = await this.comparePassword(password, user.password);
     if (!isPasswordValid) {
+      await this.accountSecurityService.handleFailedLogin(user);
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
     // Đăng nhập thành công: reset counter
     await this.accountSecurityService.resetFailedLogin(user);
+
     return UserWithPermissionsSchema.parse(user);
   }
 
