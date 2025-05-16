@@ -8,7 +8,12 @@ import fastifyCors, { FastifyCorsOptions } from '@fastify/cors';
 export const corsConfig: FastifyCorsOptions = {
   origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Authorization', 'Content-Type'],
+  allowedHeaders: [
+    'Authorization',
+    'Content-Type',
+    'x-device-fingerprint',
+    'x-recaptcha-token',
+  ],
   credentials: true,
 };
 /**

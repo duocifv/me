@@ -1,13 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import * as fs from 'fs';
 import * as path from 'path';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { UsersService } from 'src/user/users.service';
+import { PermissionsService } from 'src/permissions/permissions.service';
+import { User } from 'src/user/entities/user.entity';
+import { Permission } from 'src/permissions/entities/permission.entity';
+import { JwtStrategyType } from '../interfaces/jwt.strategy.type';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(
+    private readonly userService: UsersService,
+    private readonly permissionService: PermissionsService,
+  ) {
     const publicKeyPath = path.resolve('certs/public.pem');
     if (!fs.existsSync(publicKeyPath)) {
       throw new Error(`Public key not found at path: ${publicKeyPath}`);
@@ -30,11 +38,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload): JwtPayload {
-    // In ra kiểm tra
-    console.log('JWT Payload:--->', payload);
+  async validate(payload: JwtPayload): Promise<User> {
+    const user = await this.userService.findBySub(payload.sub);
+    console.log('ping---->', user);
+    if (!user) {
+      throw new UnauthorizedException();
+    }
 
-    // Trả về nguyên payload, bao gồm permissions
-    return payload;
+    return user;
   }
 }

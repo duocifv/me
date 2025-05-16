@@ -16,12 +16,14 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    
     "outDir": "dist",
     "baseUrl": "./",
     "paths": {
       "src/*": [
         "./src/*"
+      ],
+      "@adapter/*": [
+        "../packages/libs/src/*"
       ]
     }
   },
@@ -31,7 +33,9 @@
     "src/",
     "typeorm.config.ts",
     "src/shared/keys/*.pem",
-    "src/mail/templates/**/*.hbs"
+    "src/mail/templates/**/*.hbs",
+    // "../packages/libs/src/**/*.ts",
+    // "../packages/libs/src/**/*.tsx",
   ],
   "exclude": [
     "node_modules",

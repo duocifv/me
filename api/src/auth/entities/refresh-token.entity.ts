@@ -9,7 +9,7 @@ import {
 
 @Entity()
 export class RefreshToken {
-  @PrimaryGeneratedColumn('uuid')  
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @ManyToOne(() => User, (user) => user.refreshTokens, { onDelete: 'CASCADE' })
@@ -25,7 +25,10 @@ export class RefreshToken {
   revoked: boolean;
 
   @Column({ nullable: true })
-  deviceInfo: string; 
+  fingerprint: string;
+
+  @Column()
+  tokenHash: string;
 
   @CreateDateColumn()
   createdAt: Date;

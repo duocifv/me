@@ -14,7 +14,8 @@ export interface ApiOpts<T> {
   headers?: Record<string, string>;
   timeout?: number;
   fallback?: T | null;
-  credentials?: RequestCredentials
+  credentials?: RequestCredentials;
+  useFingerprint?: boolean;
 }
 
 /**
@@ -23,7 +24,9 @@ export interface ApiOpts<T> {
 export interface FetchOpts extends RequestInit {
   retries?: number;
   retryDelay?: number;
-  retryOn?: (attempt: number, err: Error | null, res: Response | null) => boolean | Promise<boolean>;
+  retryOn?: (
+    attempt: number,
+    err: Error | null,
+    res: Response | null
+  ) => boolean | Promise<boolean>;
 }
-
-

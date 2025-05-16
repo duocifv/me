@@ -26,13 +26,7 @@ export class User {
   password: string;
 
   @Column({ default: false })
-  isActive: boolean;
-
-  @Column({ default: false })
   isPaid: boolean;
-
-  @Column({ default: false })
-  isEmailVerified: boolean;
 
   @Column({
     type: 'enum',
@@ -40,9 +34,20 @@ export class User {
     default: UserStatus.pending,
   })
   status: UserStatus;
+  @Column({ default: 0 })
+  failedLoginAttempts: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  lastLoginAt: Date;
+  lockedUntil: Date | null;
+
+  @Column({ nullable: true })
+  resetPasswordToken: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  resetPasswordExpires: Date | null;
+
+  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
+  refreshTokens: RefreshToken[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -51,10 +56,7 @@ export class User {
   updatedAt: Date;
 
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
-  deletedAt?: Date;
-
-  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
-  refreshTokens: RefreshToken[];
+  deletedAt: Date | null;
 
   @ManyToMany(() => Role, (role) => role.users)
   @JoinTable({

@@ -6,7 +6,6 @@ import {
   Get,
   Param,
   Put,
-  Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -14,15 +13,14 @@ import { RolesAllowed } from 'src/roles/roles.decorator';
 import { Roles } from 'src/roles/dto/role.enum';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUsersDto, GetUsersSchema } from './dto/get-users.dto';
-import { Schema } from 'src/shared/decorators/dto.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import {
   UpdateByAdminDto,
   UpdateByAdminSchema,
 } from './dto/update-by-admin.dto';
 import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
-import { ZodBody } from 'src/shared/decorators/zod-body.decorator';
-import { ZodQuery } from 'src/shared/decorators/zod-query.decorator';
+import { QuerySchema } from 'src/shared/decorators/query-schema.decorator';
+import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 
 @ApiTags('Users - Khu vực ADMIN mới được truy cập')
 @RolesAllowed(Roles.ADMIN)
@@ -33,8 +31,7 @@ export class UsersController {
   @Get()
   // @Permissions('create:posts')
   // @Scopes('write:posts')
-  async findAll(@ZodQuery(GetUsersSchema) dto: GetUsersDto) {
-    console.log('findAll 1', dto);
+  async findAll(@QuerySchema(GetUsersSchema) dto: GetUsersDto) {
     const paginate = await this.usersService.getUsers(dto);
     const stats = await this.usersService.getUsersWithStats();
     return {
@@ -51,9 +48,8 @@ export class UsersController {
   @Put(':id')
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @ZodBody(UpdateByAdminSchema) dto: UpdateByAdminDto,
+    @BodySchema(UpdateByAdminSchema) dto: UpdateByAdminDto,
   ) {
-    console.log('dtodtodtodto 1', dto);
     return await this.usersService.update(id, dto);
   }
 
@@ -65,11 +61,11 @@ export class UsersController {
     return this.usersService.updateProfile(id, dto);
   }
 
-  @Put(':id/restore')
-  @HttpCode(200)
-  async restore(@Param('id', new ParseUUIDPipe()) id: string) {
-    return await this.usersService.restore(id);
-  }
+  // @Put(':id/restore')
+  // @HttpCode(200)
+  // async restore(@Param('id', new ParseUUIDPipe()) id: string) {
+  //   return await this.usersService.restore(id);
+  // }
 
   // @Delete(':id')
   // @HttpCode(204)
@@ -79,7 +75,7 @@ export class UsersController {
 
   @Post()
   @HttpCode(201)
-  register(@ZodBody(CreateUserSchema) dto: CreateUserDto) {
+  register(@BodySchema(CreateUserSchema) dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
 }

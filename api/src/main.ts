@@ -10,6 +10,7 @@ import mailerPlugin from './plugins/mailer.plugin';
 import { setupSwagger } from './plugins/swagger.plugin';
 import { TypeOrmExceptionFilter } from './shared/filters/TypeOrmExceptionFilter';
 import cors from './plugins/cors.plugin';
+import recaptcha from './plugins/recaptcha.plugin';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -20,6 +21,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
   app.useGlobalFilters(new TypeOrmExceptionFilter());
   await cors(app);
+  await recaptcha(app);
   await app.register(authPlugin);
   await app.register(fileManagerPlugin);
   await app.register(mailerPlugin);

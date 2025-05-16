@@ -14,6 +14,7 @@ class AuthService {
   async login(dto: SignInDto): Promise<LoginDto> {
     const res = await this.authApi.post<LoginDto>("login", dto, {
       credentials: "include",
+      useFingerprint: true,
     });
     if (res.accessToken) {
       api.setToken(res.accessToken);
@@ -38,10 +39,11 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
-    api.clearToken();
-    return this.authApi.delete<void>("logout", {
+    this.authApi.delete<void>("logout", {
       credentials: "include",
+      useFingerprint: true,
     });
+    api.clearToken();
   }
 }
 

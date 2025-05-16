@@ -1,5 +1,3 @@
-// src/plugins/auth.plugin.ts
-
 import fp from 'fastify-plugin';
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import fastifyCookie from '@fastify/cookie';
@@ -16,6 +14,7 @@ declare module 'fastify' {
     getCookieIpAddress(): string;
     getCookieRefreshToken(): string;
     getCookieDeviceInfo(): string;
+    getDeviceFingerprint(): string;
   }
 }
 
@@ -99,6 +98,17 @@ export const authPlugin = fp((fastify: FastifyInstance) => {
       const browser = result.browser.name || 'Unknown Browser';
       const os = result.os.name || 'Unknown OS';
       return `${browser} on ${os}`;
+    },
+  );
+
+  fastify.decorateRequest(
+    'getDeviceFingerprint',
+    function (this: FastifyRequest): string {
+      const fingerprint = this.headers['x-device-fingerprint'];
+      if (!fingerprint || typeof fingerprint !== 'string') {
+        return 'unknown_fingerprint';
+      }
+      return fingerprint;
     },
   );
 });

@@ -6,7 +6,6 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtPayload } from 'src/auth/interfaces/jwt-payload.interface';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -24,7 +23,7 @@ export class PermissionsGuard implements CanActivate {
 
     // 2. Lấy user từ request (đã được JwtStrategy gán)
     const request = context.switchToHttp().getRequest();
-    const user = request.user as JwtPayload;
+    const user = request.user;
 
     // 3. Kiểm tra user và mảng permissions phải tồn tại
     if (!user || !Array.isArray(user.permissions)) {

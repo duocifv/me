@@ -1,11 +1,12 @@
+// src/users/users.service.ts
 import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
-import { IsNull, Like, MoreThan, Repository } from 'typeorm';
+import { Repository, IsNull, MoreThan } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserDto, UserListSchema, UserSchema } from './dto/user.dto';
@@ -18,6 +19,9 @@ import { ChangePasswordDto } from '../auth/dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateByAdminDto } from './dto/update-by-admin.dto';
 import { RoleService } from 'src/roles/roles.service';
+import { UserStatus } from './dto/user-status.enum';
+import { User } from './entities/user.entity';
+import { AccountSecurityService } from 'src/auth/services/account-security.service';
 
 @Injectable()
 export class UsersService {
@@ -26,13 +30,14 @@ export class UsersService {
     private readonly usersRepo: Repository<User>,
     private readonly rolesService: RoleService,
     private readonly paginationService: PaginationService,
+    private readonly accountSecurityService: AccountSecurityService,
   ) {}
 
   private escapeLike(str: string): string {
     return str.replace(/'/g, "''").replace(/([\\%_])/g, '\\$1');
   }
 
-  private async hashToken(token: string): Promise<string> {
+  public async hashToken(token: string): Promise<string> {
     const saltRounds = 10;
     return bcrypt.hash(token, saltRounds);
   }
@@ -46,25 +51,21 @@ export class UsersService {
 
   async getUsers(dto: GetUsersDto) {
     const { page, limit, roles, status, search, ...filters } = dto;
-
     const qb = this.usersRepo
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.roles', 'role')
       .where('user.deleted_at IS NULL');
 
-    if (roles && roles.length > 0) {
+    if (roles?.length) {
       qb.andWhere('role.name IN (:...roles)', { roles });
     }
 
     if (search) {
       const safe = this.escapeLike(search.trim().toLowerCase());
-      console.log('safe', safe);
-      qb.andWhere(`LOWER(user.email) LIKE :search`, {
-        search: `%${safe}%`,
-      });
+      qb.andWhere('LOWER(user.email) LIKE :search', { search: `%${safe}%` });
     }
 
-    if (status && status.length > 0) {
+    if (status?.length) {
       qb.andWhere('user.status IN (:...status)', { status });
     }
 
@@ -92,8 +93,9 @@ export class UsersService {
     }
 
     const hash = await this.hashToken(dto.password);
-
     const user = this.usersRepo.create({ email: dto.email, password: hash });
+    // mặc định status pending
+    user.status = UserStatus.pending;
     const createdUser = await this.usersRepo.save(user);
 
     const defaultRole = await this.rolesService.findRoleByName(Roles.CUSTOMER);
@@ -101,17 +103,22 @@ export class UsersService {
       PermissionName.VIEW_PRODUCTS,
       PermissionName.PLACE_ORDER,
     ]);
-
+    defaultRole.permissions = permissions;
     user.roles = [defaultRole];
-    await this.rolesService.assignPermissionsToRole(defaultRole, permissions);
-
     await this.usersRepo.save(user);
 
     return UserSchema.parse(createdUser);
   }
 
   async findById(id: string): Promise<User> {
-    return this.usersRepo.findOneOrFail({ where: { id } });
+    const user = await this.usersRepo.findOne({
+      where: { id },
+      relations: ['roles', 'roles.permissions'],
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   async findByEmail(email: string): Promise<User> {
@@ -127,17 +134,26 @@ export class UsersService {
 
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.findByEmail(email);
+    if (this.accountSecurityService.isLocked(user)) {
+      throw new UnauthorizedException(
+        `Tài khoản bị khóa đến ${user.lockedUntil?.toLocaleString()}`,
+      );
+    }
     const matches = await this.compareToken(password, user.password);
     if (!matches) {
-      throw new UnauthorizedException('Invalid password');
+      await this.accountSecurityService.handleFailedLogin(user);
+      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
+    await this.accountSecurityService.resetFailedLogin(user);
     return user;
   }
 
   async getUsersWithStats(): Promise<UserStatsDto> {
     const [totalUsers, activeUsers, newUsers] = await Promise.all([
       this.usersRepo.count({ where: { deletedAt: IsNull() } }),
-      this.usersRepo.count({ where: { isActive: true, deletedAt: IsNull() } }),
+      this.usersRepo.count({
+        where: { status: UserStatus.active, deletedAt: IsNull() },
+      }),
       this.usersRepo.count({
         where: {
           createdAt: MoreThan(new Date(Date.now() - 24 * 60 * 60 * 1000)),
@@ -150,74 +166,59 @@ export class UsersService {
       totalUsers,
       activeUsers,
       newUsers,
-      conversionRate: 0,
+      conversionRate: activeUsers / (totalUsers || 1),
     });
   }
 
   async update(id: string, dto: UpdateByAdminDto): Promise<UserDto> {
     const user = await this.findById(id);
-    if (typeof dto.isActive === 'boolean') {
-      user.isActive = dto.isActive;
-    }
-    if (typeof dto.isPaid === 'boolean') {
-      user.isPaid = dto.isPaid;
-    }
-
     if (dto.status?.length) {
       user.status = dto.status[0];
     }
-
+    if (dto.isPaid !== undefined) {
+      user.isPaid = dto.isPaid;
+    }
     if (dto.roles?.length) {
       const roleEntities = await Promise.all(
         dto.roles.map((name) => this.rolesService.findRoleByName(name)),
       );
       user.roles = roleEntities;
     }
-    console.log('dtodtodtodto---->22', dto, user);
     const updatedUser = await this.usersRepo.save(user);
     return UserSchema.parse(updatedUser);
   }
 
   async changePassword(id: string, dto: ChangePasswordDto): Promise<void> {
     const user = await this.findById(id);
-    user.password = await this.hashToken(dto.password);
+
+    const isMatch = await this.compareToken(dto.oldPassword, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException('Mật khẩu hiện tại không đúng');
+    }
+
+    user.password = await this.hashToken(dto.newPassword);
     await this.usersRepo.save(user);
   }
 
   async updateProfile(id: string, dto: UpdateProfileDto): Promise<UserDto> {
     const user = await this.findById(id);
-    if (!dto.status?.length) {
-      throw new UnauthorizedException('not found');
+    if (dto.email) {
+      user.email = dto.email;
     }
-    user.status = dto.status[0];
     const updatedUser = await this.usersRepo.save(user);
     return UserSchema.parse(updatedUser);
   }
 
-  // async delete(id: string, adminId: string): Promise<void> {
-  //   const user = await this.findById(id);
-  //   const admin = await this.findById(adminId);
-  //   if (admin.roles.some((role) => role.name === Roles.ADMIN)) {
-  //     if (user.id === admin.id) {
-  //       throw new UnauthorizedException(
-  //         'Admin cannot delete their own account',
-  //       );
-  //     }
-  //   } else {
-  //     throw new UnauthorizedException(
-  //       'You do not have permission to delete users',
-  //     );
-  //   }
-  //   await this.usersRepo.remove(user);
-  // }
+  async saveUser(user: User): Promise<User> {
+    return this.usersRepo.save(user);
+  }
 
-  async restore(id: string): Promise<UserDto> {
-    const user = await this.findById(id);
-    if (user.deletedAt) {
-      user.deletedAt = undefined;
-      const restoredUser = await this.usersRepo.save(user);
-      return UserSchema.parse(restoredUser);
-    }
-    throw new UnauthorizedException('User is not deleted');
+  async findByResetToken(token: string): Promise<User | null> {
+    return this.usersRepo.findOne({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordExpires: MoreThan(new Date()),
+      },
+    });
   }
 }

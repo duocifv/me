@@ -62,11 +62,11 @@ export class AppConfigService {
 
     return {
       accessToken: {
-        secret: process.env.JWT_ACCESS_SECRET!,
+        privateKey,
         expires: process.env.JWT_ACCESS_EXPIRES_IN || '900s',
       },
       refreshToken: {
-        secret: process.env.JWT_REFRESH_SECRET!,
+        privateKey,
         expires: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
       },
       issuer: process.env.JWT_ISSUER!,

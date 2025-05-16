@@ -11,12 +11,15 @@ import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from './strategy/local.strategy';
 import { CoreModule } from 'src/shared/core.module';
 import { AppConfigService } from 'src/shared/config/config.service';
+import { PermissionsModule } from 'src/permissions/permissions.module';
+import { AccountSecurityService } from './services/account-security.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RefreshToken]),
     UsersModule,
     PassportModule,
+    PermissionsModule,
     JwtModule.registerAsync({
       imports: [CoreModule],
       inject: [AppConfigService],
@@ -34,6 +37,7 @@ import { AppConfigService } from 'src/shared/config/config.service';
   providers: [
     AuthService,
     TokensService,
+    AccountSecurityService,
     JwtStrategy,
     JwtService,
     LocalStrategy,

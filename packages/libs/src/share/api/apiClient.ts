@@ -1,6 +1,9 @@
 import type { HttpMethod, ApiOpts } from "./types";
 import { callApi } from "./callApi";
 import { ApiError, errorHandler } from "./errorHandler";
+import { getFingerprint } from "./fingerprint";
+import { $config } from "../config/env";
+import { isTokenExpiringSoon } from "./jwt";
 
 /**
  * A robust API client with built-in token handling, refresh logic,
@@ -31,6 +34,9 @@ export class ApiClient {
     return Boolean(this.accessToken);
   }
 
+  redirectLogin(): void {
+    window.location.replace("/en/login");
+  }
   /** Constructs full URL by joining prefix and path cleanly */
   private buildUrl(path: string): string {
     const url = [this.prefix, path].filter(Boolean).join("/");
@@ -42,12 +48,16 @@ export class ApiClient {
    * concurrent refresh requests.
    */
   private async refreshToken(): Promise<void> {
+    if (!this.hasToken()) return;
     if (!this.refreshPromise) {
       this.refreshPromise = (async () => {
         try {
           const { data, error, status } = await callApi<{
             accessToken: string;
-          }>("POST", this.buildUrl("auth/token2"), { credentials: "include" });
+          }>("POST", this.buildUrl("auth/token2"), {
+            credentials: "include",
+            useFingerprint: true,
+          });
 
           if (error || !data?.accessToken) {
             throw new ApiError("RefreshExpired", 401, "RefreshExpired");
@@ -80,10 +90,20 @@ export class ApiClient {
     opts: ApiOpts<T> = {},
     retry = true
   ): Promise<T> {
-    console.log("this.accessToken", this.accessToken);
+    if (process.env.NODE_ENV === "development") {
+      console.log("AccessToken:", this.accessToken);
+    }
+    // Proactive token refresh if it's about to expire
+    if (this.accessToken && isTokenExpiringSoon(this.accessToken)) {
+      await this.refreshToken();
+    }
+
     const url = this.buildUrl(path);
+    const fingerprint = opts.useFingerprint ? await getFingerprint() : null;
+
     const headers = {
       ...opts.headers,
+      ...(fingerprint ? { "X-Device-Fingerprint": fingerprint } : {}),
       ...(this.accessToken
         ? { Authorization: `Bearer ${this.accessToken}` }
         : {}),
@@ -95,7 +115,7 @@ export class ApiClient {
     });
 
     // Handle expired token: refresh and retry once
-    if (status === 401 && retry) {
+    if (status === 401 && retry && this.hasToken()) {
       await this.refreshToken();
       return this.request(method, path, opts, false);
     }

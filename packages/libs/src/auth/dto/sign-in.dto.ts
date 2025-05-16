@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const SignInSchema = z.object({
   email: z.string().email(),
@@ -6,10 +6,3 @@ export const SignInSchema = z.object({
 });
 
 export type SignInDto = z.infer<typeof SignInSchema>;
-
-export interface RefreshTokenPayload {
-  sub: string; 
-  jti: string; // Token ID
-  iat: number; // Issued at (timestamp)
-  exp: number; // Expiration (timestamp)
-}

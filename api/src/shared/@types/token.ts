@@ -1,10 +1,10 @@
 export interface TokenOption {
   accessToken: {
-    secret: string;
+    privateKey: string;
     expires: string;
   };
   refreshToken: {
-    secret: string;
+    privateKey: string;
     expires: string;
   };
   issuer: string;

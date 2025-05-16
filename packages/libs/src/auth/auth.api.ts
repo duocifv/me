@@ -28,6 +28,8 @@ export function useAuthLogoutMutation() {
   return useMutation({
     mutationFn: () => authService.logout(),
     onSuccess: async () => {
+      alert("logout");
+      console.log("Logout success, clearing cache and redirecting...");
       await queryClient.cancelQueries();
       queryClient.removeQueries();
       queryClient.getQueryCache().clear();

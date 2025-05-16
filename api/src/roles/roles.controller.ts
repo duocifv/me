@@ -11,6 +11,7 @@ import { RoleService } from './roles.service';
 import { Permissions } from 'src/permissions/permissions.decorator';
 import { PermissionName } from 'src/permissions/permission.enum';
 import { Schema } from 'src/shared/decorators/dto.decorator';
+import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 
 @Controller('roles')
 export class RoleController {
@@ -33,10 +34,9 @@ export class RoleController {
   /** Cập nhật role */
   @Put(':id')
   @Permissions(PermissionName.MANAGE_ROLES)
-  @Schema(UpdateRoleSchema)
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: UpdateRoleDto,
+    @BodySchema(UpdateRoleSchema) dto: UpdateRoleDto,
   ) {
     return this.roleService.update(id, dto);
   }

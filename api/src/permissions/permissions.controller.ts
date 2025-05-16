@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  // Post,
-  // Put,
-  // Delete,
-  // Body,
-  NotFoundException,
-  ParseUUIDPipe,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Permissions } from 'src/permissions/permissions.decorator';
 import { PermissionName } from './permission.enum';

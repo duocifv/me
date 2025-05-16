@@ -27,8 +27,9 @@ export const useAuthStore = create<AuthState>()(
         setLogin: (loggedIn) => set({ loggedIn }),
         setUser: (user) => set({ user }),
         setLogout: () => {
-          api.clearToken();
           set({ loggedIn: false, user: null });
+          api.clearToken();
+          api.redirectLogin();
         },
         setHydrated: (v) => set({ hydrated: v }),
       }),

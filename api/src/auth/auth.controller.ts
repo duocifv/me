@@ -11,10 +11,9 @@ import {
   Put,
   Param,
   UnauthorizedException,
+  Headers,
 } from '@nestjs/common';
 import { AuthService } from './services/auth.service';
-import { SignInDto, SignInSchema } from './dto/sign-in.dto';
-import { Schema } from 'src/shared/decorators/dto.decorator';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { CreateUserDto, CreateUserSchema } from 'src/user/dto/create-user.dto';
 import { LocalAuthGuard } from './guard/local-auth.guard';
@@ -25,98 +24,117 @@ import {
   ChangePasswordSchema,
 } from 'src/auth/dto/change-password.dto';
 import { MeSchema } from './dto/login.dto';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { SignInDto, SignInSchema } from './dto/sign-in.dto';
+import { DeviceHeader } from 'src/shared/decorators/device-header.decorator';
+import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
+import { Throttle } from '@nestjs/throttler';
+import {
+  ForgotPasswordDto,
+  ForgotPasswordSchema,
+} from './dto/forgot-password.dto';
+import {
+  ResetPasswordDto,
+  ResetPasswordSchema,
+} from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @DeviceHeader()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
-  @Schema(SignInSchema)
   @UseGuards(LocalAuthGuard)
   @HttpCode(200)
   async login(
-    @Body() dto: SignInDto,
+    @Headers('X-Device-Fingerprint') fingerprint: string,
+    @BodySchema(SignInSchema) dto: SignInDto,
     @Res({ passthrough: true }) res: FastifyReply,
     @Req() req: FastifyRequest,
   ) {
-    const deviceInfo = req.getCookieDeviceInfo();
     const user = req.user as User;
     const { accessToken, refreshToken, expiresAt } =
-      await this.authService.signIn(user, deviceInfo);
+      await this.authService.signIn(user, fingerprint);
     res.setCookieRefreshToken(refreshToken, expiresAt);
     return { accessToken };
   }
 
   @Public()
   @Post('register')
-  @Schema(CreateUserSchema)
-  register(@Body() dto: CreateUserDto) {
+  register(@BodySchema(CreateUserSchema) dto: CreateUserDto) {
     return this.authService.register(dto);
   }
 
+  @DeviceHeader()
   @Public()
   @Post('token')
   @HttpCode(200)
   async refresh(
+    @Headers('X-Device-Fingerprint') fingerprint: string,
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
-    const value = req.getCookieRefreshToken();
-    const deviceInfo = req.getCookieDeviceInfo();
-
+    const cookieRefreshToken = req.getCookieRefreshToken();
     const { accessToken, refreshToken, expiresAt } =
-      await this.authService.refreshTokens(value, deviceInfo);
+      await this.authService.refreshTokens(cookieRefreshToken, fingerprint);
 
     res.setCookieRefreshToken(refreshToken, expiresAt);
     return { accessToken };
   }
 
+  @DeviceHeader()
   @Delete('logout')
   @HttpCode(204)
-  async logout(@Req() req, @Res({ passthrough: true }) res) {
-    const value = req.getCookieRefreshToken();
-    const deviceInfo = req.getCookieDeviceInfo();
-    await this.authService.logout(value, deviceInfo);
+  async logout(
+    @Headers('X-Device-Fingerprint') fingerprint: string,
+    @Req() req,
+    @Res({ passthrough: true }) res,
+  ) {
+    const refreshToken = req.getCookieRefreshToken();
+    await this.authService.logout(refreshToken, fingerprint);
     res.clearCookieRefreshToken();
-    return {
-      message: 'Đã đăng xuất',
-    };
+    return;
   }
 
-  @Public()
   @Post('forgot-password')
-  forgotPassword(@Body() body: any, @Req() req: any) {
-    return { message: 'Reset link sent', user: req.user };
+  async forgotPassword(
+    @BodySchema(ForgotPasswordSchema) dto: ForgotPasswordDto,
+  ) {
+    await this.authService.forgotPassword(dto.email);
+    return { message: 'If your email exists, a reset link has been sent.' };
   }
 
   @Post('reset-password')
-  resetPassword(@Body() body: any) {
-    return { message: 'Password reset', token: body.token };
+  async resetPassword(@BodySchema(ResetPasswordSchema) dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return { message: 'Password reset successfully' };
   }
 
   @Get('me')
   // @Permissions(PermissionName.VIEW_USERS)
   @HttpCode(200)
   me(@Req() req, @Res({ passthrough: true }) res) {
-    const user = req.user as JwtPayload;
+    const user = req.user as User;
     if (!user) {
       throw new UnauthorizedException('User is not logged in');
     }
+    // const permissions = roles
+    //   .flatMap((r) => r.permissions || [])
+    //   .map((p) => p.name);
+    const roleNames = user.roles.map((r) => r.name);
     return MeSchema.parse({
-      id: user.sub,
+      id: user.id,
       email: user.email,
-      role: user.roles,
+      role: roleNames,
     });
   }
 
   @Put('change-password/:id')
-  @Schema(ChangePasswordSchema)
   @HttpCode(204)
   async changePassword(
     @Param('id') id: string,
-    @Body() dto: ChangePasswordDto,
+    @BodySchema(ChangePasswordSchema) dto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(id, dto);
   }

@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './user/users.module';
 import { AppService } from './app.service';
 import { FileModule } from './media/media.module';
@@ -26,7 +26,6 @@ import { LogsModule } from './shared/logs/logs.module';
 import { AppConfigService } from './shared/config/config.service';
 import { APP_GUARD } from '@nestjs/core';
 import { NewsModule } from './news/news.module';
-import { RolesGuard } from './roles/roles.guard';
 import { UserRoleSeeder } from './seeder/user-role.seeder';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { PermissionsGuard } from './permissions/permissions.guard';
@@ -80,6 +79,10 @@ import { PermissionsGuard } from './permissions/permissions.guard';
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })
