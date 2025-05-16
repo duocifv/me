@@ -1,6 +1,7 @@
 https://dientunguyenhien.vn/search?text_search=ESP32
 
 1. Bo mạch ESP32 WIFI + Bluetooth ESP-WROOM-32: 65,000 VNĐ
+1.1 Module ESP32-CAM Wifi Camera + Đế nạp ESP32-CAM
 
 2. Test board (Breadboard): 14,000 VNĐ
 
