@@ -7,12 +7,12 @@ import { UAParser } from 'ua-parser-js';
 // Extend interfaces
 declare module 'fastify' {
   interface FastifyReply {
-    setCookieRefreshToken(refreshToken: string, expiresAt: Date): this;
-    clearCookieRefreshToken(): this;
+    setCookieRefreshToken(refreshToken: string, expiresAt: Date, cookieName?: string): this;
+    clearCookieRefreshToken(cookieName?: string): this;
   }
   interface FastifyRequest {
-    getCookieIpAddress(): string;
-    getCookieRefreshToken(): string;
+    getCookieIpAddress(cookieName?: string): string;
+    getCookieRefreshToken(cookieName?: string): string;
     getCookieDeviceInfo(): string;
     getDeviceFingerprint(): string;
   }
@@ -49,7 +49,7 @@ export const authPlugin = fp((fastify: FastifyInstance) => {
       expiresAt: Date,
       cookieName?: string,
     ) {
-      const name = cookieName ?? 'refreshToken22';
+      const name = cookieName ? `token-${cookieName}`: 'refresh_token';
       const maxAge = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
       this.clearCookie(name, { ...cookieOptions, maxAge: 0 });
       return this.setCookie(name, encodeURIComponent(token), {
@@ -63,7 +63,7 @@ export const authPlugin = fp((fastify: FastifyInstance) => {
   fastify.decorateReply(
     'clearCookieRefreshToken',
     function (this: FastifyReply, cookieName?: string) {
-      const name = cookieName ?? 'refreshToken22';
+      const name = cookieName ? `token-${cookieName}`: 'refresh_token';
       return this.clearCookie(name, {
         ...cookieOptions,
         maxAge: 0,
@@ -75,7 +75,7 @@ export const authPlugin = fp((fastify: FastifyInstance) => {
   fastify.decorateRequest(
     'getCookieRefreshToken',
     function (this: FastifyRequest, cookieName?: string) {
-      const name = cookieName ?? 'refreshToken22';
+      const name = cookieName ? `token-${cookieName}`: 'refresh_token';
       const raw = this.cookies?.[name];
       if (!raw) {
         throw new UnauthorizedException('Missing refresh token cookie');

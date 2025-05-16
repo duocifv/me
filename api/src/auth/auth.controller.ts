@@ -43,7 +43,7 @@ export class AuthController {
 
   @Public()
   @DeviceHeader()
-  @Throttle({ default: { limit: 15, ttl: 60000 } })
+  @Throttle({ default: { limit: 50, ttl: 60000 } })
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @HttpCode(200)
@@ -56,11 +56,12 @@ export class AuthController {
     const user = req.user as User;
     const { accessToken, refreshToken, expiresAt } =
       await this.authService.signIn(user, fingerprint);
-    res.setCookieRefreshToken(refreshToken, expiresAt);
+    res.setCookieRefreshToken(refreshToken, expiresAt,user.id);
     return { accessToken };
   }
 
   @Public()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('register')
   register(@BodySchema(CreateUserSchema) dto: CreateUserDto) {
     return this.authService.register(dto);
@@ -75,11 +76,12 @@ export class AuthController {
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
+    const user = req.user as User;
     const cookieRefreshToken = req.getCookieRefreshToken();
     const { accessToken, refreshToken, expiresAt } =
       await this.authService.refreshTokens(cookieRefreshToken, fingerprint);
 
-    res.setCookieRefreshToken(refreshToken, expiresAt);
+    res.setCookieRefreshToken(refreshToken, expiresAt, user.id);
     return { accessToken };
   }
 
@@ -91,9 +93,10 @@ export class AuthController {
     @Req() req,
     @Res({ passthrough: true }) res,
   ) {
+    const user = req.user as User;
     const refreshToken = req.getCookieRefreshToken();
     await this.authService.logout(refreshToken, fingerprint);
-    res.clearCookieRefreshToken();
+    res.clearCookieRefreshToken(user.id);
     return;
   }
 
