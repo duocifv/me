@@ -69,3 +69,14 @@ GET /api/core/config – Lấy cấu hình hệ thống (ví dụ: URL cơ sở 
 GET /api/core/status – Kiểm tra trạng thái của hệ thống (ví dụ: kiểm tra kết nối cơ sở dữ liệu, dịch vụ, v.v.).
 
 POST /api/core/log – Gửi thông tin log (có thể dùng trong quá trình phát triển hoặc bảo trì hệ thống).
+
+---
+
+https://emin.vn/fotekssr-40-da-relay-ban-dan-fotek-ssr-40-da-40a-152165/pr.html
+EMIN Đà Nẵng - Việt Nam:
+Địa chỉ: Số 622 Điện Biên Phủ, Phường Thanh Khê Tây, Quận Thanh Khê, TP Đà Nẵng, Việt Nam
+
+https://bshop.com.vn/san-pham/linh-kien-khac/relay-the-ran-ssr-fotek-40a-ssr-40-da.html
+Đồng Kè - Đà Nẵng (Xem đường đi)
+
+https://emin.vn/fotekssr-40da-relay-ban-dan-dc-ac-fotek-ssr-40da-40a-141407/pr.html
