@@ -12,6 +12,7 @@ import { User } from 'src/user/entities/user.entity';
 import { AppConfigService } from 'src/shared/config/config.service';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import { RefreshTokenPayload } from '../interfaces/jwt-payload.type';
+import { Token } from '../interfaces/token.type';
 
 @Injectable()
 export class TokensService {
@@ -128,7 +129,12 @@ export class TokensService {
   async generateTokenPair(
     user: User,
     fingerprint: string,
-  ): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+    userId: string;
+  }> {
     const accessToken = await this.generateAccessToken(user);
     const { token: refreshToken, jti } = await this.generateRefreshToken(user);
     await this.saveRefreshToken(user.id, fingerprint, jti, refreshToken);
@@ -139,6 +145,7 @@ export class TokensService {
       accessToken,
       refreshToken,
       expiresAt,
+      userId: user.id,
     };
   }
 
@@ -223,7 +230,7 @@ export class TokensService {
     oldJti: string,
     user: User,
     fingerprint: string,
-  ): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
+  ): Promise<Token> {
     const rt = await this.rtRepo.findOneBy({ id: oldJti });
 
     if (!rt) {

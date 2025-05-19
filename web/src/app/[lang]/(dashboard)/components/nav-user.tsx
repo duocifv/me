@@ -38,7 +38,6 @@ import {
 import { useAuthStore } from "@adapter/auth/auth.store";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -68,10 +67,6 @@ export function NavUser() {
     name: "duocnv",
     email: user?.email || "",
     avatar: "/avatars/shadcn.jpg",
-  };
-
-  const handleLogout = () => {
-    alert("Logging out...");
   };
 
   return (

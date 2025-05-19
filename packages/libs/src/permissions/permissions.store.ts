@@ -3,7 +3,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import { initPermissionMap, IPermissionGroup } from "./permission.utils";
 
 export type Permissions = {
   id: string;
@@ -11,17 +10,15 @@ export type Permissions = {
 };
 type PermissionsState = {
   permissions: Permissions[];
-  setPermissions: (
-    permissions_list: Permissions[],
-  ) => void;
+  setPermissions: (permissions_list: Permissions[]) => void;
 };
 
 export const permissionsStore = create<PermissionsState>()(
   devtools(
     immer((set, get) => ({
       permissions: [],
-      setPermissions: (newPermissions) => set({ permissions: newPermissions })
+      setPermissions: (newPermissions) => set({ permissions: newPermissions }),
     })),
-      { name: "PermissionsStore" }
+    { name: "PermissionsStore" }
   )
 );

@@ -18,6 +18,7 @@ import { UserStatus } from 'src/user/dto/user-status.enum';
 import axios from 'axios';
 import { RecaptchaVerifyResponse } from '../interfaces/capcha.type';
 import { SignInDto } from '../dto/sign-in.dto';
+import { Token } from '../interfaces/token.type';
 
 @Injectable()
 export class AuthService {
@@ -120,10 +121,7 @@ export class AuthService {
   }
 
   // Đăng nhập, tạo cặp token và trả về
-  async signIn(
-    user: User,
-    fingerprint: string,
-  ): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
+  async signIn(user: User, fingerprint: string): Promise<Token> {
     return this.tokensService.generateTokenPair(user, fingerprint);
   }
 
@@ -131,7 +129,7 @@ export class AuthService {
   async refreshTokens(
     refreshToken: string,
     deviceInfo: string,
-  ): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
+  ): Promise<Token> {
     const payload = await this.tokensService.verifyRefreshToken(
       refreshToken,
       deviceInfo,

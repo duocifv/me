@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
-import { FileController } from './media.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { MediaController } from './media.controller';
+import { MediaFile } from './entities/file.entity';
+import { UploadFileService } from './media.service';
 
 @Module({
-  controllers: [FileController],
+  imports: [TypeOrmModule.forFeature([MediaFile])],
+  controllers: [MediaController],
+  providers: [UploadFileService],
 })
-export class FileModule {}
+export class MediaModule {}

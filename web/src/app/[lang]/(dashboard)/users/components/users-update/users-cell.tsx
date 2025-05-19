@@ -6,7 +6,6 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogCancel,
-  AlertDialogAction,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
@@ -23,12 +22,15 @@ import { Button } from "@/components/ui/button";
 import { UserDto } from "@adapter/users/dto/user.dto";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { useRef } from "react";
 import dynamic from "next/dynamic";
 import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
 import { UpdateUserSubmit } from "./update-user-submit";
-const UsersUpdate = dynamic(() => import("./users-update"));
+import AppLoading from "../../../components/app-loading";
+
+const UsersUpdate = dynamic(() => import("./users-update"), {
+  loading: () => <AppLoading />,
+});
 
 export default function TableCellViewer({ item }: { item: UserDto }) {
   const valueRef = useRef<UpdateByAdminDto>({});
@@ -68,7 +70,7 @@ export default function TableCellViewer({ item }: { item: UserDto }) {
                   <Input id="target" defaultValue={item.email} readOnly />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-3">
                   <Label htmlFor="enabled">ENABLED</Label>
                   <Switch
@@ -84,7 +86,7 @@ export default function TableCellViewer({ item }: { item: UserDto }) {
                   <Label htmlFor="verified">VERIFIED</Label>
                   <Switch id="verified" checked={item.isEmailVerified} />
                 </div>
-              </div>
+              </div> */}
             </form>
           </div>
           <SheetFooter className="mt-auto flex gap-2 sm:flex-col sm:space-x-0">

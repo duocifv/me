@@ -1,15 +1,25 @@
 "use client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SignInDto } from "./dto/sign-in.dto";
 import { authService } from "./auth.service";
 import { useAuthStore } from "./auth.store";
+import { api } from "../share/api/apiClient";
+
+export const loggedIn = () => api.storage.is();
+
+export function useAuthLogoutQuery() {
+  const user = useAuthStore((s) => s.user);
+  return useQuery({
+    queryKey: ["me"],
+    queryFn: () => authService.getMe(),
+    enabled: user === null,
+    retry: false,
+  });
+}
 
 export function useAuthLoginMutation() {
   return useMutation({
     mutationFn: (dto: SignInDto) => authService.login(dto),
-    onSuccess: () => {
-      useAuthStore.setState({ loggedIn: true });
-    },
   });
 }
 
@@ -24,16 +34,14 @@ export function useAuthRegisterMutation() {
 }
 export function useAuthLogoutMutation() {
   const queryClient = useQueryClient();
-  const setLogout = useAuthStore((s) => s.setLogout);
   return useMutation({
     mutationFn: () => authService.logout(),
-    onSuccess: async () => {
-      await queryClient.cancelQueries();
-      queryClient.removeQueries();
-      queryClient.getQueryCache().clear();
-      queryClient.getMutationCache().clear();
-      setLogout();
-    },
+    // onSuccess: async () => {
+    //   await queryClient.cancelQueries();
+    //   queryClient.removeQueries();
+    //   queryClient.getQueryCache().clear();
+    //   queryClient.getMutationCache().clear();
+    // },
   });
 }
 

@@ -56,7 +56,7 @@ export class AuthController {
     const user = req.user as User;
     const { accessToken, refreshToken, expiresAt } =
       await this.authService.signIn(user, fingerprint);
-    res.setCookieRefreshToken(refreshToken, expiresAt,user.id);
+    res.setCookieRefreshToken(refreshToken, expiresAt, user.id);
     return { accessToken };
   }
 
@@ -73,31 +73,30 @@ export class AuthController {
   @HttpCode(200)
   async refresh(
     @Headers('X-Device-Fingerprint') fingerprint: string,
+    // @Headers('X-User-Id') user_id: string,
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
-    const user = req.user as User;
     const cookieRefreshToken = req.getCookieRefreshToken();
-    const { accessToken, refreshToken, expiresAt } =
+    const { accessToken, refreshToken, expiresAt, userId } =
       await this.authService.refreshTokens(cookieRefreshToken, fingerprint);
 
-    res.setCookieRefreshToken(refreshToken, expiresAt, user.id);
+    res.setCookieRefreshToken(refreshToken, expiresAt, userId);
     return { accessToken };
   }
 
   @DeviceHeader()
   @Delete('logout')
-  @HttpCode(204)
+  @HttpCode(200)
   async logout(
     @Headers('X-Device-Fingerprint') fingerprint: string,
     @Req() req,
     @Res({ passthrough: true }) res,
   ) {
-    const user = req.user as User;
     const refreshToken = req.getCookieRefreshToken();
     await this.authService.logout(refreshToken, fingerprint);
-    res.clearCookieRefreshToken(user.id);
-    return;
+    res.clearCookieRefreshToken();
+    return 'logout-ok';
   }
 
   @Post('forgot-password')

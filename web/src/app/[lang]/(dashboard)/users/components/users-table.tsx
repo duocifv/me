@@ -33,14 +33,12 @@ import {
 import {
   ArrowUpDown,
   BanIcon,
-  CheckCircle,
   CheckCircle2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
   Clock,
-  XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,11 +62,10 @@ import {
 } from "@/components/ui/table";
 import { UserDto } from "@adapter/users/dto/user.dto";
 import { useUsersStore } from "@adapter/users/users.store";
-import { UsersLoader } from "./users-loader";
+import DraggableRow from "./draggable-row";
 
 const UsersFilter = dynamic(() => import("./users-filter"));
 const TableCellViewer = dynamic(() => import("./users-update/users-cell"));
-const DraggableRow = dynamic(() => import("./draggable-row"));
 
 const columns: ColumnDef<UserDto>[] = [
   {
@@ -117,35 +114,6 @@ const columns: ColumnDef<UserDto>[] = [
     ),
   },
   {
-    accessorKey: "VERIFIED",
-    header: "VERIFIED",
-    cell: ({ row }) => {
-      const isEmailVerified = row.original.isEmailVerified;
-      const Icon = isEmailVerified ? CheckCircle : XCircle;
-      const iconColor = isEmailVerified ? "text-green-500" : "text-red-500";
-
-      return (
-        <div className="w-16 flex items-center justify-center">
-          <Icon className={`w-4 h-4 ${iconColor}`} />
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "ENABLED",
-    header: "ENABLED",
-    cell: ({ row }) => {
-      const isActive = row.original.isActive;
-      const Icon = isActive ? CheckCircle : XCircle;
-      const iconColor = isActive ? "text-green-500" : "text-red-500";
-      return (
-        <div className="w-16 flex items-center justify-center">
-          <Icon className={`w-4 h-4 ${iconColor}`} />
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: "STATUS",
     header: "STATUS",
     cell: ({ row }) => {
@@ -187,8 +155,6 @@ const columns: ColumnDef<UserDto>[] = [
   },
 ];
 
-let render = 0;
-
 export default function DataTableUsers() {
   const filters = useUsersStore((s) => s.filters);
   const setFilters = useUsersStore((s) => s.setFilters);
@@ -196,8 +162,6 @@ export default function DataTableUsers() {
   const currentPage = users.meta.currentPage;
   const totalPages = users.meta.totalPages;
   const meta = users.meta;
-  render++;
-  console.log("component  re-render", render, users);
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =

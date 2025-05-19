@@ -12,14 +12,19 @@ class AuthService {
   private authApi = api.group("auth");
 
   async login(dto: SignInDto): Promise<LoginDto> {
-    const res = await this.authApi.post<LoginDto>("login", dto, {
-      credentials: "include",
-      useFingerprint: true,
-    });
-    if (res.accessToken) {
-      api.setToken(res.accessToken);
+    try {
+      const res = await this.authApi.post<LoginDto>("login", dto, {
+        credentials: "include",
+        useFingerprint: true,
+      });
+      if (res.accessToken) {
+        api.storage.login();
+        api.setToken(res.accessToken);
+      }
+      return res;
+    } catch (error: any) {
+      throw new Error(error.message);
     }
-    return res;
   }
 
   async register(dto: SignInDto): Promise<UserDto> {
@@ -35,15 +40,27 @@ class AuthService {
   }
 
   async getMe(): Promise<MeDto | null> {
-    return this.authApi.get<MeDto>("me");
+    try {
+      const data = await this.authApi.get<MeDto>("me");
+      api.storage.login();
+      return data;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
   }
 
   async logout(): Promise<void> {
-    this.authApi.delete<void>("logout", {
-      credentials: "include",
-      useFingerprint: true,
-    });
-    api.clearToken();
+    try {
+      await this.authApi.delete<void>("logout", {
+        credentials: "include",
+        useFingerprint: true,
+      });
+      api.clearToken();
+      api.storage.logout();
+      api.redirectLogin();
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
   }
 }
 

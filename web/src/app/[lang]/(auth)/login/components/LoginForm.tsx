@@ -57,7 +57,7 @@ export function LoginForm({
                           Forgot your password?
                         </a>
                       </div>
-                      <div className="relative">
+                      <div className="relative mb-6">
                         <Input
                           id="password"
                           type="password"

@@ -5,10 +5,14 @@ import { useAuthStore } from "@adapter/auth/auth.store";
 
 export default function Logout() {
   const { mutate, isPending } = useAuthLogoutMutation();
-  const isLoggedIn = useAuthStore((s) => s.loggedIn);
-
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const setLogout = useAuthStore((s) => s.setLogout);
+  const handleLogout = () => {
+    mutate();
+    setLogout();
+  };
   return (
-    <AlertDialogAction onClick={() => mutate()}>
+    <AlertDialogAction onClick={handleLogout}>
       {isPending
         ? "Đang đăng xuất..."
         : isLoggedIn

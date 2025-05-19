@@ -1,39 +1,31 @@
 "use client";
+
 import * as React from "react";
 import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@adapter/permissions/permissions";
 import { RoleDto } from "@adapter/roles/dto/roles.dto";
 import { useEffect, useState } from "react";
+import { IPermissionGroup } from "@adapter/permissions/permission.utils";
 
-type PermissionGroup = {
-  label: string;
-  read: boolean;
-  write: boolean;
-  readId?: string;
-  writeId?: string;
-};
-
-export function EditRoleDialog(role: RoleDto) {
+export default function EditRoleSheet(role: RoleDto) {
   const { permissionsList } = usePermissions(role.permissions);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState<string>(role.name);
   const [selectAll, setSelectAll] = useState(false);
-  const [perms, setPerms] = useState<PermissionGroup[]>([]);
+  const [perms, setPerms] = useState<IPermissionGroup[]>([]);
   const prevOpen = React.useRef(false);
-  console.log("permissions role:", permissionsList);
 
-  // Đồng bộ perms mỗi khi dialog mở
   useEffect(() => {
     if (open && !prevOpen.current) {
       setName(role.name);
@@ -41,7 +33,7 @@ export function EditRoleDialog(role: RoleDto) {
 
       const allSelected =
         permissionsList.length > 0 &&
-        permissionsList.every((p) => p.read && p.write);
+        permissionsList.every((p) => p.view && p.manage);
       setSelectAll(allSelected);
     }
     prevOpen.current = open;
@@ -51,15 +43,15 @@ export function EditRoleDialog(role: RoleDto) {
     setSelectAll(checked);
     const updated = perms.map((perm) => ({
       ...perm,
-      read: checked,
-      write: checked,
+      view: checked,
+      manage: checked,
     }));
     setPerms(updated);
   };
 
   const handlePermChange = (
     index: number,
-    field: "read" | "write",
+    field: "view" | "manage",
     value: boolean
   ) => {
     setPerms((prev) => {
@@ -68,18 +60,17 @@ export function EditRoleDialog(role: RoleDto) {
       return updated;
     });
 
-    // Cập nhật lại selectAll nếu cần
     const updated = [...perms];
     updated[index] = { ...updated[index], [field]: value };
-    const allChecked = updated.every((p) => p.read && p.write);
+    const allChecked = updated.every((p) => p.view && p.manage);
     setSelectAll(allChecked);
   };
 
   const handleSubmit = () => {
     const selectedPermissionIds = perms.flatMap((perm) => {
       const ids: string[] = [];
-      if (perm.read && perm.readId) ids.push(perm.readId);
-      if (perm.write && perm.writeId) ids.push(perm.writeId);
+      if (perm.view && perm.viewId) ids.push(perm.viewId);
+      if (perm.manage && perm.manageId) ids.push(perm.manageId);
       return ids;
     });
 
@@ -92,25 +83,26 @@ export function EditRoleDialog(role: RoleDto) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         <Button variant="outline" size="sm">
           Edit
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Edit Role {role.name}</DialogTitle>
-          <DialogDescription>Set role permissions</DialogDescription>
-        </DialogHeader>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full max-w-lg">
+        <SheetHeader>
+          <SheetTitle>Edit Role {role.name}</SheetTitle>
+          <SheetDescription>Set role permissions</SheetDescription>
+        </SheetHeader>
 
-        <div className="space-y-4 mt-4">
+        <div className="space-y-4 mt-4 px-4">
           <label className="block">
             <span className="text-sm font-medium">Role Name</span>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter a role name"
+              readOnly
             />
           </label>
 
@@ -137,7 +129,7 @@ export function EditRoleDialog(role: RoleDto) {
                 >
                   <span className="text-sm">{perm.label}</span>
                   <div className="flex space-x-4">
-                    {(["read", "write"] as const).map((field) => (
+                    {(["view", "manage"] as const).map((field) => (
                       <label
                         key={field}
                         className="flex items-center space-x-1"
@@ -158,13 +150,13 @@ export function EditRoleDialog(role: RoleDto) {
           </div>
         </div>
 
-        <DialogFooter className="mt-6 space-x-2">
+        <SheetFooter className="mt-6 space-x-2 flex justify-end">
           <Button onClick={handleSubmit}>Submit</Button>
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

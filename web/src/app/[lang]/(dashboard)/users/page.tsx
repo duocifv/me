@@ -1,13 +1,22 @@
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { UsersLoader } from "./components/users-loader";
-const UsersSummary = dynamic(() => import("./components/users-summary"));
-const DataTableUsers = dynamic(() => import("./components/users-table"));
+import UsersSummary from "./components/users-summary";
+import AppLoading from "../components/app-loading";
+
+const UsersLoader = dynamic(() => import("../users/components/users-loader"), {
+  loading: () => <AppLoading />,
+});
+const DataTableUsers = dynamic(
+  () => import("../users/components/users-table"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
 
 export default async function PageUsers() {
   return (
     <Suspense>
-      <UsersLoader />;
+      <UsersLoader />
       <UsersSummary />
       <DataTableUsers />
     </Suspense>

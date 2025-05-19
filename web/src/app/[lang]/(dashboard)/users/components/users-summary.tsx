@@ -11,7 +11,7 @@ import { Users, UserPlus, UserCheck, UserLock } from "lucide-react";
 import { useUsersStore } from "@adapter/users/users.store";
 
 export default function UsersSummary() {
-  const {stats } = useUsersStore((s) => s.data);
+  const { stats } = useUsersStore((s) => s.data);
   const metrics = [
     {
       title: "Total Users",

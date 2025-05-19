@@ -5,11 +5,15 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Users, UserPlus, Settings, LucideProps } from "lucide-react";
-import { EditRoleDialog } from "./rdit-role-dialog";
 import { useRolesQuery } from "@adapter/roles/roles";
 import { ForwardRefExoticComponent } from "react";
+import dynamic from "next/dynamic";
+import AppLoading from "../../components/app-loading";
+
+const EditRoleSheet = dynamic(() => import("./edit-role-sheet"), {
+  loading: () => <AppLoading />,
+});
 
 type Role = {
   name: "ADMIN" | "CUSTOMER" | "MANAGER" | "GUEST";
@@ -50,18 +54,7 @@ export default function RolesAndPermissionsSummary() {
   return (
     isSuccess && (
       <div className="space-y-6">
-        {/* Header + add-role button */}
-        <div className="flex justify-between items-center px-4 lg:px-6">
-          <div>
-            <h1 className="text-2xl font-semibold">Roles and Permissions</h1>
-            <p className="text-sm text-gray-500">
-              Dashboard &gt; Role Management &amp; Permission
-            </p>
-          </div>
-          <Button>+ Add New Role</Button>
-        </div>
 
-        {/* Carousel of role-cards */}
         <div className="relative px-4 lg:px-6">
           <Carousel>
             <CarouselContent className="flex -ml-4">
@@ -83,7 +76,7 @@ export default function RolesAndPermissionsSummary() {
                           <div className={`p-2 rounded ${color}`}>
                             <Icon className="h-5 w-5" />
                           </div>
-                          <EditRoleDialog {...role} />
+                          <EditRoleSheet {...role} />
                         </div>
                         <h2 className="text-lg font-medium">{name}</h2>
                         {/* <div className="flex items-center space-x-2">

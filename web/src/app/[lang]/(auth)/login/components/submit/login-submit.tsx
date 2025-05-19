@@ -6,15 +6,26 @@ import { throttle } from "lodash";
 import { useMemo } from "react";
 import { useAuthLoginMutation } from "@adapter/auth/auth.api";
 import { SignInDto } from "@adapter/auth/dto/sign-in.dto";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuthStore } from "@adapter/auth/auth.store";
 
 export function LoginSubmit(form: FormSubmit<SignInDto>) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const segments = pathname.split("/");
+  const last = segments.filter(Boolean).pop();
   const { mutate, isPending } = useAuthLoginMutation();
+  const setLogin = useAuthStore((s) => s.setLogin);
   const throttledSubmit = useMemo(
     () =>
       throttle(
         form.handleSubmit((value) => {
           mutate(value, {
             onSuccess: () => {
+              if (last === "login") {
+                router.replace(`/${segments[1]}`);
+              }
+              setLogin(true);
               toast.success("Đăng nhập thành công", {
                 duration: 5000,
                 icon: <CheckCircle className="h-5 w-5 text-green-500" />,

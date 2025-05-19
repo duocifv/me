@@ -6,16 +6,11 @@ import { AuthModule } from './auth/auth.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './user/users.module';
 import { AppService } from './app.service';
-import { FileModule } from './media/media.module';
+import { MediaModule } from './media/media.module';
 import { MailModule } from './mail/mail.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
-import { ArticlesModule } from './article/article.module';
-import { CategoryModule } from './category/category.module';
 import { SettingsModule } from './settings/settings.module';
-import { HomeModule } from './pages/home/home.module';
-import { AboutModule } from './pages/about/about.module';
-import { ContactModule } from './pages/contact/contact.module';
 import { User } from './user/entities/user.entity';
 import { Role } from './roles/entities/role.entity';
 import { Permission } from './permissions/entities/permission.entity';
@@ -25,7 +20,6 @@ import { NotificationModule } from './notification/notification.module';
 import { LogsModule } from './shared/logs/logs.module';
 import { AppConfigService } from './shared/config/config.service';
 import { APP_GUARD } from '@nestjs/core';
-import { NewsModule } from './news/news.module';
 import { UserRoleSeeder } from './seeder/user-role.seeder';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { PermissionsGuard } from './permissions/permissions.guard';
@@ -55,18 +49,12 @@ import { PermissionsGuard } from './permissions/permissions.guard';
     RolesModule,
     PermissionsModule,
     UsersModule,
-    FileModule,
+    MediaModule,
     MailModule,
-    ArticlesModule,
-    CategoryModule,
     SettingsModule,
-    HomeModule,
-    AboutModule,
-    ContactModule,
     DashboardModule,
     NotificationModule,
     LogsModule,
-    NewsModule,
   ],
   controllers: [AppController],
   providers: [

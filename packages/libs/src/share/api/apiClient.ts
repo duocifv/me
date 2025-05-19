@@ -2,8 +2,8 @@ import type { HttpMethod, ApiOpts } from "./types";
 import { callApi } from "./callApi";
 import { ApiError, errorHandler } from "./errorHandler";
 import { getFingerprint } from "./fingerprint";
-import { $config } from "../config/env";
 import { isTokenExpiringSoon } from "./jwt";
+import { loginState } from "./authStorage";
 
 /**
  * A robust API client with built-in token handling, refresh logic,
@@ -18,6 +18,12 @@ export class ApiClient {
     // Normalize prefix (remove leading/trailing slashes)
     this.prefix = prefix.replace(/^\/+|\/+$/g, "");
   }
+
+  storage = {
+    is: loginState.isLoggedIn,
+    login: loginState.setLoggedIn,
+    logout: loginState.clear,
+  };
 
   /** Sets the current access token in memory */
   setToken(token: string): void {
@@ -48,21 +54,27 @@ export class ApiClient {
    * concurrent refresh requests.
    */
   private async refreshToken(): Promise<void> {
-    if (!this.hasToken()) return;
+    const fingerprint = await getFingerprint();
+    console.log("AccessToken login state:", this.storage.is());
+
     if (!this.refreshPromise) {
       this.refreshPromise = (async () => {
         try {
-          const { data, error, status } = await callApi<{
+          const { data, error } = await callApi<{
             accessToken: string;
-          }>("POST", this.buildUrl("auth/token2"), {
+          }>("POST", this.buildUrl("/token"), {
             credentials: "include",
-            useFingerprint: true,
+            headers: {
+              "X-Device-Fingerprint": fingerprint,
+            },
           });
 
           if (error || !data?.accessToken) {
+            this.clearToken();
+            this.storage.logout();
+            this.redirectLogin();
             throw new ApiError("RefreshExpired", 401, "RefreshExpired");
           }
-
           this.setToken(data.accessToken);
         } catch (err: any) {
           this.clearToken();
@@ -90,10 +102,11 @@ export class ApiClient {
     opts: ApiOpts<T> = {},
     retry = true
   ): Promise<T> {
-    if (process.env.NODE_ENV === "development") {
-      console.log("AccessToken:", this.accessToken);
-    }
-    // Proactive token refresh if it's about to expire
+    // if (process.env.NODE_ENV === "development") {
+    //   console.log("AccessToken:", this.accessToken);
+    // }
+    console.log("AccessToken:", this.accessToken);
+
     if (this.accessToken && isTokenExpiringSoon(this.accessToken)) {
       await this.refreshToken();
     }
@@ -115,7 +128,7 @@ export class ApiClient {
     });
 
     // Handle expired token: refresh and retry once
-    if (status === 401 && retry && this.hasToken()) {
+    if (status === 401 && retry && this.storage.is()) {
       await this.refreshToken();
       return this.request(method, path, opts, false);
     }
@@ -127,6 +140,8 @@ export class ApiClient {
         status === 401 ? "Unauthorized" : "ApiError"
       );
     }
+
+    console.log("data ------------>", data);
 
     if (data == null) {
       throw new ApiError("Empty response", status ?? 500, "NoData");

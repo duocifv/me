@@ -5,10 +5,10 @@ type Permission = {
 
 export type IPermissionGroup = {
   label: string;
-  read: boolean;
-  write: boolean;
-  readId?: string;
-  writeId?: string;
+  view: boolean;
+  manage: boolean;
+  viewId?: string;
+  manageId?: string;
 };
 
 export function initPermissionMap(
@@ -28,19 +28,19 @@ export function initPermissionMap(
       .replace(/^./, (c) => c.toUpperCase());
 
     if (!map.has(label)) {
-      map.set(label, { label, read: false, write: false });
+      map.set(label, { label, view: false, manage: false });
     }
 
     const group = map.get(label)!;
 
     if (action === "VIEW") {
-      group.readId = id;
-      group.read = rolePermissionNames.has(name);
+      group.viewId = id;
+      group.view = rolePermissionNames.has(name);
     }
 
     if (action === "MANAGE") {
-      group.writeId = id;
-      group.write = rolePermissionNames.has(name);
+      group.manageId = id;
+      group.manage = rolePermissionNames.has(name);
     }
   });
 

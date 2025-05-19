@@ -1,16 +1,8 @@
-import {
-  Controller,
-  Get,
-  Body,
-  Param,
-  Put,
-  ParseUUIDPipe,
-} from '@nestjs/common';
+import { Controller, Get, Param, Put, ParseUUIDPipe } from '@nestjs/common';
 import { UpdateRoleDto, UpdateRoleSchema } from './dto/update-role.dto';
 import { RoleService } from './roles.service';
 import { Permissions } from 'src/permissions/permissions.decorator';
 import { PermissionName } from 'src/permissions/permission.enum';
-import { Schema } from 'src/shared/decorators/dto.decorator';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 
 @Controller('roles')

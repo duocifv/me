@@ -5,7 +5,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -23,8 +22,11 @@ import dynamic from "next/dynamic";
 import { useUsersStore } from "@adapter/users/users.store";
 import { GetUsersDto, GetUsersSchema } from "@adapter/users/dto/get-users.dto";
 import { UserSearch } from "./user-search";
+import AppLoading from "../../components/app-loading";
 
-const UsersAddDialog = dynamic(() => import("./users-add/users-add"));
+const UsersAddDialog = dynamic(() => import("./users-add/users-add"), {
+  loading: () => <AppLoading />,
+});
 
 export default function UsersFilter({ table }: { table: Table<UserDto> }) {
   const filters = useUsersStore((s) => s.filters);

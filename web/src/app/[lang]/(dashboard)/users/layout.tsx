@@ -14,10 +14,15 @@ export default async function UserLayout({
 }>) {
   return (
     <>
-      <SiteHeader value="Users" />
+      <SiteHeader value="Dashboard &gt; Users" />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+            <div className="flex justify-between items-center px-4 lg:px-6">
+              <div>
+                <h1 className="text-2xl font-semibold">Users</h1>
+              </div>
+            </div>
             {children}
           </div>
         </div>

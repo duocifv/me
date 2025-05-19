@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "./auth.store";
-import { authService } from "./auth.service";
-import { useQuery } from "@tanstack/react-query";
 import { errorHandler } from "../share/api/errorHandler";
+import { loggedIn, useAuthLogoutQuery } from "./auth.api";
 
 export function AuthGuard({
   children,
@@ -13,23 +12,20 @@ export function AuthGuard({
   children: React.ReactNode;
   fallback: React.ReactNode;
 }) {
-  const loggedIn = useAuthStore((s) => s.loggedIn);
-  const [hydrationDone, setHydrationDone] = useState(false);
+  const isStogareLoggedIn = loggedIn();
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const setLogin = useAuthStore((s) => s.setLogin);
 
+  const setLogout = useAuthStore((s) => s.setLogout);
+
   useEffect(() => {
-    (async () => {
-      if (!useAuthStore.persist.hasHydrated()) {
-        await useAuthStore.persist.rehydrate();
-      }
-      setHydrationDone(true);
-    })();
-  }, []);
+    setLogin(isStogareLoggedIn);
+  }, [isLoggedIn, setLogin]);
 
   useEffect(() => {
     const unsub = errorHandler.register((err) => {
       if (err instanceof Error && err.name === "RefreshExpired") {
-        setLogin(false);
+        setLogout();
         return true;
       }
       return false;
@@ -37,27 +33,22 @@ export function AuthGuard({
     return () => unsub();
   }, []);
 
-  if (hydrationDone && loggedIn) {
+  if (isLoggedIn === false) {
+    return <>{fallback}</>;
+  }
+  if (isLoggedIn) {
     return <AuthenticatedApp>{children}</AuthenticatedApp>;
   }
-
-  return hydrationDone && <>{fallback}</>;
 }
 
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
-  const user = useAuthStore((s) => s.user);
+  const { data, isSuccess, isError } = useAuthLogoutQuery();
   const setUser = useAuthStore((s) => s.setUser);
-
-  const { data, isSuccess, isError } = useQuery({
-    queryKey: ["me", user?.email],
-    queryFn: () => authService.getMe(),
-    enabled: user === null,
-    retry: false,
-  });
+  const setLogout = useAuthStore((s) => s.setLogout);
 
   useEffect(() => {
     if (isSuccess && data) setUser(data);
-    if (isError) setUser(null);
+    if (isError) setLogout();
   }, [isSuccess, isError, data, setUser]);
 
   return <>{children}</>;

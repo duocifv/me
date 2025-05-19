@@ -13,6 +13,7 @@ export const corsConfig: FastifyCorsOptions = {
     'Content-Type',
     'x-device-fingerprint',
     'x-recaptcha-token',
+    'X-User-Id',
   ],
   credentials: true,
 };
