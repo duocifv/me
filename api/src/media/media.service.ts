@@ -49,8 +49,8 @@ export class UploadFileService {
 
     return {
       totalFile,
-      totalStorage: Math.round(totalStorage / 1024 / 1024), // MB
-      imagesStorage: Math.round(imagesStorage / 1024 / 1024), // MB
+      totalStorage: Math.round(totalStorage / 1024 / 1024),
+      imagesStorage: Math.round(imagesStorage / 1024 / 1024),
     };
   }
   async findAll(): Promise<MediaFile[]> {
