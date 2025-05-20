@@ -36,12 +36,12 @@ export function useAuthLogoutMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => authService.logout(),
-    // onSuccess: async () => {
-    //   await queryClient.cancelQueries();
-    //   queryClient.removeQueries();
-    //   queryClient.getQueryCache().clear();
-    //   queryClient.getMutationCache().clear();
-    // },
+    onSuccess: async () => {
+      await queryClient.cancelQueries();
+      queryClient.removeQueries();
+      queryClient.getQueryCache().clear();
+      queryClient.getMutationCache().clear();
+    },
   });
 }
 

@@ -53,21 +53,17 @@ export class UploadFileService {
 
   async getMediaWithStats(): Promise<any> {
     const totalFile = await this.mediaRepo.count();
-    const { totalStorage = 0 } = await this.mediaRepo
+    const rawTotal = await this.mediaRepo
       .createQueryBuilder('media')
       .select('SUM(media.size)', 'totalStorage')
       .getRawOne();
 
-    const { imagesStorage = 0 } = await this.mediaRepo
-      .createQueryBuilder('media')
-      .select('SUM(media.size)', 'imagesStorage')
-      .where("media.mimetype LIKE 'image/%'")
-      .getRawOne();
-
+    const totalStorage = Number(rawTotal?.totalStorage) || 0;
+    const MAX_STORAGE_BYTES = 10 * 1024 * 1024 * 1024; // 10GB
     return {
       totalFile,
-      totalStorage: Math.round(totalStorage / 1024 / 1024),
-      imagesStorage: Math.round(imagesStorage / 1024 / 1024),
+      usedStorageBytes: totalStorage,
+      maxStorageBytes: MAX_STORAGE_BYTES,
     };
   }
   async findAll(): Promise<MediaFile[]> {

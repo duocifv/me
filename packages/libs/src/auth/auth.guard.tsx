@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAuthStore } from "./auth.store";
 import { errorHandler } from "../share/api/errorHandler";
-import { loggedIn, useAuthLogoutQuery } from "./auth.api";
+import { loggedIn, useAuthLogoutQuery } from "./auth.hook";
 
 export function AuthGuard({
   children,
@@ -15,7 +15,6 @@ export function AuthGuard({
   const isStogareLoggedIn = loggedIn();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const setLogin = useAuthStore((s) => s.setLogin);
-
   const setLogout = useAuthStore((s) => s.setLogout);
 
   useEffect(() => {

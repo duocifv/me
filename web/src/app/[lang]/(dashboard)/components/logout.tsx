@@ -1,6 +1,6 @@
 "use client";
 import { AlertDialogAction } from "@/components/ui/alert-dialog";
-import { useAuthLogoutMutation } from "@adapter/auth/auth.api";
+import { useAuthLogoutMutation } from "@adapter/auth/auth.hook";
 import { useAuthStore } from "@adapter/auth/auth.store";
 
 export default function Logout() {

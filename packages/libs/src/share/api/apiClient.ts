@@ -62,7 +62,7 @@ export class ApiClient {
         try {
           const { data, error } = await callApi<{
             accessToken: string;
-          }>("POST", this.buildUrl("/token"), {
+          }>("POST", "/auth/token", {
             credentials: "include",
             timeout: 3000,
             headers: {

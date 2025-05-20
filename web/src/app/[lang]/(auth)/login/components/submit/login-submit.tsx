@@ -4,7 +4,7 @@ import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { throttle } from "lodash";
 import { useMemo } from "react";
-import { useAuthLoginMutation } from "@adapter/auth/auth.api";
+import { useAuthLoginMutation } from "@adapter/auth/auth.hook";
 import { SignInDto } from "@adapter/auth/dto/sign-in.dto";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@adapter/auth/auth.store";
