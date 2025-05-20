@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { FormSubmit } from "@adapter/share/type/form";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { throttle } from "lodash";
 import { useAuthLoginMutation } from "@adapter/auth/auth.hook";
 import { SignInDto } from "@adapter/auth/dto/sign-in.dto";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,37 +15,37 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
   const last = segments.filter(Boolean).pop();
   const { mutate, isPending } = useAuthLoginMutation();
   const setLogin = useAuthStore((s) => s.setLogin);
-  const throttledSubmit =
-    () =>
-      throttle(
-        form.handleSubmit((value) => {
-          mutate(value, {
-            onSuccess: () => {
-              if (last === "login") {
-                router.replace(`/${segments[1]}`);
-              }
-              setLogin(true);
-              toast.success("Đăng nhập thành công", {
-                duration: 5000,
-                icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-              });
-            },
-            onError: (err) => {
-              toast.error(err.message, {
-                duration: 5000,
-                icon: <XCircle className="h-5 w-5 text-red-500" />,
-              });
-            },
-          });
-        }),
-        2000,
-        { leading: true, trailing: false }
-      )
+  const handleSubmit = form.handleSubmit((value) => {
+    mutate(value, {
+      onSuccess: () => {
+        if (last === "login") {
+          router.replace(`/${segments[1]}`);
+        }
+        setLogin(true);
+        toast.success("Đăng nhập thành công", {
+          duration: 5000,
+          icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+        });
+      },
+      onError: (err) => {
+        toast.error(err.message, {
+          duration: 5000,
+          icon: <XCircle className="h-5 w-5 text-red-500" />,
+        });
+      },
+    });
+  })
 
+
+  const onClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    handleSubmit(e);
+  };
 
   return (
     <Button
-      onClick={throttledSubmit}
+      type="button"
+      onClick={onClick}
       className="w-24"
       disabled={isPending}
       formNoValidate
