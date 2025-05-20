@@ -1,9 +1,9 @@
+"use client"
 import { Button } from "@/components/ui/button";
 import { FormSubmit } from "@adapter/share/type/form";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { throttle } from "lodash";
-import { useMemo } from "react";
 import { useAuthLoginMutation } from "@adapter/auth/auth.hook";
 import { SignInDto } from "@adapter/auth/dto/sign-in.dto";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,7 +16,7 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
   const last = segments.filter(Boolean).pop();
   const { mutate, isPending } = useAuthLoginMutation();
   const setLogin = useAuthStore((s) => s.setLogin);
-  const throttledSubmit = useMemo(
+  const throttledSubmit =
     () =>
       throttle(
         form.handleSubmit((value) => {
@@ -41,9 +41,8 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
         }),
         2000,
         { leading: true, trailing: false }
-      ),
-    [form, mutate]
-  );
+      )
+
 
   return (
     <Button

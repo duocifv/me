@@ -17,13 +17,14 @@ export const loginState = {
    * @returns `true` if logged in, otherwise `false`.
    */
   isLoggedIn(): boolean {
+    if (typeof window === "undefined") return false;
     try {
       return localStorage.getItem(LOGIN_STATE_KEY) === "true";
     } catch (error) {
-      console.warn(
-        "LoginState.isLoggedIn(): unable to access localStorage",
-        error
-      );
+      // console.warn(
+      //   "LoginState.isLoggedIn(): unable to access localStorage",
+      //   error
+      // );
       return false;
     }
   },

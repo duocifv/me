@@ -7,6 +7,7 @@ import { FormWrapper } from "@adapter/share/components/FormWrapper";
 import { SignInDto, SignInSchema } from "@adapter/auth/dto/sign-in.dto";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoginSubmit } from "./submit/login-submit";
+import { Picture } from "@/components/share/picture/ui-picture";
 
 export function LoginForm({
   className,
@@ -57,7 +58,7 @@ export function LoginForm({
                           Forgot your password?
                         </a>
                       </div>
-                      <div className="relative mb-6">
+                      <div className="relative">
                         <Input
                           id="password"
                           type="password"
@@ -84,7 +85,7 @@ export function LoginForm({
                         </a>
                       </div>
                       <div className="relative hidden bg-muted md:block">
-                        <img
+                        <Picture
                           src="/placeholder.svg"
                           alt="Image"
                           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"

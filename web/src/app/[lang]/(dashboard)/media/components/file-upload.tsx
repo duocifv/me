@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useMediaStore } from "@adapter/media/media.store";
 import { FileUploadSchema } from "@adapter/media/dto/media-upload.dto";
+import { Picture } from "@/components/share/picture/ui-picture";
 
 // Define Zod schema for file validation
 
@@ -104,7 +105,7 @@ export function FileUpload() {
           <div className="w-full">
             <div className="flex items-center justify-between bg-gray-100 rounded p-2">
               <div className="flex items-center gap-2">
-                <img
+                <Picture
                   src={URL.createObjectURL(file)}
                   alt={file.name}
                   className="h-16 w-16 object-cover rounded"

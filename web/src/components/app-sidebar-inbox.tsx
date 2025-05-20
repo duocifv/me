@@ -232,7 +232,7 @@ export function AppSidebarInbox({
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <NavUser user={data.user} />
+          <NavUser/>
         </SidebarFooter>
       </Sidebar>
 
