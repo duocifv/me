@@ -57,8 +57,11 @@ export class MediaController {
     @Req()
     req: FastifyRequest,
   ) {
+    if (!req.isMultipart()) {
+      throw new BadRequestException('Form must be multipart/form-data');
+    }
     const part = await req.file();
-    console.log('part.mimetype', part?.mimetype);
+
     if (!part) throw new NotFoundException('File không có');
 
     // Validate mime

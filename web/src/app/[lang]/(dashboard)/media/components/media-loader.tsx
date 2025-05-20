@@ -1,16 +1,16 @@
 "use client";
-import { useUsersQuery } from "@adapter/users/users.hook.";
 import { useEffect } from "react";
 import isEqual from "lodash/isEqual";
-import { useUsersStore } from "@adapter/users/users.store";
+import { useMediaQuery } from "@adapter/media/media.hook";
+import { useMediaStore } from "@adapter/media/media.store";
 
-export default function UsersLoader() {
-  const { isLoading, error, isSuccess, data } = useUsersQuery();
+export default function MediaLoader() {
+  const { isLoading, error, isSuccess, data } = useMediaQuery();
   useEffect(() => {
     if (isSuccess && data) {
-      const storeData = useUsersStore.getState().data;
+      const storeData = useMediaStore.getState().data;
       if (!isEqual(storeData, data)) {
-        useUsersStore.setState({ data });
+        useMediaStore.setState({ data });
       }
     }
   }, [data, isSuccess]);

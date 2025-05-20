@@ -64,6 +64,7 @@ export class ApiClient {
             accessToken: string;
           }>("POST", this.buildUrl("/token"), {
             credentials: "include",
+            timeout: 3000,
             headers: {
               "X-Device-Fingerprint": fingerprint,
             },
@@ -114,7 +115,7 @@ export class ApiClient {
     const url = this.buildUrl(path);
     const fingerprint = opts.useFingerprint ? await getFingerprint() : null;
 
-    const headers = {
+    const mergedHeaders = {
       ...opts.headers,
       ...(fingerprint ? { "X-Device-Fingerprint": fingerprint } : {}),
       ...(this.accessToken
@@ -124,7 +125,7 @@ export class ApiClient {
 
     const { data, error, status } = await callApi<T>(method, url, {
       ...opts,
-      headers,
+      headers: mergedHeaders,
     });
 
     // Handle expired token: refresh and retry once

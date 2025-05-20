@@ -23,6 +23,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { UserRoleSeeder } from './seeder/user-role.seeder';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { PermissionsGuard } from './permissions/permissions.guard';
+import { join } from 'path';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { TerminusModule } from '@nestjs/terminus';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -44,6 +48,12 @@ import { PermissionsGuard } from './permissions/permissions.guard';
       ],
     }),
     TypeOrmModule.forFeature([User, Role, Permission]),
+    ServeStaticModule.forRoot({
+      serveRoot: '/uploads',
+      rootPath: join(__dirname, '..', 'uploads'),
+    }),
+    TerminusModule,
+    HttpModule,
     CoreModule,
     AuthModule,
     RolesModule,

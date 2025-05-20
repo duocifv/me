@@ -30,8 +30,8 @@ export const callApi = async <T>(
   const url = makeUrl(path, params);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  if (body !== undefined && body !== null) {
+  const isFormData = body instanceof FormData;
+  if (body !== undefined && body !== null && !isFormData) {
     headers = { "Content-Type": "application/json", ...headers };
   }
 
@@ -43,7 +43,11 @@ export const callApi = async <T>(
       headers,
       signal: controller.signal,
       credentials,
-      ...(method !== "GET" && body ? { body: JSON.stringify(body) } : {}),
+      ...(method !== "GET" && body
+        ? isFormData
+          ? { body } // FormData
+          : { body: JSON.stringify(body) } // JSON
+        : {}),
     };
 
     return await retryFetch<T>(url, requestOpts);

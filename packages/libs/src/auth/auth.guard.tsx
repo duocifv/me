@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuthStore } from "./auth.store";
 import { errorHandler } from "../share/api/errorHandler";
 import { loggedIn, useAuthLogoutQuery } from "./auth.api";
