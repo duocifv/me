@@ -2,8 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MediaFile } from './entities/file.entity';
-import { CreateMediaDto } from './dto/CreateMediaDto';
+import { CreateMediaDto } from './dto/create-media.dto';
 import { PaginationService } from 'src/shared/pagination/pagination.service';
+import { MediaDto } from './dto/media.dto';
+import { paginate, Pagination } from 'nestjs-typeorm-paginate';
 
 @Injectable()
 export class UploadFileService {
@@ -18,20 +20,35 @@ export class UploadFileService {
     return this.mediaRepo.save(file);
   }
 
-  async findAllPaginate(dto: any) {
-    const { page, limit, ...filters } = dto;
+  async paginateMedia(dto: MediaDto): Promise<Pagination<MediaFile>> {
+    const { page, limit, mimetype, category, startDate, endDate } = dto;
     const qb = this.mediaRepo.createQueryBuilder('media_files');
-    const paginate = await this.paginationService.paginate(
-      qb,
-      { page, limit },
-      '/media_files',
-      filters,
-      ['email'],
-    );
-    return {
-      items: paginate.items,
-      meta: paginate.meta,
-    };
+
+    if (mimetype) {
+      qb.andWhere('media_files.mimetype = :mimetype', { mimetype });
+    }
+    if (category) {
+      qb.andWhere('media_files.category = :category', { category });
+    }
+    if (startDate) {
+      qb.andWhere('media_files.createdAt >= :startDate', { startDate });
+    }
+    if (endDate) {
+      qb.andWhere('media_files.createdAt <= :endDate', { endDate });
+    }
+
+    return paginate<MediaFile>(qb, {
+      page,
+      limit,
+      route: '/media',
+    });
+  }
+
+  async findByMimeType(type: string): Promise<MediaFile[]> {
+    return this.mediaRepo.find({
+      where: { mimetype: type },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async getMediaWithStats(): Promise<any> {

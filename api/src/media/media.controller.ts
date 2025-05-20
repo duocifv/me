@@ -10,11 +10,6 @@ import {
   NotFoundException,
   Put,
   Body,
-  UseInterceptors,
-  UploadedFile,
-  FileTypeValidator,
-  ParseFilePipe,
-  MaxFileSizeValidator,
   BadRequestException,
 } from '@nestjs/common';
 import {
@@ -31,24 +26,18 @@ import { PermissionName } from 'src/permissions/permission.enum';
 import { Permissions } from 'src/permissions/permissions.decorator';
 import { UploadFileService } from './media.service';
 import { MediaFile } from './entities/file.entity';
-import { CreateMediaDto } from './dto/CreateMediaDto';
+import { CreateMediaDto } from './dto/create-media.dto';
 import { QuerySchema } from 'src/shared/decorators/query-schema.decorator';
 import { MediaDto, MediaSchema } from './dto/media.dto';
-
-interface FileResponse {
-  id: string;
-  variants: Record<'thumbnail' | 'medium' | 'large', string>;
-  mimetype: string;
-  size: number;
-  createdAt: Date;
-}
+import { MediaFilterDto, MediaFilterSchema } from './dto/media-filter.dto';
+import { MediaFileDto } from './dto/media-file.dto';
 
 @ApiTags('Media')
 @Controller('media')
 export class MediaController {
   constructor(private readonly uploadService: UploadFileService) {}
 
-  private toResponse(file: MediaFile): FileResponse {
+  private toResponse(file: MediaFile): MediaFileDto {
     const { id, variants, mimetype, size, createdAt } = file;
     return { id, variants, mimetype, size, createdAt };
   }
@@ -69,6 +58,7 @@ export class MediaController {
     req: FastifyRequest,
   ) {
     const part = await req.file();
+    console.log('part.mimetype', part?.mimetype);
     if (!part) throw new NotFoundException('File không có');
 
     // Validate mime
@@ -80,7 +70,7 @@ export class MediaController {
 
     // Build DTO, lưu DB
     const mediaDto: CreateMediaDto = {
-      mime: part.mimetype,
+      mimetype: part.mimetype,
       size: part.file?.bytesRead || 0,
       variants: {
         thumbnail: `/uploads/${variants.thumbnail}`,
@@ -91,11 +81,14 @@ export class MediaController {
     return this.uploadService.create(mediaDto);
   }
 
+  @Get('categories')
+  getCategories() {
+    return ['image', 'video', 'document', 'audio'];
+  }
+
   @Get()
   async findAll(@QuerySchema(MediaSchema) dto: MediaDto) {
-    const paginate = await this.uploadService.findAllPaginate(dto);
-    // const list = await this.uploadService.findAll();
-    // return list.map((file) => this.toResponse(file));
+    const paginate = await this.uploadService.paginateMedia(dto);
     const stats = await this.uploadService.getMediaWithStats();
     return {
       ...paginate,
@@ -103,9 +96,16 @@ export class MediaController {
     };
   }
 
+  @Get('all')
+  @Permissions(PermissionName.VIEW_MEDIA)
+  async findAllList(): Promise<MediaFileDto[]> {
+    const files = await this.uploadService.findAll();
+    return files.map((file) => this.toResponse(file));
+  }
+
   @Get('/:id')
   @Permissions(PermissionName.VIEW_MEDIA)
-  async findOne(@Param('id') id: string): Promise<FileResponse> {
+  async findOne(@Param('id') id: string): Promise<MediaFileDto> {
     const file = await this.uploadService.findOne(id);
     return this.toResponse(file);
   }
@@ -115,7 +115,7 @@ export class MediaController {
   async update(
     @Param('id') id: string,
     @Body() body: Partial<UploadFileDto>,
-  ): Promise<FileResponse> {
+  ): Promise<MediaFileDto> {
     const updated = await this.uploadService.update(id, body as any);
     return this.toResponse(updated);
   }
@@ -131,6 +131,13 @@ export class MediaController {
     };
   }
 
+  @Get('filter')
+  @Permissions(PermissionName.VIEW_MEDIA)
+  async findByType(@QuerySchema(MediaFilterSchema) dto: MediaFilterDto) {
+    const files = await this.uploadService.findByMimeType(dto.type);
+    return files.map((file) => this.toResponse(file));
+  }
+
   @Get('download/:filename')
   @Permissions(PermissionName.VIEW_MEDIA)
   async download(
@@ -144,5 +151,23 @@ export class MediaController {
       `attachment; filename="${encodeURIComponent(filename)}"`,
     );
     await pipeline(stream, res.raw);
+  }
+
+  @Delete()
+  @Permissions(PermissionName.MANAGE_MEDIA)
+  @HttpCode(204)
+  async bulkDelete(
+    @Body() body: { ids: string[] },
+    @Req() req: FastifyRequest,
+  ) {
+    if (!Array.isArray(body.ids))
+      throw new BadRequestException('Invalid format');
+
+    for (const id of body.ids) {
+      req.server.fileManager.deleteFile(id);
+      await this.uploadService.remove(id);
+    }
+
+    return { message: 'Deleted successfully' };
   }
 }

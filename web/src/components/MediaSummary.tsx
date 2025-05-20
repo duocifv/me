@@ -7,20 +7,13 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  HardDrive,
-  Image as ImageIcon,
-  FileText,
-  Music,
-  Video,
-} from "lucide-react";
+import { HardDrive, Image as ImageIcon, FileText, Music } from "lucide-react";
 
 const storageStats = [
   { label: "Total", used: 94, limit: 100, icon: HardDrive },
   { label: "Images", used: 26, limit: 100, icon: ImageIcon },
   { label: "Documents", used: 38, limit: 100, icon: FileText },
   { label: "Audios", used: 54, limit: 100, icon: Music },
-  { label: "Videos", used: 67, limit: 100, icon: Video },
 ];
 
 export function MediaSummary() {

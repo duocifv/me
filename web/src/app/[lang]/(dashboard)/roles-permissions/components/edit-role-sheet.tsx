@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { usePermissions } from "@adapter/permissions/permissions";
+import { usePermissions } from "@adapter/permissions/permissions.hook";
 import { RoleDto } from "@adapter/roles/dto/roles.dto";
 import { useEffect, useState } from "react";
 import { IPermissionGroup } from "@adapter/permissions/permission.utils";

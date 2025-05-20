@@ -10,6 +10,9 @@ export class MediaFile {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ nullable: true })
+  name: string;
+
   @Column({ type: 'simple-json' })
   variants: Record<'thumbnail' | 'medium' | 'large', string>;
 
@@ -18,6 +21,8 @@ export class MediaFile {
 
   @Column('int')
   size: number;
+  @Column({ nullable: true })
+  category?: string;
 
   @CreateDateColumn()
   createdAt: Date;

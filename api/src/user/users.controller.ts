@@ -32,7 +32,7 @@ export class UsersController {
   // @Permissions('create:posts')
   // @Scopes('write:posts')
   async findAll(@QuerySchema(GetUsersSchema) dto: GetUsersDto) {
-    const paginate = await this.usersService.getUsers(dto);
+    const paginate = await this.usersService.paginateUsers(dto);
     const stats = await this.usersService.getUsersWithStats();
     return {
       ...paginate,

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { FormSubmit } from "@adapter/share/type/form";
 import { CreateUserDto } from "@adapter/users/dto/create-user.dto";
-import { useCreateUserMutation } from "@adapter/users/users.api.";
+import { useCreateUserMutation } from "@adapter/users/users.hook.";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { throttle } from "lodash";

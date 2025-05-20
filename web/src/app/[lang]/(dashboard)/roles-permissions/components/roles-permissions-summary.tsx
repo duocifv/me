@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, UserPlus, Settings, LucideProps } from "lucide-react";
-import { useRolesQuery } from "@adapter/roles/roles";
+import { useRolesQuery } from "@adapter/roles/roles.hook";
 import { ForwardRefExoticComponent } from "react";
 import dynamic from "next/dynamic";
 import AppLoading from "../../components/app-loading";

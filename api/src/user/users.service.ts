@@ -22,6 +22,7 @@ import { RoleService } from 'src/roles/roles.service';
 import { UserStatus } from './dto/user-status.enum';
 import { User } from './entities/user.entity';
 import { AccountSecurityService } from 'src/auth/services/account-security.service';
+import { paginate, Pagination } from 'nestjs-typeorm-paginate';
 
 @Injectable()
 export class UsersService {
@@ -49,38 +50,46 @@ export class UsersService {
     return bcrypt.compare(rawToken, storedToken);
   }
 
-  async getUsers(dto: GetUsersDto) {
-    const { page, limit, roles, status, search, ...filters } = dto;
+  async paginateUsers(dto: GetUsersDto): Promise<{
+    items: Awaited<ReturnType<typeof UserListSchema.parse>>;
+    meta: Pagination<User>['meta'];
+  }> {
+    const { page, limit, roles, status, search } = dto;
+
     const qb = this.usersRepo
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.roles', 'role')
       .where('user.deleted_at IS NULL');
 
+    // filter theo roles
     if (roles?.length) {
       qb.andWhere('role.name IN (:...roles)', { roles });
     }
 
+    // filter theo search trên email
     if (search) {
       const safe = this.escapeLike(search.trim().toLowerCase());
       qb.andWhere('LOWER(user.email) LIKE :search', { search: `%${safe}%` });
     }
 
+    // filter theo status
     if (status?.length) {
       qb.andWhere('user.status IN (:...status)', { status });
     }
 
-    const paginate = await this.paginationService.paginate(
-      qb,
-      { page, limit },
-      '/users',
-      filters,
-      ['email'],
-    );
+    // paginate
+    const result: Pagination<User> = await paginate<User>(qb, {
+      page,
+      limit,
+      route: '/users',
+    });
 
-    const validatedData = UserListSchema.parse(paginate.items);
+    // zod-validate items
+    const validatedItems = UserListSchema.parse(result.items);
+
     return {
-      items: validatedData,
-      meta: paginate.meta,
+      items: validatedItems,
+      meta: result.meta,
     };
   }
 

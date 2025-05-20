@@ -1,6 +1,6 @@
 import { RefObject } from "react";
 import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
-import { useUpdateUserMutation } from "@adapter/users/users.api.";
+import { useUpdateUserMutation } from "@adapter/users/users.hook.";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { throttle } from "lodash";
