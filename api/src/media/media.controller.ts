@@ -22,7 +22,7 @@ import {
 } from '@nestjs/swagger';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { UploadFileDto } from './dto/upload-file.dto';
-import { PermissionName } from 'src/permissions/permission.enum';
+import { PermissionName } from 'src/permissions/dto/permission.enum';
 import { Permissions } from 'src/permissions/permissions.decorator';
 import { UploadFileService } from './media.service';
 import { MediaFile } from './entities/file.entity';

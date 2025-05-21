@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, FindManyOptions, FindOneOptions } from 'typeorm';
 import { Role } from 'src/roles/entities/role.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
-import { PermissionName } from 'src/permissions/permission.enum';
+import { PermissionName } from 'src/permissions/dto/permission.enum';
 import { NotFoundException } from '@nestjs/common';
-import { UpdateRoleDto } from './dto/update-role.dto';
+import { UpdateRoleDto } from '../dto/update-role.dto';
 
-import { Roles } from './dto/role.enum';
-import { RoleFullDto } from './dto/role.dto';
+import { Roles } from '../dto/role.enum';
+import { RoleFullDto } from '../dto/role.dto';
 
 @Injectable()
 export class RoleService {

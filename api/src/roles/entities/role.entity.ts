@@ -1,18 +1,25 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   ManyToMany,
   JoinTable,
+  BeforeInsert,
 } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
 import { Roles } from '../dto/role.enum';
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity('roles')
 export class Role {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn({ type: 'char', length: 36 })
   id: string;
+
+  @BeforeInsert()
+  generateId() {
+    this.id = uuidv4();
+  }
 
   @Column({ unique: true, default: Roles.GUEST })
   name: Roles;

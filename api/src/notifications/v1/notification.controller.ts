@@ -9,15 +9,15 @@ import {
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { Permissions } from 'src/permissions/permissions.decorator';
-import { PermissionName } from 'src/permissions/permission.enum';
+import { PermissionName } from 'src/permissions/dto/permission.enum';
 import {
   CreateNotificationDto,
   createNotificationSchema,
-} from './dto/create-notification.dto';
+} from '../dto/create-notification.dto';
 import {
   UpdateNotificationDto,
   updateNotificationSchema,
-} from './dto/update-notification.dto';
+} from '../dto/update-notification.dto';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 
 @Controller('notifications')

@@ -5,7 +5,7 @@ import { Role } from 'src/roles/entities/role.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
 import { Roles } from 'src/roles/dto/role.enum';
 import bcrypt from 'bcryptjs';
-import { PermissionName } from 'src/permissions/permission.enum';
+import { PermissionName } from 'src/permissions/dto/permission.enum';
 import { User } from 'src/user/entities/user.entity';
 
 @Injectable()

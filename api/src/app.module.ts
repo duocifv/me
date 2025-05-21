@@ -25,8 +25,8 @@ import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { PermissionsGuard } from './permissions/permissions.guard';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { TerminusModule } from '@nestjs/terminus';
-import { HttpModule } from '@nestjs/axios';
+// import { TerminusModule } from '@nestjs/terminus';
+// import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -52,8 +52,8 @@ import { HttpModule } from '@nestjs/axios';
       serveRoot: '/uploads',
       rootPath: join(__dirname, '..', 'uploads'),
     }),
-    TerminusModule,
-    HttpModule,
+    // TerminusModule,
+    // HttpModule,
     CoreModule,
     AuthModule,
     RolesModule,

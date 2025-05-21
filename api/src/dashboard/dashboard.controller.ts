@@ -3,7 +3,7 @@ import { DashboardService } from './dashboard.service';
 import { Permissions } from 'src/permissions/permissions.decorator';
 import { RolesAllowed } from 'src/roles/roles.decorator';
 import { Roles } from 'src/roles/dto/role.enum';
-import { PermissionName } from 'src/permissions/permission.enum';
+import { PermissionName } from 'src/permissions/dto/permission.enum';
 
 @RolesAllowed(Roles.ADMIN, Roles.MANAGER)
 @Controller('dashboard')

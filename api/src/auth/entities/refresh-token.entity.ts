@@ -4,13 +4,22 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
+  BeforeInsert,
 } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
 export class RefreshToken {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn({ type: 'char', length: 36 })
   id: string;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
 
   @ManyToOne(() => User, (user) => user.refreshTokens, { onDelete: 'CASCADE' })
   user: User;

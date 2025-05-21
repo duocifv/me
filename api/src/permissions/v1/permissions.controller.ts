@@ -1,7 +1,7 @@
 import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Permissions } from 'src/permissions/permissions.decorator';
-import { PermissionName } from './permission.enum';
+import { PermissionName } from '../dto/permission.enum';
 import { PermissionsService } from './permissions.service';
 // import { Schema } from 'src/shared/decorators/dto.decorator';
 // import {

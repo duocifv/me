@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PermissionName } from '../permission.enum';
+import { PermissionName } from './permission.enum';
 
 export const PermissionSchema = z.object({
   id: z.string(),

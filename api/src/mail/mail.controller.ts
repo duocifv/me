@@ -2,7 +2,7 @@ import { Controller, Post, Res, Req } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Permissions } from 'src/permissions/permissions.decorator';
-import { PermissionName } from 'src/permissions/permission.enum';
+import { PermissionName } from 'src/permissions/dto/permission.enum';
 
 @Controller('mail')
 export class MailController {
