@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import * as fs from 'fs';
 import * as path from 'path';
 import { JwtPayload } from '../interfaces/jwt-payload.type';
-import { UsersService } from 'src/user/users.service';
+import { UsersService } from 'src/user/v1/users.service';
 import { User } from 'src/user/entities/user.entity';
 
 @Injectable()

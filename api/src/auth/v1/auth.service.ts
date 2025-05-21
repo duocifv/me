@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { TokensService } from './tokens.service';
-import { UsersService } from 'src/user/users.service';
+import { UsersService } from 'src/user/v1/users.service';
 import * as bcrypt from 'bcryptjs';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UserDto, UserWithPermissionsSchema } from 'src/user/dto/user.dto';

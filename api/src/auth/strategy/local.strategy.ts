@@ -8,7 +8,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../v1/auth.service';
 import { FastifyRequest } from 'fastify';
 import { SignInDto } from '../dto/sign-in.dto';
 

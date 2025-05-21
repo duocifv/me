@@ -11,13 +11,17 @@ import { setupSwagger } from './plugins/swagger.plugin';
 import { TypeOrmExceptionFilter } from './shared/filters/TypeOrmExceptionFilter';
 import cors from './plugins/cors.plugin';
 import recaptcha from './plugins/recaptcha.plugin';
+import { VersioningType } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
   );
-  // await app.enableCors(corsConfig);x
+   app.enableVersioning({
+    type: VersioningType.URI,  
+    defaultVersion: '1',  
+  });
   app.enableShutdownHooks();
   app.useGlobalFilters(new TypeOrmExceptionFilter());
   await cors(app);

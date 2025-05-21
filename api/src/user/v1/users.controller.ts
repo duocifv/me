@@ -8,17 +8,17 @@ import {
   Put,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { UsersService } from '../v1/users.service';
 import { RolesAllowed } from 'src/roles/roles.decorator';
 import { Roles } from 'src/roles/dto/role.enum';
 import { ApiTags } from '@nestjs/swagger';
-import { GetUsersDto, GetUsersSchema } from './dto/get-users.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { GetUsersDto, GetUsersSchema } from '../dto/get-users.dto';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
 import {
   UpdateByAdminDto,
   UpdateByAdminSchema,
-} from './dto/update-by-admin.dto';
-import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
+} from '../dto/update-by-admin.dto';
+import { CreateUserDto, CreateUserSchema } from '../dto/create-user.dto';
 import { QuerySchema } from 'src/shared/decorators/query-schema.decorator';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 

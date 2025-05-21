@@ -8,21 +8,21 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, MoreThan } from 'typeorm';
 import bcrypt from 'bcryptjs';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UserDto, UserListSchema, UserSchema } from './dto/user.dto';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { UserDto, UserListSchema, UserSchema } from '../dto/user.dto';
 import { PermissionName } from 'src/permissions/permission.enum';
 import { Roles } from 'src/roles/dto/role.enum';
 import { PaginationService } from 'src/shared/pagination/pagination.service';
-import { GetUsersDto } from './dto/get-users.dto';
-import { UserStatsDto, UserStatsSchema } from './dto/user-stats.dto';
-import { ChangePasswordDto } from '../auth/dto/change-password.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import { UpdateByAdminDto } from './dto/update-by-admin.dto';
+import { GetUsersDto } from '../dto/get-users.dto';
+import { UserStatsDto, UserStatsSchema } from '../dto/user-stats.dto';
+import { ChangePasswordDto } from '../../auth/dto/change-password.dto';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { UpdateByAdminDto } from '../dto/update-by-admin.dto';
 import { RoleService } from 'src/roles/roles.service';
-import { UserStatus } from './dto/user-status.enum';
-import { User } from './entities/user.entity';
-import { AccountSecurityService } from 'src/auth/services/account-security.service';
+import { UserStatus } from '../dto/user-status.enum';
+import { User } from '../entities/user.entity';
 import { paginate, Pagination } from 'nestjs-typeorm-paginate';
+import { AccountSecurityService } from 'src/auth/v1/account-security.service';
 
 @Injectable()
 export class UsersService {
@@ -30,7 +30,6 @@ export class UsersService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly rolesService: RoleService,
-    private readonly paginationService: PaginationService,
     private readonly accountSecurityService: AccountSecurityService,
   ) {}
 

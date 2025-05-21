@@ -6,8 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './user/users.module';
 import { AppService } from './app.service';
-import { MediaModule } from './media/media.module';
-import { MailModule } from './mail/mail.module';
+// import { MediaModule } from './media/media.module';
+// import { MailModule } from './mail/mail.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { SettingsModule } from './settings/settings.module';
@@ -59,8 +59,8 @@ import { HttpModule } from '@nestjs/axios';
     RolesModule,
     PermissionsModule,
     UsersModule,
-    MediaModule,
-    MailModule,
+    // MediaModule,
+    // MailModule,
     SettingsModule,
     DashboardModule,
     NotificationModule,

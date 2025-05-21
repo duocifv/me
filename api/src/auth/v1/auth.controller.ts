@@ -12,29 +12,29 @@ import {
   UnauthorizedException,
   Headers,
 } from '@nestjs/common';
-import { AuthService } from './services/auth.service';
+import { AuthService } from './auth.service';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { CreateUserDto, CreateUserSchema } from 'src/user/dto/create-user.dto';
-import { LocalAuthGuard } from './guard/local-auth.guard';
+import { LocalAuthGuard } from '../guard/local-auth.guard';
 import { User } from 'src/user/entities/user.entity';
 import { Public } from 'src/shared/decorators/public.decorator';
 import {
   ChangePasswordDto,
   ChangePasswordSchema,
 } from 'src/auth/dto/change-password.dto';
-import { MeSchema } from './dto/login.dto';
-import { SignInDto, SignInSchema } from './dto/sign-in.dto';
+import { MeSchema } from '../dto/login.dto';
+import { SignInDto, SignInSchema } from '../dto/sign-in.dto';
 import { DeviceHeader } from 'src/shared/decorators/device-header.decorator';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import { Throttle } from '@nestjs/throttler';
 import {
   ForgotPasswordDto,
   ForgotPasswordSchema,
-} from './dto/forgot-password.dto';
+} from '../dto/forgot-password.dto';
 import {
   ResetPasswordDto,
   ResetPasswordSchema,
-} from './dto/reset-password.dto';
+} from '../dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
