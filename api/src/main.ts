@@ -27,8 +27,8 @@ async function bootstrap() {
   await cors(app);
   await recaptcha(app);
   await app.register(authPlugin);
-  // await app.register(fileManagerPlugin);
-  // await app.register(mailerPlugin);
+  await app.register(fileManagerPlugin);
+  await app.register(mailerPlugin);
   if (process.env.ENABLE_SWAGGER) {
     setupSwagger(app);
   }
