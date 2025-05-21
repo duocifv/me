@@ -62,5 +62,5 @@ jobs:
         server: 103.221.223.51
         username: me@my.duocnv.top
         password: Khanh132132!!
-        server-dir: /api/
+        server-dir: /
         local-dir: "api/dist/" # For NestJS build output directory
