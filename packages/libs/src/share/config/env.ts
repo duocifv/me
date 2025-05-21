@@ -21,7 +21,7 @@ const defaultConfig: EnvConfig = {
 
 // Trả về các giá trị từ process.env hoặc giá trị mặc định
 export const $config: EnvConfig = {
-  API_URL: process.env.DB_FILE_NAME || defaultConfig.API_URL,
+  API_URL: process.env.NEXT_PUBLIC_API_URL || defaultConfig.API_URL,
   API_KEY: process.env.API_KEY || defaultConfig.API_KEY,
   LOG_LEVEL: process.env.LOG_LEVEL || defaultConfig.LOG_LEVEL,
   NODE_ENV: process.env.NODE_ENV || defaultConfig.NODE_ENV,
