@@ -10,17 +10,17 @@ import { AppService } from './app.service';
 // import { MailModule } from './mail/mail.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
-import { SettingsModule } from './settings/settings.module';
+// import { SettingsModule } from './settings/settings.module';
 import { User } from './user/entities/user.entity';
 import { Role } from './roles/entities/role.entity';
 import { Permission } from './permissions/entities/permission.entity';
-import { DashboardModule } from './dashboard/dashboard.module';
+// import { DashboardModule } from './dashboard/dashboard.module';
 import { CoreModule } from './shared/core.module';
-import { NotificationModule } from './notifications/notification.module';
-import { LogsModule } from './shared/logs/logs.module';
+// import { NotificationModule } from './notifications/notification.module';
+// import { LogsModule } from './shared/logs/logs.module';
 import { AppConfigService } from './shared/config/config.service';
 import { APP_GUARD } from '@nestjs/core';
-import { UserRoleSeeder } from './seeder/user-role.seeder';
+// import { UserRoleSeeder } from './seeder/user-role.seeder';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { PermissionsGuard } from './permissions/permissions.guard';
 import { join } from 'path';
@@ -61,15 +61,15 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     UsersModule,
     // MediaModule,
     // MailModule,
-    SettingsModule,
-    DashboardModule,
-    NotificationModule,
-    LogsModule,
+    // SettingsModule,
+    // DashboardModule,
+    // NotificationModule,
+    // LogsModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    UserRoleSeeder,
+    // UserRoleSeeder,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
@@ -84,14 +84,17 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     },
   ],
 })
-export class AppModule implements OnModuleInit {
-  constructor(private readonly userRoleSeeder: UserRoleSeeder) {}
 
-  async onModuleInit() {
-    if (process.env.NODE_ENV !== 'production') {
-      await this.userRoleSeeder.onModuleInit();
-    } else {
-      // console.log('Skipping seeding in production environment.');
-    }
-  }
-}
+export class AppModule {}
+
+// export class AppModule implements OnModuleInit {
+//   constructor(private readonly userRoleSeeder: UserRoleSeeder) {}
+
+//   async onModuleInit() {
+//     if (process.env.NODE_ENV !== 'production') {
+//       await this.userRoleSeeder.onModuleInit();
+//     } else {
+//       // console.log('Skipping seeding in production environment.');
+//     }
+//   }
+// }

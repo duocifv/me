@@ -1,28 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-  HealthCheckService,
-  HttpHealthIndicator,
-  TypeOrmHealthIndicator,
-  DiskHealthIndicator,
-  MemoryHealthIndicator,
-  HealthCheck,
-  HealthCheckResult,
-  HealthIndicatorResult,
-} from '@nestjs/terminus';
-import * as path from 'path';
 
 @ApiTags('App')
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private health: HealthCheckService,
-    private http: HttpHealthIndicator,
-    private db: TypeOrmHealthIndicator,
-    private disk: DiskHealthIndicator,
-    private memory: MemoryHealthIndicator,
   ) {}
 
   @Get()
