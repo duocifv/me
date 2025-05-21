@@ -8,7 +8,7 @@ export interface ReqParams {
  * Tùy chọn cho API client.
  */
 export interface ApiOpts<T> {
-  params?: Record<string, string | number | boolean>;
+  params?: Record<string, string | number | boolean> | unknown[];
   cache?: RequestCache;
   body?: Record<string, unknown>;
   headers?: Record<string, string>;
@@ -16,6 +16,7 @@ export interface ApiOpts<T> {
   fallback?: T | null;
   credentials?: RequestCredentials;
   useFingerprint?: boolean;
+  responseType?: "json" | "blob" | "text";
 }
 
 /**

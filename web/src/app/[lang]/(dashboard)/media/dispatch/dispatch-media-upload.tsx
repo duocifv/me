@@ -4,7 +4,7 @@ import { useMediaStore } from "@adapter/media/media.store";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
-export function ButtonUpload() {
+export default function ButtonUpload() {
   const setFileInfo = useMediaStore((s) => s.setFileInfo);
   const { mutate, isPending, error } = useMediaMutation();
   return (

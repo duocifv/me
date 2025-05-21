@@ -13,22 +13,38 @@ export function BodySchema<T extends ZodTypeAny>(
   });
   const schemaDef = definitions?.Dto ?? rootSchema;
 
-  return (target, propertyKey, parameterIndex) => {
+  return (
+    target: object,
+    propertyKey: string | symbol,
+    parameterIndex: number,
+  ) => {
     if (typeof propertyKey === 'undefined') {
       throw new Error(
-        'ZodBody: propertyKey is undefined — cannot apply ApiBody.',
+        'BodySchema: propertyKey is undefined — cannot apply ApiBody.',
       );
     }
 
-    ApiBody({ schema: schemaDef as any })(
-      target.constructor,
-      propertyKey,
+    const descriptor =
+      Object.getOwnPropertyDescriptor(target, propertyKey) ??
       Object.getOwnPropertyDescriptor(
         target.constructor.prototype,
         propertyKey,
-      )!,
+      );
+
+    if (!descriptor) {
+      console.warn(
+        `BodySchema: Unable to find descriptor for ${String(propertyKey)}. Swagger schema may not apply correctly.`,
+      );
+    }
+
+    // Swagger schema definition
+    ApiBody({ schema: schemaDef as any })(
+      target.constructor,
+      propertyKey,
+      descriptor ?? {},
     );
 
+    // Apply Zod validation pipe
     Body(pipe)(target, propertyKey, parameterIndex);
   };
 }

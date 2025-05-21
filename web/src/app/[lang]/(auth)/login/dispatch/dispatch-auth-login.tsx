@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { Button } from "@/components/ui/button";
 import { FormSubmit } from "@adapter/share/type/form";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
@@ -34,8 +34,7 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
         });
       },
     });
-  })
-
+  });
 
   const onClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -46,7 +45,7 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
     <Button
       type="button"
       onClick={onClick}
-      className="w-24"
+      className="w-24 mt-6"
       disabled={isPending}
       formNoValidate
     >

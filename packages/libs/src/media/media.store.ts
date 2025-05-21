@@ -10,10 +10,15 @@ import { FileType } from "./dto/media-upload.dto";
 interface MediaState {
   data: PaginatedMediaResponse;
   file: FileType | null;
+  fileId: string | null;
+  fileIds: string[];
   fileInfo: File[];
   filters: MediaDto;
   setFilters: (patch: Partial<MediaDto>) => void;
   setFile: (file: File | null) => void;
+  setFileIds: (fileId: string | null) => void;
+  clearFileIds: () => void;
+  setFileId: (fileId: string | null) => void;
   setFileInfo: () => void;
   setData: (data: PaginatedMediaResponse) => void;
 }
@@ -21,6 +26,10 @@ interface MediaState {
 export const useMediaStore = create<MediaState>()(
   devtools(
     immer((set, get) => ({
+      file: null,
+      fileId: null,
+      fileIds: [],
+      fileInfo: [],
       data: {
         items: [],
         meta: {
@@ -32,18 +41,24 @@ export const useMediaStore = create<MediaState>()(
         },
         stats: {
           totalFile: 0,
-          totalStorage: 0,
-          imagesStorage: 0,
+          usedStorageBytes: 0,
+          maxStorageBytes: 0,
         },
       },
       filters: {
         page: 1,
         limit: 10,
       },
-      file: null,
-      fileInfo: [],
-      setFile: (file) => set({ file }),
       setData: (data) => set({ data }),
+      setFile: (file) => set({ file }),
+      setFileId: (fileId) => set({ fileId }),
+      clearFileIds: () => set({ fileIds: [] }),
+      setFileIds: (fileId) => {
+        if (!fileId) return;
+        set((state) => {
+          state.fileIds.push(fileId);
+        });
+      },
       setFileInfo: () => {
         const file = get().file;
         if (!file) return;

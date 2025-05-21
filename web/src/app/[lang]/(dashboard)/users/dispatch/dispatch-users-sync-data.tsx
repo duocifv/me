@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import isEqual from "lodash/isEqual";
 import { useUsersStore } from "@adapter/users/users.store";
 
-export default function UsersLoader() {
+export default function UsersSyncData() {
   const { isLoading, error, isSuccess, data } = useUsersQuery();
   useEffect(() => {
     if (isSuccess && data) {

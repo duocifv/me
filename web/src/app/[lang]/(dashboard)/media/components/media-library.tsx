@@ -10,9 +10,23 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { ImageManager } from "./media-table";
-import { X } from "lucide-react";
-import { FileUpload } from "./file-upload";
-import { ButtonUpload } from "./dispatch/button-upload";
+import dynamic from "next/dynamic";
+import AppLoading from "../../components/app-loading";
+import { ButtonMediaDeleteMany } from "../dispatch/dispatch-media-delete-many";
+
+const ButtonMediaDelete = dynamic(
+  () => import("../dispatch/dispatch-media-delete-one")
+);
+
+const ButtonUpload = dynamic(
+  () => import("../dispatch/dispatch-media-upload"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
+const FileUpload = dynamic(() => import("./media-file-upload"), {
+  loading: () => <AppLoading />,
+});
 
 export default function ImageLibrary() {
   return (
@@ -25,15 +39,7 @@ export default function ImageLibrary() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Upload Files</DialogTitle>
-              <DialogClose asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2"
-                >
-                  <X />
-                </Button>
-              </DialogClose>
+              <DialogClose asChild></DialogClose>
             </DialogHeader>
             <FileUpload />
             <div className="mt-4 flex justify-end space-x-2">
@@ -44,10 +50,12 @@ export default function ImageLibrary() {
             </div>
           </DialogContent>
         </Dialog>
+        <ButtonMediaDeleteMany />
       </div>
 
       <div className="overflow-auto bg-white">
         <ImageManager />
+        <ButtonMediaDelete />
       </div>
     </div>
   );

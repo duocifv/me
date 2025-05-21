@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { throttle } from "lodash";
 import { useMemo } from "react";
 
-export function CreateUserSubmit(form: FormSubmit<CreateUserDto>) {
+export default function CreateUserSubmit(form: FormSubmit<CreateUserDto>) {
   const { mutate, isPending } = useCreateUserMutation();
 
   const throttledSubmit = useMemo(

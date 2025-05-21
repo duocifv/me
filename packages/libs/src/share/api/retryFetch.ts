@@ -19,7 +19,8 @@ export const retryFetch = async <T>(
   opts: RequestInit = {},
   maxRetries = 3,
   baseDelay = 500,
-  attempt = 1
+  attempt = 1,
+  responseType: "json" | "text" | "blob" = "json"
 ): Promise<{
   data: T | null;
   error: ErrorRespose | null;
@@ -43,12 +44,19 @@ export const retryFetch = async <T>(
 
     let resData: any = null;
     try {
-      resData = await res.json();
+      if (responseType === "blob") {
+        resData = await res.blob();
+      } else if (responseType === "text") {
+        resData = await res.text();
+      } else {
+        resData = await res.json();
+      }
     } catch {
       resData = null;
     }
 
-    const actualData = resData?.data ?? resData;
+    const actualData =
+      responseType === "json" ? resData?.data ?? resData : resData;
 
     if (!res.ok) {
       // Retry nếu status nằm trong danh sách có thể recover

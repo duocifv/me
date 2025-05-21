@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { throttle } from "lodash";
 import { AlertDialogAction } from "@/components/ui/alert-dialog";
 
-export function UpdateUserSubmit({
+export default function UpdateUserSubmit({
   valueRef,
   id,
 }: {

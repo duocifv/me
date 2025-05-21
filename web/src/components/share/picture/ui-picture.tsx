@@ -2,7 +2,11 @@ import * as React from "react";
 
 export function srcUrl(url?: string): string {
   if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) {
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("blob:")
+  ) {
     return url;
   }
   const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "") || "";

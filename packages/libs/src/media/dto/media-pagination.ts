@@ -15,8 +15,8 @@ export interface PaginationLinks {
 
 export interface MediaStats {
   totalFile: number;
-  totalStorage: number;
-  imagesStorage: number;
+  usedStorageBytes: number;
+  maxStorageBytes: number;
 }
 
 export interface MediaFile {

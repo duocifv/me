@@ -3,9 +3,12 @@ import { Suspense } from "react";
 import UsersSummary from "./components/users-summary";
 import AppLoading from "../components/app-loading";
 
-const UsersLoader = dynamic(() => import("../users/components/users-loader"), {
-  loading: () => <AppLoading />,
-});
+const UsersSyncData = dynamic(
+  () => import("./dispatch/dispatch-users-sync-data"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
 const DataTableUsers = dynamic(
   () => import("../users/components/users-table"),
   {
@@ -16,7 +19,7 @@ const DataTableUsers = dynamic(
 export default async function PageUsers() {
   return (
     <Suspense>
-      <UsersLoader />
+      <UsersSyncData />
       <UsersSummary />
       <DataTableUsers />
     </Suspense>

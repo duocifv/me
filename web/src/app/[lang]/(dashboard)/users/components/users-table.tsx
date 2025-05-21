@@ -62,10 +62,18 @@ import {
 } from "@/components/ui/table";
 import { UserDto } from "@adapter/users/dto/user.dto";
 import { useUsersStore } from "@adapter/users/users.store";
-import DraggableRow from "./draggable-row";
+import { IUserListResponse } from "@adapter/users/dto/user-list.dto";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Row } from "@tanstack/react-table";
+import AppLoading from "../../components/app-loading";
 
-const UsersFilter = dynamic(() => import("./users-filter"));
-const TableCellViewer = dynamic(() => import("./users-update/users-cell"));
+const UsersFilter = dynamic(() => import("./users-filter"), {
+  loading: () => <AppLoading />,
+});
+const TableCellViewer = dynamic(() => import("./users-cell"), {
+  loading: () => <AppLoading />,
+});
 
 const columns: ColumnDef<UserDto>[] = [
   {
@@ -155,7 +163,7 @@ const columns: ColumnDef<UserDto>[] = [
   },
 ];
 
-export default function DataTableUsers() {
+export default function UsersDataTable() {
   const filters = useUsersStore((s) => s.filters);
   const setFilters = useUsersStore((s) => s.setFilters);
   const users = useUsersStore((s) => s.data);
@@ -331,5 +339,33 @@ export default function DataTableUsers() {
         </div>
       </div>
     </div>
+  );
+}
+
+export function DraggableRow({
+  row,
+}: {
+  row: Row<IUserListResponse["items"][0]>;
+}) {
+  const { transform, transition, setNodeRef, isDragging } = useSortable({
+    id: row.original.id,
+  });
+  return (
+    <TableRow
+      data-state={row.getIsSelected() && "selected"}
+      data-dragging={isDragging}
+      ref={setNodeRef}
+      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition: transition,
+      }}
+    >
+      {row.getVisibleCells().map((cell) => (
+        <TableCell key={cell.id}>
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </TableCell>
+      ))}
+    </TableRow>
   );
 }

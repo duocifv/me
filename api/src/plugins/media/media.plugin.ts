@@ -139,6 +139,7 @@ export const fileManagerPlugin = fp(async (fastify: FastifyInstance) => {
         throw new NotFoundException('File không tồn tại');
       }
       unlinkSync(fullPath);
+
       return { deleted: safe };
     },
   };

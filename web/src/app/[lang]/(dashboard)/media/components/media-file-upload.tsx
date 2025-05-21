@@ -9,9 +9,7 @@ import { useMediaStore } from "@adapter/media/media.store";
 import { FileUploadSchema } from "@adapter/media/dto/media-upload.dto";
 import { Picture } from "@/components/share/picture/ui-picture";
 
-// Define Zod schema for file validation
-
-export function FileUpload() {
+export default function FileUpload() {
   const file = useMediaStore((s) => s.file);
   const fileInfo = useMediaStore((s) => s.fileInfo);
   const setFile = useMediaStore((s) => s.setFile);
@@ -61,9 +59,6 @@ export function FileUpload() {
 
   return (
     <Card className="border-dashed border-2 border-gray-300 p-0">
-      {/* <CardHeader>
-        <CardTitle>Chọn ảnh</CardTitle>
-      </CardHeader> */}
       <CardContent
         className="p-4 min-h-36 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition relative"
         onDragOver={preventDefault}

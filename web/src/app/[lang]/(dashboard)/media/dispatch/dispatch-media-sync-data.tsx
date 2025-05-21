@@ -4,7 +4,7 @@ import isEqual from "lodash/isEqual";
 import { useMediaQuery } from "@adapter/media/media.hook";
 import { useMediaStore } from "@adapter/media/media.store";
 
-export default function MediaLoader() {
+export default function MediaSyncData() {
   const { isLoading, error, isSuccess, data } = useMediaQuery();
   useEffect(() => {
     if (isSuccess && data) {
@@ -22,5 +22,5 @@ export default function MediaLoader() {
     return <>Error… {error.message}</>;
   }
 
-  return null;
+  return;
 }

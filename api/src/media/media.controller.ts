@@ -11,6 +11,7 @@ import {
   Put,
   Body,
   BadRequestException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -20,7 +21,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { pipeline } from 'node:stream/promises';
 import { UploadFileDto } from './dto/upload-file.dto';
 import { PermissionName } from 'src/permissions/permission.enum';
 import { Permissions } from 'src/permissions/permissions.decorator';
@@ -31,6 +31,8 @@ import { QuerySchema } from 'src/shared/decorators/query-schema.decorator';
 import { MediaDto, MediaSchema } from './dto/media.dto';
 import { MediaFilterDto, MediaFilterSchema } from './dto/media-filter.dto';
 import { MediaFileDto } from './dto/media-file.dto';
+import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
+import { BulkDeleteDto, BulkDeleteSchema } from './dto/bulk-delete.dto';
 
 @ApiTags('Media')
 @Controller('media')
@@ -108,7 +110,9 @@ export class MediaController {
 
   @Get('/:id')
   @Permissions(PermissionName.VIEW_MEDIA)
-  async findOne(@Param('id') id: string): Promise<MediaFileDto> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<MediaFileDto> {
     const file = await this.uploadService.findOne(id);
     return this.toResponse(file);
   }
@@ -116,22 +120,11 @@ export class MediaController {
   @Put(':id')
   @Permissions(PermissionName.VIEW_MEDIA)
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() body: Partial<UploadFileDto>,
   ): Promise<MediaFileDto> {
     const updated = await this.uploadService.update(id, body as any);
     return this.toResponse(updated);
-  }
-
-  @Delete(':id')
-  @HttpCode(204)
-  @Permissions(PermissionName.MANAGE_MEDIA)
-  async remove(@Param('id') id: string, @Req() req: FastifyRequest) {
-    const { deleted } = req.server.fileManager.deleteFile(id);
-    await this.uploadService.remove(id);
-    return {
-      message: deleted,
-    };
   }
 
   @Get('filter')
@@ -143,34 +136,71 @@ export class MediaController {
 
   @Get('download/:filename')
   @Permissions(PermissionName.VIEW_MEDIA)
-  async download(
+  download(
     @Param('filename') filename: string,
-    @Res() res: FastifyReply,
+    @Res({ passthrough: true }) res: FastifyReply,
     @Req() req: FastifyRequest,
   ) {
-    const stream = req.server.fileManager.getStream(filename);
-    res.header(
-      'Content-Disposition',
-      `attachment; filename="${encodeURIComponent(filename)}"`,
-    );
-    await pipeline(stream, res.raw);
+    try {
+      const stream = req.server.fileManager.getStream(filename);
+      res.raw.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${encodeURIComponent(filename)}"`,
+      );
+      res.raw.setHeader('Content-Type', 'application/octet-stream');
+      stream.pipe(res.raw);
+    } catch {
+      res.status(500).send({ message: 'Download failed' });
+    }
   }
 
-  @Delete()
+  @Delete(':id')
+  @HttpCode(204)
+  @Permissions(PermissionName.MANAGE_MEDIA)
+  async remove(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: FastifyRequest,
+  ) {
+    const { deleted } = req.server.fileManager.deleteFile(id);
+    await this.uploadService.remove(id);
+    return {
+      message: deleted,
+    };
+  }
+
+  @Post('delete-many')
   @Permissions(PermissionName.MANAGE_MEDIA)
   @HttpCode(204)
   async bulkDelete(
-    @Body() body: { ids: string[] },
+    @BodySchema(BulkDeleteSchema) dto: BulkDeleteDto,
     @Req() req: FastifyRequest,
   ) {
-    if (!Array.isArray(body.ids))
-      throw new BadRequestException('Invalid format');
+    const files = await this.uploadService.findManyByIds(dto.ids);
 
-    for (const id of body.ids) {
-      req.server.fileManager.deleteFile(id);
-      await this.uploadService.remove(id);
+    if (!files || files.length === 0) {
+      throw new NotFoundException('Không tìm thấy file nào trong danh sách.');
     }
 
-    return { message: 'Deleted successfully' };
+    const existingIds = files.map((f) => f.id);
+    const notFoundIds = dto.ids.filter((id) => !existingIds.includes(id));
+    if (notFoundIds.length > 0) {
+      throw new NotFoundException(
+        `Các ID không tồn tại: ${notFoundIds.join(', ')}`,
+      );
+    }
+
+    await Promise.all(
+      files.map(async (file) => {
+        const deleted = req.server.fileManager.deleteFile(file.variants.large);
+        if (!deleted || !deleted.deleted) {
+          throw new NotFoundException(
+            `Không xóa được file từ ổ đĩa: ${file.variants.large}`,
+          );
+        }
+        await this.uploadService.remove(file.id);
+      }),
+    );
+
+    return;
   }
 }

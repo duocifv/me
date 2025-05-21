@@ -24,7 +24,7 @@ import { GetUsersDto, GetUsersSchema } from "@adapter/users/dto/get-users.dto";
 import { UserSearch } from "./user-search";
 import AppLoading from "../../components/app-loading";
 
-const UsersAddDialog = dynamic(() => import("./users-add/users-add"), {
+const UsersAddDialog = dynamic(() => import("./users-add"), {
   loading: () => <AppLoading />,
 });
 

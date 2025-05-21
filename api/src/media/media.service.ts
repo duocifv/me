@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { MediaFile } from './entities/file.entity';
 import { CreateMediaDto } from './dto/create-media.dto';
-import { PaginationService } from 'src/shared/pagination/pagination.service';
 import { MediaDto } from './dto/media.dto';
 import { paginate, Pagination } from 'nestjs-typeorm-paginate';
 
@@ -12,7 +11,6 @@ export class UploadFileService {
   constructor(
     @InjectRepository(MediaFile)
     private readonly mediaRepo: Repository<MediaFile>,
-    private readonly paginationService: PaginationService,
   ) {}
 
   async create(dto: CreateMediaDto): Promise<MediaFile> {
@@ -51,7 +49,11 @@ export class UploadFileService {
     });
   }
 
-  async getMediaWithStats(): Promise<any> {
+  async getMediaWithStats(): Promise<{
+    totalFile: number;
+    usedStorageBytes: number;
+    maxStorageBytes: number;
+  }> {
     const totalFile = await this.mediaRepo.count();
     const rawTotal = await this.mediaRepo
       .createQueryBuilder('media')
@@ -66,6 +68,15 @@ export class UploadFileService {
       maxStorageBytes: MAX_STORAGE_BYTES,
     };
   }
+
+  async findManyByIds(ids: string[]): Promise<MediaFile[]> {
+    return this.mediaRepo.find({
+      where: {
+        id: In(ids),
+      },
+    });
+  }
+
   async findAll(): Promise<MediaFile[]> {
     return this.mediaRepo.find({ order: { createdAt: 'DESC' } });
   }

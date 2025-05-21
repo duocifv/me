@@ -19,6 +19,7 @@ export const callApi = async <T>(
     timeout = 5000,
     fallback = null,
     credentials = "include",
+    responseType = "json",
   }: ApiOpts<T> = {}
 ): Promise<{
   data: T | null;
@@ -50,7 +51,7 @@ export const callApi = async <T>(
         : {}),
     };
 
-    return await retryFetch<T>(url, requestOpts);
+    return await retryFetch<T>(url, requestOpts, 3, 500, 1, responseType);
   } catch (err: unknown) {
     let errorResponse: ErrorRespose = {
       message: "Unknown error",

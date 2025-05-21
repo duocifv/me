@@ -25,12 +25,18 @@ import { Input } from "@/components/ui/input";
 import { useRef } from "react";
 import dynamic from "next/dynamic";
 import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
-import { UpdateUserSubmit } from "./update-user-submit";
-import AppLoading from "../../../components/app-loading";
+import AppLoading from "../../components/app-loading";
 
 const UsersUpdate = dynamic(() => import("./users-update"), {
   loading: () => <AppLoading />,
 });
+
+const UpdateUserSubmit = dynamic(
+  () => import("../dispatch/dispatch-user-update"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
 
 export default function TableCellViewer({ item }: { item: UserDto }) {
   const valueRef = useRef<UpdateByAdminDto>({});

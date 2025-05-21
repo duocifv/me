@@ -8,7 +8,17 @@ jobs:
     steps:
     - name: 🚚 Get latest code
       uses: actions/checkout@v4
-      
+
+    # Install dependencies at root (if using workspaces or shared libs)
+    - name: 📦 Install root dependencies (for shared libs)
+      run: npm install
+
+    # Build shared libraries first (if used by both web and api)
+    - name: 🧱 Build shared libs (if any)
+      run: |
+        cd packages/libs
+        npm install
+
     # Deploy Next.js
     - name: "📦 Install dependencies for Next.js"
       run: |

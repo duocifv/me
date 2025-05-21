@@ -1,7 +1,10 @@
 import { $config } from "../config/env";
 import { ReqParams } from "./types";
 
-export const makeUrl = (path: string, params?: ReqParams): string => {
+export const makeUrl = (
+  path: string,
+  params?: ReqParams | unknown[]
+): string => {
   // nếu front-end đóng gói object trong 'params', hãy lấy luôn cái bên trong
   let realParams = params as any;
   if (realParams && typeof realParams === "object" && "params" in realParams) {

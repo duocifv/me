@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { FormWrapper } from "@adapter/share/components/FormWrapper";
 import { SignInDto, SignInSchema } from "@adapter/auth/dto/sign-in.dto";
 import { Card, CardContent } from "@/components/ui/card";
-import { LoginSubmit } from "./submit/login-submit";
+import { LoginSubmit } from "../dispatch/dispatch-auth-login";
 import { Picture } from "@/components/share/picture/ui-picture";
 
 export function LoginForm({

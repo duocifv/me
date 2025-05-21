@@ -1,19 +1,7 @@
 "use client";
 import * as React from "react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-} from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MoreVerticalIcon } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import {
   Dialog,
   DialogContent,
@@ -24,9 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { ColumnDef } from "@tanstack/react-table";
 import { Picture } from "@/components/share/picture/ui-picture";
-import { useState } from "react";
 import { useMediaStore } from "@adapter/media/media.store";
 import { MediaFile } from "@adapter/media/dto/media-pagination";
+import MediaAction from "./media-action";
 
 export const columns: ColumnDef<MediaFile>[] = [
   {
@@ -54,33 +42,26 @@ export const columns: ColumnDef<MediaFile>[] = [
 ];
 
 export function ImageManager() {
-  const [rowSelection, setRowSelection] = useState({});
+  const fileIds = useMediaStore((s) => s.fileIds);
+  const setFileIds = useMediaStore((s) => s.setFileIds);
   const medias = useMediaStore((s) => s.data);
-  const table = useReactTable({
-    data: medias.items,
-    columns,
-    state: { rowSelection },
-    onRowSelectionChange: setRowSelection,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
 
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {table.getRowModel().rows.length ? (
-          table.getRowModel().rows.map((row) => {
-            const file = row.original;
+        {medias.items.length ? (
+          medias.items.map((file) => {
+            const isActive = fileIds.includes(file.id);
             return (
               <div
-                key={row.id}
+                key={file.id}
                 className={`border rounded-lg overflow-hidden shadow-sm flex flex-col relative ${
-                  row.getIsSelected() ? "ring-2 ring-emerald-400" : "bg-white"
+                  isActive ? "ring-2 ring-emerald-400" : "bg-white"
                 }`}
               >
                 <Checkbox
-                  checked={row.getIsSelected()}
-                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  checked={isActive}
+                  onCheckedChange={() => setFileIds(file.id)}
                   className="absolute top-2 left-2 z-10 cursor-pointer"
                 />
                 <Dialog>
@@ -113,20 +94,7 @@ export function ImageManager() {
                       </span>
                       <span>{(file.size / 1024).toFixed(1)} KB</span>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <div>
-                          <MoreVerticalIcon size={16} />
-                          <span className="sr-only">Open menu</span>
-                        </div>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-32">
-                        <DropdownMenuItem>Download</DropdownMenuItem>
-                        <DropdownMenuItem>Rename</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <MediaAction {...file} />
                   </div>
                 </div>
               </div>

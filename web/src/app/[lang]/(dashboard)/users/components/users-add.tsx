@@ -15,7 +15,15 @@ import {
   CreateUserDto,
   CreateUserSchema,
 } from "@adapter/users/dto/create-user.dto";
-import { CreateUserSubmit } from "./create-user-submit";
+import AppLoading from "../../components/app-loading";
+import dynamic from "next/dynamic";
+
+const CreateUserSubmit = dynamic(
+  () => import("../dispatch/dispatch-user-create"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
 
 export default function UsersAddDialog() {
   return (
