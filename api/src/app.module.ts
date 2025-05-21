@@ -16,7 +16,7 @@ import { Role } from './roles/entities/role.entity';
 import { Permission } from './permissions/entities/permission.entity';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { CoreModule } from './shared/core.module';
-import { NotificationModule } from './notification/notification.module';
+import { NotificationModule } from './notifications/notification.module';
 import { LogsModule } from './shared/logs/logs.module';
 import { AppConfigService } from './shared/config/config.service';
 import { APP_GUARD } from '@nestjs/core';
@@ -91,7 +91,7 @@ export class AppModule implements OnModuleInit {
     if (process.env.NODE_ENV !== 'production') {
       await this.userRoleSeeder.onModuleInit();
     } else {
-      console.log('Skipping seeding in production environment.');
+      // console.log('Skipping seeding in production environment.');
     }
   }
 }

@@ -31,20 +31,12 @@ export function BodySchema<T extends ZodTypeAny>(
         propertyKey,
       );
 
-    if (!descriptor) {
-      console.warn(
-        `BodySchema: Unable to find descriptor for ${String(propertyKey)}. Swagger schema may not apply correctly.`,
-      );
-    }
-
-    // Swagger schema definition
     ApiBody({ schema: schemaDef as any })(
       target.constructor,
       propertyKey,
       descriptor ?? {},
     );
 
-    // Apply Zod validation pipe
     Body(pipe)(target, propertyKey, parameterIndex);
   };
 }

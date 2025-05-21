@@ -35,7 +35,6 @@ export class PaginationService {
       }
     }
 
-    console.log(qb.getQueryAndParameters());
     return paginate<T>(qb, options);
   }
 

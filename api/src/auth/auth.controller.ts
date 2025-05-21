@@ -4,7 +4,6 @@ import {
   Req,
   Res,
   HttpCode,
-  Body,
   Delete,
   Get,
   UseGuards,
@@ -116,7 +115,7 @@ export class AuthController {
   @Get('me')
   // @Permissions(PermissionName.VIEW_USERS)
   @HttpCode(200)
-  me(@Req() req, @Res({ passthrough: true }) res) {
+  me(@Req() req) {
     const user = req.user as User;
     if (!user) {
       throw new UnauthorizedException('User is not logged in');

@@ -272,7 +272,6 @@ export class TokensService {
   /** Thu hồi refresh token (đánh dấu revoked) */
   async revokeRefreshToken(jti: string, fingerprint: string): Promise<void> {
     const token = await this.rtRepo.findOneBy({ id: jti });
-    console.log('refreshToken', token);
     if (!token) {
       throw new NotFoundException('Refresh token không tồn tại');
     }

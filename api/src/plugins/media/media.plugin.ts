@@ -32,8 +32,7 @@ declare module 'fastify' {
 }
 
 export const fileManagerPlugin = fp(async (fastify: FastifyInstance) => {
-  const { uploadDir, limits, allowedMimeTypes, outputFormat, quality, sizes } =
-    uploadConfig;
+  const { uploadDir, limits, allowedMimeTypes, sizes } = uploadConfig;
 
   // 1) Đăng ký multipart với giới hạn kích thước
   await fastify.register(multipart, { limits });
@@ -57,7 +56,7 @@ export const fileManagerPlugin = fp(async (fastify: FastifyInstance) => {
       const rawExt = extname(filename) || '';
       const rawName = `${id}-raw${rawExt}`;
       const rawPath = normalize(join(tempDir, rawName));
-      console.log('rawExt------>', rawExt);
+
       // c) Ghi stream xuống disk
       try {
         await pipeline(file, createWriteStream(rawPath));

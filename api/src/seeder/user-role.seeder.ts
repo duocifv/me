@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from 'src/roles/entities/role.entity';
@@ -39,7 +39,6 @@ export class UserRoleSeeder implements OnModuleInit {
       if (!permission) {
         permission = this.permissionRepo.create({ name });
         permission = await this.permissionRepo.save(permission);
-        console.log(`Permission created: ${name}`);
       }
       permissions.push(permission);
     }
@@ -61,9 +60,10 @@ export class UserRoleSeeder implements OnModuleInit {
       ];
       adminRole.permissions = merged;
       await this.roleRepo.save(adminRole);
-      console.log('All permissions assigned to ADMIN role');
     } else {
-      console.warn('ADMIN role not found. Cannot assign permissions.');
+      throw new NotFoundException(
+        'ADMIN role not found. Cannot assign permissions.',
+      );
     }
   }
 
@@ -84,7 +84,6 @@ export class UserRoleSeeder implements OnModuleInit {
           permissions: name === Roles.ADMIN ? permissions : [],
         });
         await this.roleRepo.save(role);
-        console.log(`Role created: ${name}`);
       }
     }
   }
@@ -96,7 +95,7 @@ export class UserRoleSeeder implements OnModuleInit {
     });
 
     if (!exist) {
-      const hash = await bcrypt.hash('string', 10); // Mật khẩu mặc định
+      const hash = await bcrypt.hash('string', 10);
 
       // Tạo Admin User
       const adminUser = this.userRepo.create({
@@ -111,9 +110,10 @@ export class UserRoleSeeder implements OnModuleInit {
       if (adminRole) {
         adminUser.roles = [adminRole];
         await this.userRepo.save(adminUser);
-        console.log('Admin user created');
       } else {
-        console.log('Admin role not found, skipping admin user creation');
+        throw new NotFoundException(
+          'Admin role not found, skipping admin user creation',
+        );
       }
     }
   }
