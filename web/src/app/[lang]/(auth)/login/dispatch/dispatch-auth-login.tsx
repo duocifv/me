@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useAuthLoginMutation } from "@adapter/auth/auth.hook";
 import { SignInDto } from "@adapter/auth/dto/sign-in.dto";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuthStore } from "@adapter/auth/auth.store";
+import { CaptchaStatus, useAuthStore } from "@adapter/auth/auth.store";
 
 export function LoginSubmit(form: FormSubmit<SignInDto>) {
   const router = useRouter();
@@ -15,8 +15,15 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
   const last = segments.filter(Boolean).pop();
   const { mutate, isPending } = useAuthLoginMutation();
   const setLogin = useAuthStore((s) => s.setLogin);
+  const captcha = useAuthStore((s) => s.captcha);
+
   const handleSubmit = form.handleSubmit((value) => {
-    mutate(value, {
+    const data = value;
+    if (captcha.status === CaptchaStatus.Failed) return null;
+    if (captcha.status === CaptchaStatus.Success && captcha.token) {
+      data.captchaToken = captcha.token;
+    }
+    mutate(data, {
       onSuccess: () => {
         if (last === "login") {
           router.replace(`/${segments[1]}`);

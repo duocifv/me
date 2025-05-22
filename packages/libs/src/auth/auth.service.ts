@@ -12,19 +12,15 @@ class AuthService {
   private authApi = api.group("auth");
 
   async login(dto: SignInDto): Promise<LoginDto> {
-    try {
-      const res = await this.authApi.post<LoginDto>("login", dto, {
-        credentials: "include",
-        useFingerprint: true,
-      });
-      if (res.accessToken) {
-        api.storage.login();
-        api.setToken(res.accessToken);
-      }
-      return res;
-    } catch (error: any) {
-      throw new Error(error.message);
+    const res = await this.authApi.post<LoginDto>("login", dto, {
+      credentials: "include",
+      useFingerprint: true,
+    });
+    if (res.accessToken) {
+      api.storage.login();
+      api.setToken(res.accessToken);
     }
+    return res;
   }
 
   async register(dto: SignInDto): Promise<UserDto> {

@@ -70,6 +70,7 @@ export const retryFetch = async <T>(
       const error: ErrorRespose = {
         message: resData?.message || "Lỗi từ máy chủ",
         errors: resData?.errors || null,
+        code: resData.code,
         statusCode: status,
       };
 

@@ -6,6 +6,7 @@ export class ApiError extends Error {
   ) {
     super(message);
     this.name = name;
+    Object.setPrototypeOf(this, ApiError.prototype);
   }
 }
 
@@ -13,6 +14,7 @@ export interface ErrorRespose {
   message: string;
   errors?: zodValidation[] | string;
   statusCode: number;
+  code?: string;
 }
 
 export type zodValidation = {

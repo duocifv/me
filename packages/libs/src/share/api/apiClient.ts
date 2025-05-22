@@ -135,6 +135,16 @@ export class ApiClient {
     }
 
     if (error) {
+      const statusCode = error.statusCode ?? status ?? 500;
+
+      if (statusCode === 400 && error.code === "CAPTCHA_REQUIRED") {
+        throw new ApiError(
+          error.message || "Vui lòng xác thực CAPTCHA",
+          statusCode,
+          "CaptchaRequired"
+        );
+      }
+
       throw new ApiError(
         error.message || "API error",
         error.statusCode ?? status ?? 500,

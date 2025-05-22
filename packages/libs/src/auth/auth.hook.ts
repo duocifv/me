@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SignInDto } from "./dto/sign-in.dto";
 import { authService } from "./auth.service";
-import { useAuthStore } from "./auth.store";
+import { CaptchaStatus, useAuthStore } from "./auth.store";
 import { api } from "../share/api/apiClient";
 
 export const loggedIn = () => api.storage.is();
@@ -18,8 +18,16 @@ export function useAuthLogoutQuery() {
 }
 
 export function useAuthLoginMutation() {
+  const setCaptcha = useAuthStore((s) => s.setCaptcha);
   return useMutation({
     mutationFn: (dto: SignInDto) => authService.login(dto),
+    onError: (error) => {
+      if (error.name === "CaptchaRequired") {
+        setCaptcha({
+          status: CaptchaStatus.Failed,
+        });
+      }
+    },
   });
 }
 

@@ -61,6 +61,7 @@ export const callApi = async <T>(
     if (err instanceof Error) {
       try {
         const parsed = JSON.parse(err.message);
+       
         errorResponse = {
           message: parsed.message || err.message,
           errors: parsed.errors,

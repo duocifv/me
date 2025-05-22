@@ -18,11 +18,10 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     super({
       usernameField: 'email',
       passwordField: 'password',
-      passReqToCallback: true, // Cho phép nhận req
+      passReqToCallback: true,
     });
   }
 
-  // validate sẽ nhận req, email, password
   async validate(
     req: FastifyRequest,
     email: string,

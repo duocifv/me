@@ -129,19 +129,19 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(email: string): Promise<User> {
+  async findByEmail(email: string): Promise<User | null> {
     const user = await this.usersRepo.findOne({
       where: { email },
       relations: ['roles', 'roles.permissions'],
     });
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
     return user;
   }
 
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+    }
     if (this.accountSecurityService.isLocked(user)) {
       throw new UnauthorizedException(
         `Tài khoản bị khóa đến ${user.lockedUntil?.toLocaleString()}`,

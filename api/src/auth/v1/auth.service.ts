@@ -19,6 +19,11 @@ import axios from 'axios';
 import { RecaptchaVerifyResponse } from '../interfaces/capcha.type';
 import { SignInDto } from '../dto/sign-in.dto';
 import { Token } from '../interfaces/token.type';
+import {
+  CaptchaInvalidException,
+  CaptchaRequestFailedException,
+  CaptchaRequiredException,
+} from 'src/shared/filters/captcha-required.exception';
 
 @Injectable()
 export class AuthService {
@@ -28,15 +33,16 @@ export class AuthService {
     private readonly tokensService: TokensService,
     private readonly accountSecurityService: AccountSecurityService,
   ) {}
+
   private async verifyCaptcha(token: string): Promise<void> {
     if (!token) {
-      throw new BadRequestException('Vui lòng xác thực reCAPTCHA');
+      throw new CaptchaRequiredException();
     }
 
-    const secret = process.env.RECAPTCHA_SECRET;
+    const secret = process.env.TURNSTILE_SECRET_KEY;
     if (!secret) {
       throw new InternalServerErrorException(
-        'Server chưa cấu hình reCAPTCHA_SECRET',
+        'Server chưa cấu hình TURNSTILE_SECRET_KEY',
       );
     }
 
@@ -46,8 +52,8 @@ export class AuthService {
     });
 
     try {
-      const { data } = await axios.post<RecaptchaVerifyResponse>(
-        'https://www.google.com/recaptcha/api/siteverify',
+      const { data } = await axios.post(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
         params,
         {
           headers: {
@@ -57,13 +63,14 @@ export class AuthService {
       );
 
       if (!data.success) {
-        throw new BadRequestException('reCAPTCHA không hợp lệ');
+        // Bạn có thể in log `data['error-codes']` để debug chi tiết hơn
+        throw new CaptchaInvalidException();
       }
     } catch (err: any) {
-      // Nếu axios throw lỗi network hoặc tương tự
-      throw new BadRequestException(`Lỗi reCAPTCHA: ${err.message}`);
+      throw new CaptchaRequestFailedException(err);
     }
   }
+
   // So sánh mật khẩu plain text với hash
   private async comparePassword(
     plainPassword: string,
@@ -89,7 +96,7 @@ export class AuthService {
     if (user.failedLoginAttempts >= this.CAPTCHA_THRESHOLD) {
       const token = captchaToken;
       if (!token) {
-        throw new BadRequestException('Vui lòng xác thực reCAPTCHA');
+        throw new CaptchaRequiredException();
       }
       await this.verifyCaptcha(token);
     }
