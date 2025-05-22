@@ -9,7 +9,9 @@ export function srcUrl(url?: string): string {
   ) {
     return url;
   }
-  const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "") || "";
+  const base =
+    process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "") ||
+    "https://my.duocnv.top";
   const path = url.replace(/^\/+/, "");
   return `${base}/${path}`;
 }
