@@ -14,15 +14,23 @@ export function useMediaQuery() {
 }
 
 export function useMediaMutation() {
+  const refresh = useQueryClient();
   const file = useMediaStore((s) => s.file);
   return useMutation({
     mutationFn: () => mediaService.upload(file as FileType),
+    onSuccess: () => {
+      refresh.invalidateQueries({ queryKey: ["media"] });
+    },
   });
 }
 
 export function useMediaDeleteOneMutation() {
+  const refresh = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => mediaService.deleteOne(id),
+    onSuccess: () => {
+      refresh.invalidateQueries({ queryKey: ["media"] });
+    },
   });
 }
 
