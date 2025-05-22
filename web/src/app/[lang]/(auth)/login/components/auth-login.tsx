@@ -10,7 +10,7 @@ import { LoginSubmit } from "../dispatch/dispatch-auth-login";
 import { Picture } from "@/components/share/picture/ui-picture";
 import Lottie from "lottie-react";
 import animationData from "@/share/assets/hydroponic-animation.json";
-import TurnstileWidget from "../dispatch/TurnstileWidget";
+import ReCapcha from "../dispatch/dispatch-recapcha";
 
 export function LoginForm({
   className,
@@ -75,7 +75,7 @@ export function LoginForm({
                         )}
                       </div>
                       <LoginSubmit {...from} />
-                      <TurnstileWidget />
+                      <ReCapcha />
                       <div className="relative my-4 text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                         <span className="relative z-10 bg-background px-2 text-muted-foreground">
                           Or continue with

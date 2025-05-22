@@ -16,6 +16,7 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
   const { mutate, isPending } = useAuthLoginMutation();
   const setLogin = useAuthStore((s) => s.setLogin);
   const captcha = useAuthStore((s) => s.captcha);
+  const setCaptcha = useAuthStore((s) => s.setCaptcha);
 
   const handleSubmit = form.handleSubmit((value) => {
     const data = value;
@@ -39,6 +40,13 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
           duration: 5000,
           icon: <XCircle className="h-5 w-5 text-red-500" />,
         });
+      },
+      onSettled: () => {
+        if (captcha.status === CaptchaStatus.Success && captcha.token) {
+          setCaptcha({
+            status: CaptchaStatus.Failed,
+          });
+        }
       },
     });
   });

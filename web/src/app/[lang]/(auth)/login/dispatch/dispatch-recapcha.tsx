@@ -18,7 +18,7 @@ declare global {
   }
 }
 
-export default function TurnstileWidget() {
+export default function ReCapcha() {
   const captcha = useAuthStore((s) => s.captcha);
   const setCaptcha = useAuthStore((s) => s.setCaptcha);
   const hasRenderedRef = useRef(false);
