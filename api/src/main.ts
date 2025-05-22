@@ -18,9 +18,9 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
-   app.enableVersioning({
-    type: VersioningType.URI,  
-    defaultVersion: '1',  
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
   });
   app.enableShutdownHooks();
   app.useGlobalFilters(new TypeOrmExceptionFilter());

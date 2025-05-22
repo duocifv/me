@@ -8,6 +8,8 @@ import { SignInDto, SignInSchema } from "@adapter/auth/dto/sign-in.dto";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoginSubmit } from "../dispatch/dispatch-auth-login";
 import { Picture } from "@/components/share/picture/ui-picture";
+import Lottie from "lottie-react";
+import animationData from "@/share/assets/hydroponic-animation.json";
 
 export function LoginForm({
   className,
@@ -95,6 +97,15 @@ export function LoginForm({
                   </>
                 )}
               </FormWrapper>
+            </div>
+          </div>
+          <div className="justify-center items-center md:pr-8 hidden md:flex">
+            <div className="rounded-md overflow-hidden">
+              <Lottie
+                animationData={animationData}
+                loop={true}
+                className="w-full h-full"
+              />
             </div>
           </div>
         </CardContent>

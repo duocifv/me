@@ -23,8 +23,8 @@ export class UserRoleSeeder implements OnModuleInit {
 
   // Phương thức khởi tạo seeder
   async onModuleInit() {
-    await this.seedPermissionsAndAssignToAdmin();
     await this.seedRoles();
+    await this.seedPermissionsAndAssignToAdmin();
     await this.seedAdminUser();
   }
 

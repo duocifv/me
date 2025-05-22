@@ -84,7 +84,6 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     },
   ],
 })
-
 export class AppModule {}
 
 // export class AppModule implements OnModuleInit {
