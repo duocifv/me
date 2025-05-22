@@ -12,12 +12,26 @@ import { TypeOrmExceptionFilter } from './shared/filters/TypeOrmExceptionFilter'
 import cors from './plugins/cors.plugin';
 import recaptcha from './plugins/recaptcha.plugin';
 import { VersioningType } from '@nestjs/common';
+import helmet from '@fastify/helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({
+      logger: true,
+      disableRequestLogging: false,
+    }),
   );
+  await app.register(helmet, {
+    global: true,
+    hidePoweredBy: true,
+    contentSecurityPolicy: false,
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  });
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',

@@ -35,8 +35,10 @@ import {
   ResetPasswordDto,
   ResetPasswordSchema,
 } from '../dto/reset-password.dto';
+import { NoCacheGuard } from '../guard/cache-control.guard';
 
 @Controller('auth')
+@UseGuards(NoCacheGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

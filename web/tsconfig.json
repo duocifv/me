@@ -41,7 +41,8 @@
     "../packages/libs/src/**/*.ts",
     "../packages/libs/src/**/*.tsx",
     "next-env.d.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "../api/src/auth/guard/cache-control.guard.ts"
   ],
   "exclude": [
     "node_modules"

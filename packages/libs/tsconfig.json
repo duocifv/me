@@ -20,6 +20,7 @@
   },
   "include": [
     "src",
-    "tests"
+    "tests",
+    "../../api/src/auth/guard/cache-control.guard.ts"
   ]
 }
