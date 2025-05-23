@@ -12,7 +12,6 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { UserDto, UserListSchema, UserSchema } from '../dto/user.dto';
 import { PermissionName } from 'src/permissions/dto/permission.enum';
 import { Roles } from 'src/roles/dto/role.enum';
-import { PaginationService } from 'src/shared/pagination/pagination.service';
 import { GetUsersDto } from '../dto/get-users.dto';
 import { UserStatsDto, UserStatsSchema } from '../dto/user-stats.dto';
 import { ChangePasswordDto } from '../../auth/dto/change-password.dto';
@@ -23,6 +22,8 @@ import { UserStatus } from '../dto/user-status.enum';
 import { User } from '../entities/user.entity';
 import { paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { AccountSecurityService } from 'src/auth/v1/account-security.service';
+import { randomBytes } from 'crypto';
+import { addHours } from 'date-fns';
 
 @Injectable()
 export class UsersService {
@@ -35,6 +36,17 @@ export class UsersService {
 
   private escapeLike(str: string): string {
     return str.replace(/'/g, "''").replace(/([\\%_])/g, '\\$1');
+  }
+
+  async generateEmailVerificationToken(user: User): Promise<string> {
+    const token = randomBytes(32).toString('hex');
+    const expires = addHours(new Date(), 24); // Token có hiệu lực 24 giờ
+
+    user.emailVerificationToken = token;
+    user.emailVerificationExpires = expires;
+    await this.usersRepo.save(user);
+
+    return token;
   }
 
   public async hashToken(token: string): Promise<string> {
@@ -92,18 +104,20 @@ export class UsersService {
     };
   }
 
-  async create(dto: CreateUserDto): Promise<UserDto> {
+  async create(dto: CreateUserDto): Promise<{ fullUser: User; dto: UserDto }> {
     const exists = await this.usersRepo.findOne({
       where: { email: dto.email },
     });
-    if (exists) {
-      throw new ConflictException('Email đã tồn tại');
-    }
+    if (exists) throw new ConflictException('Email đã tồn tại');
 
     const hash = await this.hashToken(dto.password);
-    const user = this.usersRepo.create({ email: dto.email, password: hash });
-    // mặc định status pending
-    user.status = UserStatus.pending;
+
+    const user = this.usersRepo.create({
+      email: dto.email,
+      password: hash,
+      status: UserStatus.pending,
+    });
+
     const createdUser = await this.usersRepo.save(user);
 
     const defaultRole = await this.rolesService.findRoleByName(Roles.CUSTOMER);
@@ -112,10 +126,18 @@ export class UsersService {
       PermissionName.PLACE_ORDER,
     ]);
     defaultRole.permissions = permissions;
-    user.roles = [defaultRole];
-    await this.usersRepo.save(user);
+    createdUser.roles = [defaultRole];
+    await this.usersRepo.save(createdUser);
 
-    return UserSchema.parse(createdUser);
+    const fullUser = await this.usersRepo.findOneOrFail({
+      where: { id: createdUser.id },
+      relations: ['roles', 'roles.permissions'],
+    });
+
+    return {
+      fullUser,
+      dto: UserSchema.parse(fullUser),
+    };
   }
 
   async findById(id: string): Promise<User> {

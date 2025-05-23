@@ -19,6 +19,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { uploadConfig } from './config';
 
 export interface FileManager {
+  saveEsp32Image(
+    part: MultipartFile,
+  ): Promise<{ filename: string; url: string }>;
   saveFile(part: MultipartFile): Promise<Record<string, string>>;
   listFiles(): string[];
   getStream(filename: string): Readable;
@@ -37,12 +40,42 @@ export const fileManagerPlugin = fp(async (fastify: FastifyInstance) => {
   // 1) Đăng ký multipart với giới hạn kích thước
   await fastify.register(multipart, { limits });
 
-  // 2) Tạo thư mục nếu chưa tồn tại
+  // Tạo thư mục chính nếu chưa tồn tại
   if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
+
+  // Tạo thư mục esp32 riêng để lưu ảnh ESP32
+  const esp32Dir = join(uploadDir, 'esp32');
+  if (!existsSync(esp32Dir)) mkdirSync(esp32Dir, { recursive: true });
+
+  // Tạo thư mục temp nếu cần
   const tempDir = join(uploadDir, 'temp');
   if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
 
   const fileManager: FileManager = {
+    async saveEsp32Image(part) {
+      const { filename, mimetype, file } = part;
+
+      // a) Kiểm tra MIME
+      if (!['image/jpeg', 'image/png'].includes(mimetype)) {
+        throw new BadRequestException('ESP32 chỉ hỗ trợ JPEG/PNG');
+      }
+
+      // b) Tạo tên file đơn giản theo UUID
+      const id = uuidv4();
+      const ext = extname(filename) || '.jpg'; // fallback .jpg
+      const finalName = `${id}${ext}`;
+      const finalPath = normalize(join(esp32Dir, finalName)); // Lưu vào /uploads/esp32/
+
+      // c) Lưu stream vào disk
+      try {
+        await pipeline(file, createWriteStream(finalPath));
+      } catch {
+        throw new BadRequestException('Không thể lưu ảnh từ ESP32');
+      }
+
+      return { filename: finalName, url: `/uploads/esp32/${finalName}` };
+    },
+
     async saveFile(part) {
       const { filename, mimetype, file } = part;
 
@@ -145,3 +178,7 @@ export const fileManagerPlugin = fp(async (fastify: FastifyInstance) => {
 
   fastify.decorate('fileManager', fileManager);
 });
+
+export default async function fileManager(app) {
+  await app.register(fileManagerPlugin);
+}

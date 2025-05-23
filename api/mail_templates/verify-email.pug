@@ -1,0 +1,38 @@
+doctype html
+html
+  head
+    meta(charset="UTF-8")
+    title Xác minh địa chỉ email
+    style.
+      body {
+        font-family: Arial, sans-serif;
+        background: #f9f9f9;
+        padding: 20px;
+        color: #333;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        max-width: 600px;
+        margin: 0 auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+      }
+      .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background: #0070f3;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-top: 20px;
+      }
+  body
+    .container
+      h2 Chào #{name},
+      p Cảm ơn bạn đã đăng ký tài khoản tại DuocNV!
+      p Vui lòng nhấn vào nút bên dưới để xác minh địa chỉ email của bạn.
+      a.btn(href=verifyLink) Xác minh email
+      p Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.
+      hr
+      p(style="font-size: 12px; color: #999") Email này được gửi tự động. Vui lòng không trả lời.

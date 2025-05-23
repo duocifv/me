@@ -122,9 +122,6 @@ export class AuthController {
     if (!user) {
       throw new UnauthorizedException('User is not logged in');
     }
-    // const permissions = roles
-    //   .flatMap((r) => r.permissions || [])
-    //   .map((p) => p.name);
     const roleNames = user.roles.map((r) => r.name);
     return MeSchema.parse({
       id: user.id,

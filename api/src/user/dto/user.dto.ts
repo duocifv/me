@@ -10,6 +10,16 @@ export const UserFullSchema = z.object({
   roles: z.array(RoleFullSchema).default([]),
   isPaid: z.boolean(),
   status: z.enum(['pending', 'active', 'blocked']),
+
+  failedLoginAttempts: z.number().default(0),
+  lockedUntil: z.date().nullable().optional(),
+
+  resetPasswordToken: z.string().nullable().optional(),
+  resetPasswordExpires: z.date().nullable().optional(),
+
+  emailVerificationToken: z.string().nullable().optional(),
+  emailVerificationExpires: z.date().nullable().optional(),
+
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   deletedAt: z.coerce.date().nullable(),
@@ -19,13 +29,22 @@ export const UserWithPermissionsSchema = UserFullSchema.omit({
   password: true,
   refreshTokens: true,
   deletedAt: true,
+  resetPasswordToken: true,
+  resetPasswordExpires: true,
+  failedLoginAttempts: true,
+  lockedUntil: true,
 }).extend({
   roles: z.array(RoleFullSchema),
 });
+
 export const UserSchema = UserFullSchema.omit({
   password: true,
   refreshTokens: true,
   deletedAt: true,
+  resetPasswordToken: true,
+  resetPasswordExpires: true,
+  failedLoginAttempts: true,
+  lockedUntil: true,
 }).extend({
   roles: z.array(RolePublicSchema).optional(),
 });

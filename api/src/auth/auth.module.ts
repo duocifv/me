@@ -14,6 +14,7 @@ import { AppConfigService } from 'src/shared/config/config.service';
 import { PermissionsModule } from 'src/permissions/permissions.module';
 import { AccountSecurityService } from './v1/account-security.service';
 import { User } from 'src/user/entities/user.entity';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { User } from 'src/user/entities/user.entity';
     UsersModule,
     PassportModule,
     PermissionsModule,
+    MailModule,
     JwtModule.registerAsync({
       imports: [CoreModule],
       inject: [AppConfigService],

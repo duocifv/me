@@ -22,7 +22,7 @@ declare module 'fastify' {
   }
 }
 
-export const authPlugin = fp((fastify: FastifyInstance) => {
+export const authCookiePlugin = fp((fastify: FastifyInstance) => {
   // We won't use cookie signing because JWT has its own signature
   // Common cookie options
   const cookieSecret = process.env.COOKIE_SECRET;
@@ -116,3 +116,7 @@ export const authPlugin = fp((fastify: FastifyInstance) => {
     },
   );
 });
+
+export default async function authCookie(app) {
+  await app.register(authCookiePlugin);
+}

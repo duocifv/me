@@ -33,6 +33,8 @@ import { MediaFilterDto, MediaFilterSchema } from './dto/media-filter.dto';
 import { MediaFileDto } from './dto/media-file.dto';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import { BulkDeleteDto, BulkDeleteSchema } from './dto/bulk-delete.dto';
+import { MediaEsp32Dto, MediaEsp32Schema } from './dto/media-esp32.schema';
+import { MediaCategory } from './type/media-category.type';
 
 @ApiTags('Media')
 @Controller('media')
@@ -41,7 +43,14 @@ export class MediaController {
 
   private toResponse(file: MediaFile): MediaFileDto {
     const { id, variants, mimetype, size, createdAt } = file;
-    return { id, variants, mimetype, size, createdAt };
+
+    const safeVariants: Record<'thumbnail' | 'medium' | 'large', string> = {
+      thumbnail: variants.thumbnail || '',
+      medium: variants.medium || '',
+      large: variants.large || '',
+    };
+
+    return { id, variants: safeVariants, mimetype, size, createdAt };
   }
 
   @HttpCode(200)
@@ -83,7 +92,54 @@ export class MediaController {
         large: `/uploads/${variants.large}`,
       },
     };
-    return this.uploadService.create(mediaDto);
+    return this.uploadService.saveImage(mediaDto);
+  }
+
+  @Post('upload/esp32')
+  @ApiOperation({
+    summary: 'Upload ảnh ESP32 (chỉ lưu file gốc, không resize)',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: UploadFileDto })
+  async uploadEsp32(
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ) {
+    if (!req.isMultipart()) {
+      throw new BadRequestException('Form must be multipart/form-data');
+    }
+    const part = await req.file();
+
+    if (!part) throw new NotFoundException('File không có');
+
+    if (!['image/jpeg', 'image/png'].includes(part.mimetype)) {
+      throw new BadRequestException('Chỉ JPG hoặc PNG được phép cho ESP32');
+    }
+    const { url } = await req.server.fileManager.saveEsp32Image(part);
+    const mediaDto: CreateMediaDto = {
+      mimetype: part.mimetype,
+      size: part.file?.bytesRead || 0,
+      variants: { original: url },
+      category: [MediaCategory.ESP32],
+    };
+    return this.uploadService.saveImage(mediaDto);
+  }
+
+  @Get('esp32')
+  @ApiOperation({ summary: 'Danh sách ảnh ESP32 có phân trang' })
+  async findAllEsp32(@QuerySchema(MediaEsp32Schema) dto: MediaEsp32Dto) {
+    const paginated = await this.uploadService.paginateMediaByCategory({
+      ...dto,
+      category: [MediaCategory.ESP32],
+    });
+    const stats = await this.uploadService.getMediaStatsByCategory([
+      MediaCategory.ESP32,
+    ]);
+
+    return {
+      ...paginated,
+      stats,
+    };
   }
 
   @Get('categories')
@@ -191,11 +247,21 @@ export class MediaController {
 
     await Promise.all(
       files.map(async (file) => {
-        const deleted = req.server.fileManager.deleteFile(file.variants.large);
-        if (!deleted || !deleted.deleted) {
-          throw new NotFoundException(
-            `Không xóa được file từ ổ đĩa: ${file.variants.large}`,
-          );
+        const variants = file.variants;
+        if (!variants || Object.keys(variants).length === 0) {
+          throw new NotFoundException('Không có variants để xóa');
+        }
+
+        for (const key in variants) {
+          const filePath = variants[key];
+          if (!filePath) continue;
+
+          const deleted = req.server.fileManager.deleteFile(filePath);
+          if (!deleted || !deleted.deleted) {
+            throw new NotFoundException(
+              `Không xóa được file từ ổ đĩa: ${filePath}`,
+            );
+          }
         }
         await this.uploadService.remove(file.id);
       }),

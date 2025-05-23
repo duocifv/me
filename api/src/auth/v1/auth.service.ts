@@ -12,17 +12,20 @@ import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UserDto, UserWithPermissionsSchema } from 'src/user/dto/user.dto';
 import { User } from 'src/user/entities/user.entity';
 import { ChangePasswordDto } from 'src/auth/dto/change-password.dto';
-import { JwtPayload } from '../interfaces/jwt-payload.type';
+import { JwtPayload } from '../type/jwt-payload.type';
 import { AccountSecurityService } from './account-security.service';
 import { UserStatus } from 'src/user/dto/user-status.enum';
 import axios from 'axios';
 import { SignInDto } from '../dto/sign-in.dto';
-import { Token } from '../interfaces/token.type';
+import { Token } from '../type/token.type';
 import {
   CaptchaInvalidException,
   CaptchaRequestFailedException,
   CaptchaRequiredException,
 } from 'src/shared/filters/captcha-required.exception';
+import { MailService } from 'src/mail/v1/mail.service';
+import { randomBytes } from 'crypto';
+import { addHours } from 'date-fns';
 
 @Injectable()
 export class AuthService {
@@ -31,6 +34,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly tokensService: TokensService,
     private readonly accountSecurityService: AccountSecurityService,
+    private readonly mailService: MailService,
   ) {}
 
   private async verifyCaptcha(token: string): Promise<void> {
@@ -120,10 +124,14 @@ export class AuthService {
     return UserWithPermissionsSchema.parse(user);
   }
 
-  // Đăng ký user mới
   async register(dto: CreateUserDto): Promise<UserDto> {
-    const user = await this.usersService.create(dto);
-    return user;
+    const { fullUser, dto: userDto } = await this.usersService.create(dto);
+
+    const token =
+      await this.usersService.generateEmailVerificationToken(fullUser);
+    await this.mailService.sendEmailVerification(fullUser.email, token);
+
+    return userDto;
   }
 
   // Đăng nhập, tạo cặp token và trả về
@@ -164,7 +172,16 @@ export class AuthService {
 
   // Thay đổi mật khẩu user
   async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
-    return this.usersService.changePassword(userId, dto);
+    await this.usersService.changePassword(userId, dto);
+
+    const user = await this.usersService.findById(userId);
+    if (user) {
+      await this.mailService.sendNotification(
+        user.email,
+        'Thay đổi mật khẩu thành công',
+        'Mật khẩu của bạn đã được thay đổi thành công. Nếu bạn không thực hiện hành động này, vui lòng liên hệ bộ phận hỗ trợ ngay.',
+      );
+    }
   }
 
   async getMe(userJwt: JwtPayload) {
@@ -185,19 +202,14 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email).catch(() => null);
     if (!user) return;
 
-    // const token = randomBytes(32).toString('hex');
-    // const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 giờ
+    const token = randomBytes(32).toString('hex');
+    const expires = addHours(new Date(), 2);
 
-    // user.resetPasswordToken = token;
-    // user.resetPasswordExpires = expires;
-    // await this.usersService.saveUser(user);
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = expires;
+    await this.usersService.saveUser(user);
 
-    // const resetLink = `https://your-app.com/reset-password?token=${token}`;
-    // await this.mailService.sendMail({
-    //   to: email,
-    //   subject: 'Reset your password',
-    //   text: `Click here to reset your password: ${resetLink}`,
-    // });
+    await this.mailService.sendResetPassword(email, token);
   }
 
   async resetPassword(
@@ -222,6 +234,13 @@ export class AuthService {
     user.resetPasswordExpires = null;
     await this.usersService.saveUser(user);
 
-    return { message: 'Password reset successful' };
+    // Gửi mail xác nhận đã reset xong
+    await this.mailService.sendNotification(
+      user.email,
+      'Mật khẩu của bạn đã được đặt lại',
+      'Mật khẩu của bạn vừa được thay đổi thành công. Nếu không phải bạn thực hiện, vui lòng liên hệ bộ phận hỗ trợ ngay.',
+    );
+
+    return { message: 'Mật khẩu đã được đặt lại thành công' };
   }
 }

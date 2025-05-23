@@ -4,15 +4,14 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
-import { authPlugin } from './plugins/auth.plugin';
-import { fileManagerPlugin } from './plugins/media/media.plugin';
-import mailerPlugin from './plugins/mailer.plugin';
+import authCookie from './plugins/auth.plugin';
+import fileManager from './plugins/media/media.plugin';
 import { setupSwagger } from './plugins/swagger.plugin';
 import { TypeOrmExceptionFilter } from './shared/filters/TypeOrmExceptionFilter';
 import cors from './plugins/cors.plugin';
-import recaptcha from './plugins/recaptcha.plugin';
 import { VersioningType } from '@nestjs/common';
-import helmet from '@fastify/helmet';
+import securityHelmet from './plugins/security-helmet.plugin';
+import mailer from './plugins/mailer.plugin';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -22,27 +21,17 @@ async function bootstrap() {
       disableRequestLogging: false,
     }),
   );
-  await app.register(helmet, {
-    global: true,
-    hidePoweredBy: true,
-    contentSecurityPolicy: false,
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-  });
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
   });
   app.enableShutdownHooks();
   app.useGlobalFilters(new TypeOrmExceptionFilter());
+  await securityHelmet(app);
   await cors(app);
-  await recaptcha(app);
-  await app.register(authPlugin);
-  await app.register(fileManagerPlugin);
-  await app.register(mailerPlugin);
+  await authCookie(app);
+  await fileManager(app);
+  await mailer(app);
   if (process.env.ENABLE_SWAGGER) {
     setupSwagger(app);
   }

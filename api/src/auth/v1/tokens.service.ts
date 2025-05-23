@@ -11,8 +11,8 @@ import { randomUUID, createHash } from 'crypto';
 import { User } from 'src/user/entities/user.entity';
 import { AppConfigService } from 'src/shared/config/config.service';
 import { RefreshToken } from '../entities/refresh-token.entity';
-import { RefreshTokenPayload } from '../interfaces/jwt-payload.type';
-import { Token } from '../interfaces/token.type';
+import { RefreshTokenPayload } from '../type/jwt-payload.type';
+import { Token } from '../type/token.type';
 
 @Injectable()
 export class TokensService {

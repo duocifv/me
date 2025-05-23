@@ -5,6 +5,8 @@ import { MediaFile } from './entities/file.entity';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { MediaDto } from './dto/media.dto';
 import { paginate, Pagination } from 'nestjs-typeorm-paginate';
+import { MediaEsp32Dto } from './dto/media-esp32.schema';
+import { MediaCategory } from './type/media-category.type';
 
 @Injectable()
 export class UploadFileService {
@@ -13,11 +15,6 @@ export class UploadFileService {
     private readonly mediaRepo: Repository<MediaFile>,
   ) {}
 
-  async create(dto: CreateMediaDto): Promise<MediaFile> {
-    const file = this.mediaRepo.create(dto);
-    return this.mediaRepo.save(file);
-  }
-
   async paginateMedia(dto: MediaDto): Promise<Pagination<MediaFile>> {
     const { page, limit, mimetype, category, startDate, endDate } = dto;
     const qb = this.mediaRepo.createQueryBuilder('media_files');
@@ -25,6 +22,9 @@ export class UploadFileService {
     if (mimetype) {
       qb.andWhere('media_files.mimetype = :mimetype', { mimetype });
     }
+
+    // qb.andWhere('media.category != :esp32', { esp32: 'esp32' });
+
     if (category) {
       qb.andWhere('media_files.category = :category', { category });
     }
@@ -40,6 +40,57 @@ export class UploadFileService {
       limit,
       route: '/media',
     });
+  }
+
+  async paginateMediaByCategory(
+    dto: MediaEsp32Dto,
+  ): Promise<Pagination<MediaFile>> {
+    const { page, limit, category, startDate, endDate } = dto;
+
+    const qb = this.mediaRepo.createQueryBuilder('media_files');
+
+    const catArray = Array.isArray(category) ? category : [category];
+
+    if (catArray.length > 0) {
+      qb.andWhere(
+        catArray
+          .map((_, i) => `JSON_CONTAINS(media_files.category, :cat${i})`)
+          .join(' OR '),
+        Object.fromEntries(catArray.map((c, i) => [`cat${i}`, `"${c}"`])),
+      );
+    }
+
+    if (startDate) {
+      qb.andWhere('media_files.createdAt >= :startDate', { startDate });
+    }
+
+    if (endDate) {
+      qb.andWhere('media_files.createdAt <= :endDate', { endDate });
+    }
+
+    return paginate<MediaFile>(qb, {
+      page,
+      limit,
+      route: `/media`,
+    });
+  }
+
+  async getMediaStatsByCategory(categories: MediaCategory[]) {
+    if (!categories || categories.length === 0) {
+      return { count: 0 };
+    }
+
+    const qb = this.mediaRepo.createQueryBuilder('media_files');
+
+    qb.where(
+      categories
+        .map((_, i) => `JSON_CONTAINS(media_files.category, :cat${i})`)
+        .join(' OR '),
+      Object.fromEntries(categories.map((c, i) => [`cat${i}`, `"${c}"`])),
+    );
+
+    const count = await qb.getCount();
+    return { count };
   }
 
   async findByMimeType(type: string): Promise<MediaFile[]> {
@@ -85,6 +136,11 @@ export class UploadFileService {
     const file = await this.mediaRepo.findOne({ where: { id } });
     if (!file) throw new NotFoundException('File not found');
     return file;
+  }
+
+  async saveImage(dto: CreateMediaDto): Promise<MediaFile> {
+    const file = this.mediaRepo.create(dto);
+    return this.mediaRepo.save(file);
   }
 
   async update(id: string, updateData: Partial<MediaFile>): Promise<MediaFile> {

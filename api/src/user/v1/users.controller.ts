@@ -21,12 +21,17 @@ import {
 import { CreateUserDto, CreateUserSchema } from '../dto/create-user.dto';
 import { QuerySchema } from 'src/shared/decorators/query-schema.decorator';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
+import { UserDto } from '../dto/user.dto';
+import { MailService } from 'src/mail/v1/mail.service';
 
 @ApiTags('Users - Khu vực ADMIN mới được truy cập')
 @RolesAllowed(Roles.ADMIN)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly mailService: MailService,
+  ) {}
 
   @Get()
   // @Permissions('create:posts')
@@ -75,7 +80,15 @@ export class UsersController {
 
   @Post()
   @HttpCode(201)
-  register(@BodySchema(CreateUserSchema) dto: CreateUserDto) {
-    return this.usersService.create(dto);
+  async register(
+    @BodySchema(CreateUserSchema) dto: CreateUserDto,
+  ): Promise<UserDto> {
+    const { fullUser, dto: userDto } = await this.usersService.create(dto);
+
+    const token =
+      await this.usersService.generateEmailVerificationToken(fullUser);
+    await this.mailService.sendEmailVerification(fullUser.email, token);
+
+    return userDto;
   }
 }

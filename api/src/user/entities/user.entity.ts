@@ -1,4 +1,3 @@
-// src/users/entities/user.entity.ts
 import { RefreshToken } from 'src/auth/entities/refresh-token.entity';
 import { Role } from 'src/roles/entities/role.entity';
 import {
@@ -34,6 +33,7 @@ export class User {
     default: UserStatus.pending,
   })
   status: UserStatus;
+
   @Column({ default: 0 })
   failedLoginAttempts: number;
 
@@ -43,8 +43,14 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   resetPasswordToken: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   resetPasswordExpires: Date | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  emailVerificationToken: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  emailVerificationExpires: Date | null;
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
   refreshTokens: RefreshToken[];

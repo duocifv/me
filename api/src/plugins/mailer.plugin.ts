@@ -6,7 +6,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { SendMailOptions, SentMessageInfo } from 'nodemailer';
-import { UnauthorizedException } from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -24,7 +24,7 @@ declare module 'fastify' {
   }
 }
 
-const mailOptionsSchema = z.object({
+export const mailOptionsSchema = z.object({
   to: z.string().email(),
   subject: z.string(),
   template: z.string(),
@@ -33,18 +33,21 @@ const mailOptionsSchema = z.object({
   attachments: z.array(z.any()).optional(),
 });
 
+export type mailOptionsDto = z.infer<typeof mailOptionsSchema>;
+
 // JSON Schema cho Swagger nếu cần
 const TemplateMailOptionsJson = zodToJsonSchema(mailOptionsSchema, {
   $refStrategy: 'none',
 });
 
-export default fp<FastifyInstance>(async (app) => {
+export const mailerPlugin = fp(async (app: FastifyInstance) => {
   const {
     SMTP_HOST,
     SMTP_PORT,
     SMTP_USER,
     SMTP_PASS,
     MAIL_FROM,
+    SMTP_SECURE,
     MAIL_TEMPLATE_PATH,
   } = process.env;
   if (
@@ -53,6 +56,7 @@ export default fp<FastifyInstance>(async (app) => {
     !SMTP_USER ||
     !SMTP_PASS ||
     !MAIL_FROM ||
+    !SMTP_SECURE ||
     !MAIL_TEMPLATE_PATH
   ) {
     throw new Error('Missing SMTP config in environment variables');
@@ -60,13 +64,16 @@ export default fp<FastifyInstance>(async (app) => {
 
   // 1. register mailer
   await app.register(fastifyMailer, {
+    defaults: {
+      from: process.env.MAIL_FROM,
+      subject: 'default example',
+    },
     transport: {
       host: SMTP_HOST,
       port: Number(SMTP_PORT),
+      secure: SMTP_SECURE === 'true',
       auth: { user: SMTP_USER, pass: SMTP_PASS },
-      jsonTransport: true,
     },
-    defaults: { from: `"No Reply" <${MAIL_FROM}>` },
   });
 
   // 2. nếu bạn muốn expose schema cho Swagger
@@ -94,23 +101,39 @@ export default fp<FastifyInstance>(async (app) => {
     async function (
       this: FastifyReply,
       opts: SendMailOptions,
-    ): Promise<{ sussecs: string }> {
+    ): Promise<{
+      sussecs: string;
+      info: {
+        from: string;
+        to: string;
+      };
+    }> {
       const parsed = mailOptionsSchema.parse(opts);
       const { to, subject, template, context, text, attachments } = parsed;
       const tplPath = path.join(MAIL_TEMPLATE_PATH, `${template}.pug`);
       const html = pug.renderFile(tplPath, context || {});
       try {
-        await this.server.mailer.sendMail({
+        await app.mailer.sendMail({
           to,
           subject,
           text,
           html,
-          attachments,
+          // attachments,
         });
-        return { sussecs: 'đã gửi mail thành công' };
+        return {
+          sussecs: 'đã gửi mail thành công',
+          info: {
+            from: SMTP_USER,
+            to,
+          },
+        };
       } catch {
-        throw new UnauthorizedException('Invalid refresh token signature');
+        throw new InternalServerErrorException('Gửi mail thất bại');
       }
     },
   );
 });
+
+export default async function mailer(app) {
+  await app.register(mailerPlugin);
+}
