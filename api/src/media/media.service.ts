@@ -42,39 +42,6 @@ export class UploadFileService {
     });
   }
 
-  async paginateMediaByCategory(
-    dto: MediaEsp32Dto,
-  ): Promise<Pagination<MediaFile>> {
-    const { page, limit, category, startDate, endDate } = dto;
-
-    const qb = this.mediaRepo.createQueryBuilder('media_files');
-
-    const catArray = Array.isArray(category) ? category : [category];
-
-    if (catArray.length > 0) {
-      qb.andWhere(
-        catArray
-          .map((_, i) => `JSON_CONTAINS(media_files.category, :cat${i})`)
-          .join(' OR '),
-        Object.fromEntries(catArray.map((c, i) => [`cat${i}`, `"${c}"`])),
-      );
-    }
-
-    if (startDate) {
-      qb.andWhere('media_files.createdAt >= :startDate', { startDate });
-    }
-
-    if (endDate) {
-      qb.andWhere('media_files.createdAt <= :endDate', { endDate });
-    }
-
-    return paginate<MediaFile>(qb, {
-      page,
-      limit,
-      route: `/media`,
-    });
-  }
-
   async getMediaStatsByCategory(categories: MediaCategory[]) {
     if (!categories || categories.length === 0) {
       return { count: 0 };
