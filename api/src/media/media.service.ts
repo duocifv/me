@@ -5,7 +5,6 @@ import { MediaFile } from './entities/file.entity';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { MediaDto } from './dto/media.dto';
 import { paginate, Pagination } from 'nestjs-typeorm-paginate';
-import { MediaEsp32Dto } from './dto/media-esp32.schema';
 import { MediaCategory } from './type/media-category.type';
 
 @Injectable()

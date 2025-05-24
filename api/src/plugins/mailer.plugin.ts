@@ -109,7 +109,7 @@ export const mailerPlugin = fp(async (app: FastifyInstance) => {
       };
     }> {
       const parsed = mailOptionsSchema.parse(opts);
-      const { to, subject, template, context, text, attachments } = parsed;
+      const { to, subject, template, context, text } = parsed;
       const tplPath = path.join(MAIL_TEMPLATE_PATH, `${template}.pug`);
       const html = pug.renderFile(tplPath, context || {});
       try {

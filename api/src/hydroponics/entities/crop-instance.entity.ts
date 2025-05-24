@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+} from 'typeorm';
 import { PlantType } from '../../plant-type/entity/plant-type.entity';
 import { Snapshot } from './snapshot.entity';
 
@@ -9,7 +16,7 @@ export class CropInstance {
 
   @Column()
   deviceId: string;
-  
+
   @ManyToOne(() => PlantType, (pt) => pt.cropInstances, { nullable: false })
   plantType: PlantType;
 

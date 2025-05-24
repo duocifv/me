@@ -1,5 +1,5 @@
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param, Post } from '@nestjs/common';
 import { PlantTypeService } from './plant-type.service';
 import { CreatePlantTypeDto, CreatePlantTypeSchema } from '../dto/create-plant-type.dto';
 

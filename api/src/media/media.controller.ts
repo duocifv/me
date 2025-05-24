@@ -33,7 +33,6 @@ import { MediaFilterDto, MediaFilterSchema } from './dto/media-filter.dto';
 import { MediaFileDto } from './dto/media-file.dto';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import { BulkDeleteDto, BulkDeleteSchema } from './dto/bulk-delete.dto';
-import { MediaEsp32Dto, MediaEsp32Schema } from './dto/media-esp32.schema';
 import { MediaCategory } from './type/media-category.type';
 
 @ApiTags('Media')
@@ -103,7 +102,6 @@ export class MediaController {
   @ApiBody({ type: UploadFileDto })
   async uploadEsp32(
     @Req() req: FastifyRequest,
-    @Res({ passthrough: true }) res: FastifyReply,
   ) {
     if (!req.isMultipart()) {
       throw new BadRequestException('Form must be multipart/form-data');

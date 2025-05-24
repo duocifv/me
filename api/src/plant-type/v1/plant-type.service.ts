@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PlantType } from '../entity/plant-type.entity';
@@ -9,7 +13,7 @@ export class PlantTypeService {
   constructor(
     @InjectRepository(PlantType)
     private readonly repo: Repository<PlantType>,
-  ) { }
+  ) {}
 
   async findAll(): Promise<PlantType[]> {
     return this.repo.find();
@@ -34,7 +38,9 @@ export class PlantTypeService {
   async create(dto: CreatePlantTypeDto): Promise<PlantType> {
     const existing = await this.repo.findOne({ where: { slug: dto.slug } });
     if (existing) {
-      throw new ConflictException(`PlantType with slug '${dto.slug}' already exists.`);
+      throw new ConflictException(
+        `PlantType with slug '${dto.slug}' already exists.`,
+      );
     }
 
     const entity = this.repo.create({

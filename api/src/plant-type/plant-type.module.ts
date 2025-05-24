@@ -5,9 +5,9 @@ import { PlantTypeController } from './v1/plant-type.controller';
 import { PlantType } from 'src/plant-type/entity/plant-type.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([PlantType])],
-    controllers: [PlantTypeController],
-    providers: [PlantTypeService],
-    exports: [PlantTypeService],
+  imports: [TypeOrmModule.forFeature([PlantType])],
+  controllers: [PlantTypeController],
+  providers: [PlantTypeService],
+  exports: [PlantTypeService],
 })
-export class PlantTypeModule { }
+export class PlantTypeModule {}

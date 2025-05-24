@@ -1,18 +1,15 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { promisify } from 'util';
-import { writeFile } from 'fs';
-import { extname, join } from 'path';
 import { CropInstance } from '../entities/crop-instance.entity';
 import { PlantType } from '../../plant-type/entity/plant-type.entity';
 import { Snapshot } from '../entities/snapshot.entity';
 import { CameraImage } from '../entities/camera-image.entity';
 import { CreateCropInstanceDto } from '../dto/create-crop-instance.dto';
 import { CreateSnapshotDto } from '../dto/create-snapshot.dto';
-import { UploadImageDto } from '../dto/upload-image.dto';
-
-const write = promisify(writeFile);
 
 @Injectable()
 export class HydroponicsService {
@@ -85,10 +82,7 @@ export class HydroponicsService {
   }
 
   /** Gắn ảnh vào snapshot */
-  async uploadImage(
-    snapshotId: number,
-    url: string,
-  ) {
+  async uploadImage(snapshotId: number, url: string) {
     const snap = await this.snapRepo.findOne({ where: { id: snapshotId } });
     if (!snap) throw new NotFoundException('Snapshot not found');
 

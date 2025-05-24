@@ -1,4 +1,10 @@
-import { Entity, PrimaryColumn, Column, ManyToMany, BeforeInsert } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  ManyToMany,
+  BeforeInsert,
+} from 'typeorm';
 import { Role } from 'src/roles/entities/role.entity';
 import { PermissionName } from 'src/permissions/dto/permission.enum';
 import { v4 as uuidv4 } from 'uuid';

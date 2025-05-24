@@ -1,5 +1,4 @@
 import helmet from '@fastify/helmet';
-import { FastifyInstance } from 'fastify';
 
 const helmetConfig = {
   global: true,

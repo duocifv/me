@@ -12,7 +12,6 @@ import {
   DeleteDateColumn,
 } from 'typeorm';
 import { UserStatus } from '../dto/user-status.enum';
-import { CropInstance } from 'src/hydroponics/entities/crop-instance.entity';
 
 @Entity('users')
 export class User {
@@ -72,5 +71,4 @@ export class User {
     inverseJoinColumn: { name: 'role_id', referencedColumnName: 'id' },
   })
   roles: Role[];
-
 }
