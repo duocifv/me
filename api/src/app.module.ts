@@ -27,6 +27,7 @@ import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 // import { TerminusModule } from '@nestjs/terminus';
 // import { HttpModule } from '@nestjs/axios';
+import { HydroponicsModule } from './hydroponics/hydroponics.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     UsersModule,
     MediaModule,
     MailModule,
+    HydroponicsModule,
     // SettingsModule,
     // DashboardModule,
     // NotificationModule,

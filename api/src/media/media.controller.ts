@@ -125,22 +125,22 @@ export class MediaController {
     return this.uploadService.saveImage(mediaDto);
   }
 
-  @Get('esp32')
-  @ApiOperation({ summary: 'Danh sách ảnh ESP32 có phân trang' })
-  async findAllEsp32(@QuerySchema(MediaEsp32Schema) dto: MediaEsp32Dto) {
-    const paginated = await this.uploadService.paginateMediaByCategory({
-      ...dto,
-      category: [MediaCategory.ESP32],
-    });
-    const stats = await this.uploadService.getMediaStatsByCategory([
-      MediaCategory.ESP32,
-    ]);
+  // @Get('esp32')
+  // @ApiOperation({ summary: 'Danh sách ảnh ESP32 có phân trang' })
+  // async findAllEsp32(@QuerySchema(MediaEsp32Schema) dto: MediaEsp32Dto) {
+  //   const paginated = await this.uploadService.paginateMediaByCategory({
+  //     ...dto,
+  //     category: [MediaCategory.ESP32],
+  //   });
+  //   const stats = await this.uploadService.getMediaStatsByCategory([
+  //     MediaCategory.ESP32,
+  //   ]);
 
-    return {
-      ...paginated,
-      stats,
-    };
-  }
+  //   return {
+  //     ...paginated,
+  //     stats,
+  //   };
+  // }
 
   @Get('categories')
   getCategories() {
