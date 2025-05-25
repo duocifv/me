@@ -2,11 +2,9 @@ import {
   Controller,
   Get,
   Post,
-  Param,
   UseGuards,
   Request,
-  Req,
-  Res,
+  Param,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
@@ -22,18 +20,21 @@ import {
 } from '../dto/create-snapshot.dto';
 import { DeviceTokenGuard } from '../guard/device-token.guard';
 import { Public } from 'src/shared/decorators/public.decorator';
-import { DeviceToken } from 'src/shared/decorators/device-token.decorator';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyRequest } from 'fastify';
 import { UploadFileDto } from '../dto/upload-file.dto';
+import { DeviceToken } from 'src/shared/decorators/device-token.decorator';
 
 @Public()
 @DeviceToken()
 @UseGuards(DeviceTokenGuard)
-@Controller()
+@Controller('hydroponics')
 export class HydroponicsController {
   constructor(private readonly service: HydroponicsService) {}
 
+  /**
+   * Tạo crop instance mới → tự động đánh dấu active
+   */
   @Post('crop-instances')
   createCrop(
     @BodySchema(CreateCropInstanceSchema) dto: CreateCropInstanceDto,
@@ -42,48 +43,65 @@ export class HydroponicsController {
     return this.service.createCropInstance(req.deviceId, dto);
   }
 
+  /**
+   * Lấy tất cả crop instances của device
+   */
   @Get('crop-instances')
   getCrops(@Request() req) {
     return this.service.getCropInstances(req.deviceId);
   }
 
-  @Post('crop-instances/:id/snapshots')
+  /**
+   * Tạo snapshot mới cho crop active (deviceId → crop active → snapshot)
+   */
+  @Post('snapshots')
   createSnapshot(
-    @Param('id') cropId: number,
+    @Request() req,
     @BodySchema(CreateSnapshotSchema) dto: CreateSnapshotDto,
   ) {
-    return this.service.createSnapshot(cropId, dto);
+    return this.service.createSnapshot(req.deviceId, dto);
   }
 
-  @Get('crop-instances/:id/snapshots')
-  getSnapshots(@Param('id') cropId: number) {
-    return this.service.getSnapshots(cropId);
+  /**
+   * Lấy tất cả snapshots của crop active
+   */
+  @Get('snapshots')
+  getSnapshots(@Request() req) {
+    return this.service.getSnapshotsByDevice(req.deviceId);
   }
 
+  /**
+   * Lấy thông tin snapshot cụ thể (chỉ khi cần tra cứu riêng)
+   */
   @Get('snapshots/:snapshotId')
   getSnapshot(@Param('snapshotId') snapshotId: number) {
     return this.service.getSnapshotById(snapshotId);
   }
 
-  @ApiOperation({ summary: 'Upload ảnh' })
+  /**
+   * Upload ảnh cho snapshot mới nhất (crop active + snapshot active)
+   */
+  @ApiOperation({ summary: 'Upload ảnh cho snapshot mới nhất' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UploadFileDto })
-  @Post('snapshots/:snapshotId/images')
-  async uploadEsp32(
-    @Param('snapshotId') snapshotId: number,
-    @Req() req: FastifyRequest,
+  @Post('snapshots/images')
+  async uploadLatestSnapshotImage(
+    @Request() req,
+    @Request() fastifyReq: FastifyRequest,
   ) {
-    if (!req.isMultipart()) {
+    if (!fastifyReq.isMultipart()) {
       throw new BadRequestException('Form must be multipart/form-data');
     }
-    const part = await req.file();
 
-    if (!part) throw new NotFoundException('File không có');
-
-    if (!['image/jpeg', 'image/png'].includes(part.mimetype)) {
-      throw new BadRequestException('Chỉ JPG hoặc PNG được phép cho ESP32');
+    const part = await fastifyReq.file();
+    if (!part) {
+      throw new NotFoundException('Không tìm thấy file upload');
     }
-    const { url } = await req.server.fileManager.saveEsp32Image(part);
-    return this.service.uploadImage(snapshotId, url);
+    if (!['image/jpeg', 'image/png'].includes(part.mimetype)) {
+      throw new BadRequestException('Chỉ chấp nhận JPG hoặc PNG');
+    }
+
+    const { url } = await fastifyReq.server.fileManager.saveEsp32Image(part);
+    return this.service.addImageToLatestSnapshot(req.deviceId, url);
   }
 }

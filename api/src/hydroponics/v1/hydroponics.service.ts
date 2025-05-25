@@ -1,96 +1,131 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CropInstance } from '../entities/crop-instance.entity';
-import { PlantType } from '../../plant-type/entity/plant-type.entity';
-import { Snapshot } from '../entities/snapshot.entity';
-import { CameraImage } from '../entities/camera-image.entity';
 import { CreateCropInstanceDto } from '../dto/create-crop-instance.dto';
 import { CreateSnapshotDto } from '../dto/create-snapshot.dto';
+import { CropInstance } from '../entities/crop-instance.entity';
+import { Snapshot } from '../entities/snapshot.entity';
+import { CameraImage } from '../entities/camera-image.entity';
 
 @Injectable()
 export class HydroponicsService {
   constructor(
     @InjectRepository(CropInstance)
     private readonly cropRepo: Repository<CropInstance>,
-    @InjectRepository(PlantType)
-    private readonly plantTypeRepo: Repository<PlantType>,
     @InjectRepository(Snapshot)
     private readonly snapRepo: Repository<Snapshot>,
     @InjectRepository(CameraImage)
     private readonly imgRepo: Repository<CameraImage>,
   ) {}
 
-  /** Tạo CropInstance bằng deviceId và plantTypeId */
-  async createCropInstance(deviceId: string, dto: CreateCropInstanceDto) {
-    const plantType = await this.plantTypeRepo.findOne({
-      where: { id: dto.plantTypeId },
-    });
-
-    if (!plantType) throw new NotFoundException('PlantType not found');
-
+  /**
+   * Tạo crop instance mới, set active=true, deactivate crop cũ
+   */
+  async createCropInstance(
+    deviceId: string,
+    dto: CreateCropInstanceDto,
+  ): Promise<CropInstance> {
+    await this.cropRepo.update({ deviceId, isActive: true }, { isActive: false });
     const crop = this.cropRepo.create({
-      name: dto.name,
-      plantType,
       deviceId,
+      plantTypeId: dto.plantTypeId,
+      name: dto.name,
+      isActive: true,
     });
-
-    return await this.cropRepo.save(crop);
+    return this.cropRepo.save(crop);
   }
 
-  /** Lấy danh sách crop của một thiết bị */
-  async getCropInstances(deviceId: string) {
-    return await this.cropRepo.find({
+  /**
+   * Lấy tất cả crop instances của device
+   */
+  async getCropInstances(deviceId: string): Promise<CropInstance[]> {
+    return this.cropRepo.find({
       where: { deviceId },
       relations: ['plantType'],
+      order: { createdAt: 'DESC' },
     });
   }
 
-  /** Tạo snapshot gắn với cropId */
-  async createSnapshot(cropId: number, dto: CreateSnapshotDto) {
-    const crop = await this.cropRepo.findOne({ where: { id: cropId } });
-    if (!crop) throw new NotFoundException('CropInstance not found');
+  /**
+   * Tạo snapshot mới cho crop active
+   */
+  async createSnapshot(
+    deviceId: string,
+    dto: CreateSnapshotDto,
+  ): Promise<Snapshot> {
+    const crop = await this.cropRepo.findOne({
+      where: { deviceId, isActive: true },
+    });
+    if (!crop) {
+      throw new NotFoundException('Không tìm thấy crop active');
+    }
 
-    const snap = this.snapRepo.create({
-      cropInstance: crop,
+    const snapshot = this.snapRepo.create({
+      cropInstanceId: crop.id,
       sensorData: dto.sensorData,
       solutionData: dto.solutionData,
     });
-
-    return await this.snapRepo.save(snap);
+    return this.snapRepo.save(snapshot);
   }
 
-  /** Lấy toàn bộ snapshots của một crop */
-  async getSnapshots(cropId: number) {
-    return await this.snapRepo.find({
-      where: { cropInstance: { id: cropId } },
+  /**
+   * Lấy tất cả snapshots của crop active
+   */
+  async getSnapshotsByDevice(deviceId: string): Promise<Snapshot[]> {
+    const crop = await this.cropRepo.findOne({
+      where: { deviceId, isActive: true },
+    });
+    if (!crop) {
+      throw new NotFoundException('Không tìm thấy crop active');
+    }
+
+    return this.snapRepo.find({
+      where: { cropInstanceId: crop.id },
       relations: ['images'],
+      order: { timestamp: 'DESC' },
     });
   }
 
-  /** Lấy chi tiết một snapshot */
-  async getSnapshotById(snapshotId: number) {
-    const snap = await this.snapRepo.findOne({
+  /**
+   * Lấy chi tiết snapshot theo ID
+   */
+  async getSnapshotById(snapshotId: number): Promise<Snapshot> {
+    const snapshot = await this.snapRepo.findOne({
       where: { id: snapshotId },
       relations: ['images'],
     });
-    if (!snap) throw new NotFoundException('Snapshot not found');
-    return snap;
+    if (!snapshot) {
+      throw new NotFoundException('Snapshot không tồn tại');
+    }
+    return snapshot;
   }
 
-  /** Gắn ảnh vào snapshot */
-  async uploadImage(snapshotId: number, url: string) {
-    const snap = await this.snapRepo.findOne({ where: { id: snapshotId } });
-    if (!snap) throw new NotFoundException('Snapshot not found');
+  /**
+   * Upload ảnh vào snapshot mới nhất của crop active
+   */
+  async addImageToLatestSnapshot(
+    deviceId: string,
+    url: string,
+  ): Promise<CameraImage> {
+    const crop = await this.cropRepo.findOne({
+      where: { deviceId, isActive: true },
+    });
+    if (!crop) {
+      throw new NotFoundException('Không tìm thấy crop active');
+    }
 
-    const img = this.imgRepo.create({
-      snapshot: snap,
+    const latestSnapshot = await this.snapRepo.findOne({
+      where: { cropInstanceId: crop.id },
+      order: { timestamp: 'DESC' },
+    });
+    if (!latestSnapshot) {
+      throw new NotFoundException('Không tìm thấy snapshot nào');
+    }
+
+    const image = this.imgRepo.create({
+      snapshotId: latestSnapshot.id,
       url,
     });
-
-    return await this.imgRepo.save(img);
+    return this.imgRepo.save(image);
   }
 }

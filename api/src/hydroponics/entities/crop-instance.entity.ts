@@ -1,3 +1,4 @@
+// src/entity/crop-instance.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -5,11 +6,12 @@ import {
   ManyToOne,
   OneToMany,
   CreateDateColumn,
+  JoinColumn,
 } from 'typeorm';
 import { PlantType } from '../../plant-type/entity/plant-type.entity';
 import { Snapshot } from './snapshot.entity';
 
-@Entity()
+@Entity({ name: 'crop_instances' })
 export class CropInstance {
   @PrimaryGeneratedColumn()
   id: number;
@@ -17,15 +19,29 @@ export class CropInstance {
   @Column()
   deviceId: string;
 
-  @ManyToOne(() => PlantType, (pt) => pt.cropInstances, { nullable: false })
+  @ManyToOne(() => PlantType, (pt) => pt.cropInstances, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'plantTypeId' })
   plantType: PlantType;
+
+  @Column()
+  plantTypeId: number;
 
   @Column()
   name: string;
 
+  // Timestamp khi tạo
   @CreateDateColumn()
   createdAt: Date;
 
-  @OneToMany(() => Snapshot, (s) => s.cropInstance)
+  // Flag chỉ 1 crop active cho mỗi thiết bị
+  @Column({ default: true })
+  isActive: boolean;
+
+  @OneToMany(() => Snapshot, (s) => s.cropInstance, {
+    cascade: ['insert', 'update', 'remove'],
+  })
   snapshots: Snapshot[];
 }
