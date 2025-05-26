@@ -10,7 +10,11 @@ import { FileType } from "./dto/media-upload.dto";
 class MediaService {
   private media = api.group("media");
 
-  async findAll(): Promise<PaginatedMediaResponse> {
+  async findAll(): Promise<MediaFileDto[]> {
+    return this.media.get<MediaFileDto[]>("all");
+  }
+
+  async findPaginate(): Promise<PaginatedMediaResponse> {
     return this.media.get<PaginatedMediaResponse>("");
   }
 

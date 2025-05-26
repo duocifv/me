@@ -37,7 +37,8 @@ export interface ResponsivePictureProps
     "src" | "alt" | "width" | "height"
   > {
   /** Either a string URL or ImageData object */
-  src: string | ImageData;
+  src?: string;
+  srcSet?: ImageData;
   alt?: string;
   loading?: "lazy" | "eager";
   className?: string;
@@ -45,13 +46,14 @@ export interface ResponsivePictureProps
 
 export const Picture: React.FC<ResponsivePictureProps> = ({
   src,
+  srcSet,
   alt,
   loading = "lazy",
   className,
   ...imgProps
 }) => {
   // If src is string, render simple img
-  if (typeof src === "string") {
+  if (src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -64,8 +66,9 @@ export const Picture: React.FC<ResponsivePictureProps> = ({
     );
   }
 
+  if(!srcSet) return
   // Destructure imageData
-  const { url, width, height, formats, alt: dataAlt } = src;
+  const { url, width, height, formats, alt: dataAlt } = srcSet;
   const defaultAlt = alt ?? dataAlt ?? "";
 
   return (
