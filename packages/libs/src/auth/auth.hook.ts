@@ -4,6 +4,7 @@ import { SignInDto } from "./dto/sign-in.dto";
 import { authService } from "./auth.service";
 import { CaptchaStatus, useAuthStore } from "./auth.store";
 import { api } from "../share/api/apiClient";
+import { ResetPasswordDto } from "./dto/reset-password";
 
 export const loggedIn = () => api.storage.is();
 
@@ -60,5 +61,11 @@ export function useAuthChangePasswordMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["register"] });
     },
+  });
+}
+
+export function useAuthResetPasswordMutation() {
+  return useMutation({
+    mutationFn: (dto: ResetPasswordDto) => authService.resetPassword(dto),
   });
 }
