@@ -6,7 +6,7 @@ import {
   ChangePasswordSchema,
 } from "./dto/change-password.dto";
 import { LoginDto, MeDto } from "./dto/login.dto";
-import { ResetPasswordDto } from "./dto/reset-password";
+import { ResetPasswordDto, ResetPasswordTokenDto } from "./dto/reset-password";
 import { SignInDto } from "./dto/sign-in.dto";
 
 class AuthService {
@@ -36,8 +36,12 @@ class AuthService {
     return this.authApi.post<void>("change-password", { data });
   }
 
-  async resetPassword(dto: ResetPasswordDto): Promise<void> {
+  async resetPassword(dto: ResetPasswordTokenDto): Promise<void> {
     return this.authApi.post<void>("reset-password", dto);
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    return this.authApi.post<void>("verify-email", { token });
   }
 
   async getMe(): Promise<MeDto | null> {

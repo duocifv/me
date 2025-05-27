@@ -243,4 +243,15 @@ export class AuthService {
 
     return { message: 'Mật khẩu đã được đặt lại thành công' };
   }
+
+  async verifyEmail(token: string): Promise<void> {
+    const user = await this.usersService.verifyEmailToken(token);
+
+    if (!user) {
+      throw new BadRequestException('Token không hợp lệ hoặc đã hết hạn');
+    }
+
+    // Đánh dấu user đã xác minh email
+    await this.usersService.markEmailAsVerified(user.id);
+  }
 }

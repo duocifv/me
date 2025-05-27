@@ -18,7 +18,6 @@ import {
 import { ResetPasswordSubmit } from "../dispatch/dispatch-reset-password";
 
 export default function ResetPassword() {
-
   return (
     <Card className="max-w-md mx-auto px-6 py-8">
       <CardHeader>
@@ -28,7 +27,7 @@ export default function ResetPassword() {
       <CardContent>
         <FormWrapper<ResetPasswordDto>
           schema={ResetPasswordSchema}
-          defaultValues={{ password: "", confirmPassword: "" }}
+          defaultValues={{ newPassword: "", confirmPassword: "" }}
         >
           {(from) => (
             <>
@@ -38,11 +37,11 @@ export default function ResetPassword() {
                   id="password"
                   type="password"
                   placeholder="••••••••"
-                  {...from.register("password")}
+                  {...from.register("newPassword")}
                 />
-                {from.formState.errors.password && (
+                {from.formState.errors.newPassword && (
                   <span className="text-red-500 text-sm">
-                    {from.formState.errors.password.message}
+                    {from.formState.errors.newPassword.message}
                   </span>
                 )}
               </div>

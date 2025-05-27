@@ -251,4 +251,31 @@ export class UsersService {
       },
     });
   }
+
+  async markEmailAsVerified(userId: string): Promise<void> {
+    await this.usersRepo.update(userId, {
+      status: UserStatus.active,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+    });
+  }
+
+  async verifyEmailToken(token: string): Promise<User | null> {
+    const user = await this.usersRepo.findOne({
+      where: {
+        emailVerificationToken: token,
+      },
+    });
+
+    if (!user) return null;
+
+    if (
+      !user.emailVerificationExpires ||
+      user.emailVerificationExpires < new Date()
+    ) {
+      return null;
+    }
+
+    return user;
+  }
 }
