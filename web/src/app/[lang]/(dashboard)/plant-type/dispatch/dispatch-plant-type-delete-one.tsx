@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { usePlantTypeStore } from "@adapter/plant-type/plant-type.store";
 import { useRemoveUserMutation } from "@adapter/plant-type/plant-type.hook.";
-import { ApiError } from "next/dist/server/api-utils";
 
 export default function ButtonPlantTypeDelete() {
   const id = usePlantTypeStore((s) => s.selectedPlantId);

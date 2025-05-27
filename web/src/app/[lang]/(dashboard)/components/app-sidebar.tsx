@@ -3,14 +3,10 @@
 import * as React from "react";
 import {
   ArrowUpCircleIcon,
-  BarChartIcon,
-  CameraIcon,
   ClipboardListIcon,
   DatabaseIcon,
   DiscAlbum,
-  FileCodeIcon,
   FileIcon,
-  FileTextIcon,
   HelpCircleIcon,
   LayoutDashboardIcon,
   MailCheck,

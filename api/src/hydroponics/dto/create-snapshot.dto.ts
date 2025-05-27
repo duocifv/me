@@ -2,17 +2,17 @@ import { z } from 'zod';
 
 // Định nghĩa các loại sensor
 export const SensorTypeSchema = z.enum([
-  'water_temperature',    // nhiệt độ nước
-  'ambient_temperature',  // nhiệt độ không khí
-  'humidity',             // độ ẩm
-  'light_intensity',      // cường độ ánh sáng
+  'water_temperature', // nhiệt độ nước
+  'ambient_temperature', // nhiệt độ không khí
+  'humidity', // độ ẩm
+  'light_intensity', // cường độ ánh sáng
 ]);
 
 // Định nghĩa các thông số dung dịch (nutrient solution)
 export const SolutionParamSchema = z.enum([
-  'ph',                   // độ pH
-  'ec',                   // conductivity (điện dẫn suất)
-  'orp',                  // oxidation-reduction potential
+  'ph', // độ pH
+  'ec', // conductivity (điện dẫn suất)
+  'orp', // oxidation-reduction potential
 ]);
 
 export const CreateSnapshotSchema = z.object({
@@ -25,7 +25,7 @@ export const CreateSnapshotSchema = z.object({
     {
       required_error: 'sensorData là bắt buộc',
       invalid_type_error: 'sensorData phải là object với key là loại sensor',
-    }
+    },
   ),
   solutionData: z.record(
     SolutionParamSchema,
@@ -35,8 +35,9 @@ export const CreateSnapshotSchema = z.object({
     }),
     {
       required_error: 'solutionData là bắt buộc',
-      invalid_type_error: 'solutionData phải là object với key là thông số dung dịch',
-    }
+      invalid_type_error:
+        'solutionData phải là object với key là thông số dung dịch',
+    },
   ),
 });
 

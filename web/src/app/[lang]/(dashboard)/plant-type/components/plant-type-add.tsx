@@ -19,6 +19,7 @@ import {
 import CreatePlantTypeSubmit from "../dispatch/dispatch-plant-type-create";
 import { generateSlug } from "@adapter/share/utils/generateSlug";
 import { useMediaAllQuery } from "@adapter/media/media.hook";
+import { Picture } from "@/components/share/picture/ui-picture";
 
 export default function PlantTypeAddDialog() {
   const { data = [], isSuccess } = useMediaAllQuery();
@@ -99,7 +100,7 @@ export default function PlantTypeAddDialog() {
                               }`}
                               onClick={() => setValue("mediaId", id)}
                             >
-                              <img
+                              <Picture
                                 src={variants.medium}
                                 alt="thumbnail"
                                 className="h-20 w-full object-cover rounded"
@@ -108,7 +109,6 @@ export default function PlantTypeAddDialog() {
                           ) : null
                         )}
                       </div>
-                      {/* hidden input để form ghi nhận mediaId */}
                       <Input type="hidden" {...form.register("mediaId")} />
                       {formState.errors.mediaId && (
                         <p className="text-red-500 text-sm mt-1">

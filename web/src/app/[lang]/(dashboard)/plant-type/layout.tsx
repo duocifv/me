@@ -1,6 +1,4 @@
 import { SiteHeader } from "@/components/site-header";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
 import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Create Next App",
