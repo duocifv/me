@@ -21,7 +21,7 @@ export interface ImageFormat {
   mime: string;
 }
 
-export interface ImageData {
+export interface set {
   url: string;
   alt?: string;
   width: number;
@@ -34,10 +34,10 @@ export interface ImageData {
 export interface ResponsivePictureProps
   extends Omit<
     React.ImgHTMLAttributes<HTMLImageElement>,
-    "src" | "alt" | "width" | "height"
+    "src" | "alt" | "width" | "height" | "srcSet"
   > {
-  /** Either a string URL or ImageData object */
-  src: string | ImageData;
+  src?: string;
+  set?: set; // Đổi tên thành imageData
   alt?: string;
   loading?: "lazy" | "eager";
   className?: string;
@@ -45,13 +45,14 @@ export interface ResponsivePictureProps
 
 export const Picture: React.FC<ResponsivePictureProps> = ({
   src,
+  set,
   alt,
   loading = "lazy",
   className,
   ...imgProps
 }) => {
   // If src is string, render simple img
-  if (typeof src === "string") {
+  if (src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -64,8 +65,9 @@ export const Picture: React.FC<ResponsivePictureProps> = ({
     );
   }
 
+  if (!set) return;
   // Destructure imageData
-  const { url, width, height, formats, alt: dataAlt } = src;
+  const { url, width, height, formats, alt: dataAlt } = set;
   const defaultAlt = alt ?? dataAlt ?? "";
 
   return (

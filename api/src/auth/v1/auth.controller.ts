@@ -136,4 +136,12 @@ export class AuthController {
   ) {
     return this.authService.changePassword(id, dto);
   }
+
+  @Public()
+  @Get('verify-email/:token')
+  @HttpCode(200)
+  async verifyEmail(@Param('token') token: string) {
+    await this.authService.verifyEmail(token);
+    return { message: 'Email xác minh thành công' };
+  }
 }

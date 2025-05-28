@@ -183,7 +183,7 @@ export class ApiClient {
 
   // Public HTTP methods
   get<T>(
-    path: string,
+    path: string = "",
     params?: Record<string, any>,
     opts?: ApiOpts<T>
   ): Promise<T> {

@@ -191,10 +191,6 @@ export function NavUser() {
                 <CreditCardIcon className="mr-2 h-4 w-4" />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon className="mr-2 h-4 w-4" />
-                Notifications
-              </DropdownMenuItem>
             </DropdownMenuGroup>
 
             {/* ✅ Log out fixed */}

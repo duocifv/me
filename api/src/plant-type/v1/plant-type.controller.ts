@@ -1,5 +1,15 @@
+// src/plant-type/plant-type.controller.ts
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Delete,
+  ParseIntPipe,
+  HttpCode,
+} from '@nestjs/common';
 import { PlantTypeService } from './plant-type.service';
 import {
   CreatePlantTypeDto,
@@ -21,7 +31,21 @@ export class PlantTypeController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.plantTypeService.findById(id);
+  }
+
+  @Put(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @BodySchema(UpdatePlantTypeSchema) dto: UpdatePlantTypeDto,
+  ) {
+    return this.plantTypeService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.plantTypeService.remove(id);
   }
 }

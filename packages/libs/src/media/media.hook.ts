@@ -6,10 +6,17 @@ import { useMediaStore } from "./media.store";
 import { FileType } from "./dto/media-upload.dto";
 import { BulkDeleteDto } from "../auth/dto/bulk-delete.dto";
 
+export function useMediaAllQuery() {
+  return useQuery({
+    queryKey: ["media-all"],
+    queryFn: () => mediaService.findAll(),
+  });
+}
+
 export function useMediaQuery() {
   return useQuery({
     queryKey: ["media"],
-    queryFn: () => mediaService.findAll(),
+    queryFn: () => mediaService.findPaginate(),
   });
 }
 

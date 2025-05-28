@@ -21,19 +21,19 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { UploadFileDto } from './dto/upload-file.dto';
+import { UploadFileDto } from '../dto/upload-file.dto';
 import { PermissionName } from 'src/permissions/dto/permission.enum';
 import { Permissions } from 'src/permissions/permissions.decorator';
-import { UploadFileService } from './media.service';
-import { MediaFile } from './entities/file.entity';
-import { CreateMediaDto } from './dto/create-media.dto';
+import { MediaFile } from '../entities/media.entity';
+import { CreateMediaDto } from '../dto/create-media.dto';
 import { QuerySchema } from 'src/shared/decorators/query-schema.decorator';
-import { MediaDto, MediaSchema } from './dto/media.dto';
-import { MediaFilterDto, MediaFilterSchema } from './dto/media-filter.dto';
-import { MediaFileDto } from './dto/media-file.dto';
+import { MediaDto, MediaSchema } from '../dto/media.dto';
+import { MediaFilterDto, MediaFilterSchema } from '../dto/media-filter.dto';
+import { MediaFileDto } from '../dto/media-file.dto';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
-import { BulkDeleteDto, BulkDeleteSchema } from './dto/bulk-delete.dto';
-import { MediaCategory } from './type/media-category.type';
+import { BulkDeleteDto, BulkDeleteSchema } from '../dto/bulk-delete.dto';
+import { MediaCategory } from '../type/media-category.type';
+import { UploadFileService } from './media.service';
 
 @ApiTags('Media')
 @Controller('media')

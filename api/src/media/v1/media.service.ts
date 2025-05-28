@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { MediaFile } from './entities/file.entity';
-import { CreateMediaDto } from './dto/create-media.dto';
-import { MediaDto } from './dto/media.dto';
+import { MediaFile } from '../entities/media.entity';
+import { CreateMediaDto } from '../dto/create-media.dto';
+import { MediaDto } from '../dto/media.dto';
 import { paginate, Pagination } from 'nestjs-typeorm-paginate';
-import { MediaCategory } from './type/media-category.type';
+import { MediaCategory } from '../type/media-category.type';
 
 @Injectable()
 export class UploadFileService {
