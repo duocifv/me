@@ -100,9 +100,7 @@ export class MediaController {
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UploadFileDto })
-  async uploadEsp32(
-    @Req() req: FastifyRequest,
-  ) {
+  async uploadEsp32(@Req() req: FastifyRequest) {
     if (!req.isMultipart()) {
       throw new BadRequestException('Form must be multipart/form-data');
     }

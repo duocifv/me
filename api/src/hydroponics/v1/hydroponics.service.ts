@@ -25,7 +25,10 @@ export class HydroponicsService {
     deviceId: string,
     dto: CreateCropInstanceDto,
   ): Promise<CropInstance> {
-    await this.cropRepo.update({ deviceId, isActive: true }, { isActive: false });
+    await this.cropRepo.update(
+      { deviceId, isActive: true },
+      { isActive: false },
+    );
     const crop = this.cropRepo.create({
       deviceId,
       plantTypeId: dto.plantTypeId,
