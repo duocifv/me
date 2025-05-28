@@ -1,5 +1,6 @@
+import { Suspense } from "react";
 import VerifyEmail from "./components/verify-email";
 
 export default function VerifyEmaildPage() {
-  return <VerifyEmail />;
+  return <Suspense><VerifyEmail /></Suspense>;
 }
