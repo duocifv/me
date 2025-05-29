@@ -45,18 +45,27 @@ void setup() {
 }
 
 void loop() {
+  static int wifiRetry = 0;
+
   if (!wifi.isConnected()) {
-    Serial.println("[⚠️ WiFi] Lost. Reconnecting...");
-    wifi.connect();
-    delay(500);
-    return;
+    if (wifiRetry < 3) {
+      Serial.printf("[⚠️ WiFi] Disconnected. Attempting reconnect (%d)...\n", wifiRetry + 1);
+      wifi.connect();
+      wifiRetry++;
+    } else {
+      Serial.println("[❌ WiFi] Too many failures. Skipping this cycle.");
+      delay(TEST_LOOP_INTERVAL_MS);
+      return;
+    }
+  } else {
+    wifiRetry = 0;  // reset if connected
   }
 
   if (millis() - lastMillis >= TEST_LOOP_INTERVAL_MS) {
     lastMillis = millis();
     Serial.println("=== 🔁 SYSTEM LOOP ===");
 
-    // Điều khiển bơm ON/OFF
+    // Pump control
     if (pumpState == PUMP_OFF) {
       pump.on();
       pumpState = PUMP_ON;
@@ -67,7 +76,7 @@ void loop() {
       Serial.println("[Pump] ✅ Turned OFF");
     }
 
-    // Đọc cảm biến
+    // Sensor read
     float ambientTemp = NAN, humidity = NAN;
     air.read(ambientTemp, humidity);
     float waterTemp = water.readTemperature();
@@ -75,11 +84,8 @@ void loop() {
     Serial.printf("[Sensor] 🌡️ %.2f°C | 💧 %.2f%% | 🌊 %.2f°C\n",
                   ambientTemp, humidity, waterTemp);
 
-    Serial.printf("[Uploader] ⏫ Uploading sensor data... (heap: %u)\n", ESP.getFreeHeap());
     bool ok = uploader.sendSensorData(ambientTemp, humidity, waterTemp);
     Serial.printf("[Uploader] 📶 Status: %s\n", ok ? "✅ SUCCESS" : "❌ FAILED");
-
-    Serial.printf("[Heap] After upload: %u bytes\n", ESP.getFreeHeap());
     Serial.println("=== ✅ LOOP DONE ===\n");
   }
 }
