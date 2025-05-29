@@ -15,12 +15,12 @@ static constexpr const char* API_SNAPSHOT  = "/v1/hydroponics/snapshots";
 // Relay
 constexpr int RELAY_PIN = 12;
 
-// DHT sensor
-constexpr int DHT_PIN = 27;
-#define DHT_TYPE DHT22  // Giữ #define vì DHT library yêu cầu
+// DHT sensor (môi trường) - chân gắn DHT22
+constexpr int DHT_PIN = 16;
+#define DHT_TYPE DHT22  // Giữ #define vì thư viện DHT yêu cầu
 
-// OneWire sensor (DS18B20)
-constexpr int ONEWIRE_PIN = 14;
+// OneWire sensor (DS18B20) - chân gắn nhiệt độ nước
+constexpr int ONEWIRE_PIN = 13;
 
 // Loop interval (milliseconds)
 constexpr unsigned long LOOP_INTERVAL_MS = 15000;
