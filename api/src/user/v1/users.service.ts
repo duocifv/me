@@ -114,6 +114,7 @@ export class UsersService {
 
     const user = this.usersRepo.create({
       email: dto.email,
+      fullName: dto.fullName,
       password: hash,
       status: UserStatus.pending,
     });

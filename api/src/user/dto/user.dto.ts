@@ -4,6 +4,11 @@ import { RoleFullSchema, RolePublicSchema } from 'src/roles/dto/role.dto';
 
 export const UserFullSchema = z.object({
   id: z.string(),
+  fullName: z
+    .string()
+    .min(1, 'Full name is required')
+    .max(100, 'Full name must be at most 100 characters')
+    .regex(/^[a-zA-Z\s]+$/, 'Full name can only contain letters and spaces'),
   email: z.string().email(),
   password: z.string().min(8),
   refreshTokens: z.array(RefreshTokenSchema).default([]),

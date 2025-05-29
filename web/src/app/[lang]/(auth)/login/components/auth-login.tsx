@@ -9,6 +9,7 @@ import { Picture } from "@/components/share/picture/ui-picture";
 import Lottie from "lottie-react";
 import animationData from "@/share/assets/hydroponic-animation.json";
 import ReCapcha from "../dispatch/dispatch-recapcha";
+import Link from "next/link";
 
 export function LoginForm() {
   return (
@@ -77,9 +78,12 @@ export function LoginForm() {
                   <LoginFormAuth />
                   <div className="text-center text-sm mt-4">
                     Don&apos;t have an account?{" "}
-                    <a href="#" className="underline underline-offset-4">
+                    <Link
+                      href="/en/register/"
+                      className="underline underline-offset-4"
+                    >
                       Sign up
-                    </a>
+                    </Link>
                   </div>
                   <div className="relative hidden bg-muted md:block">
                     <Picture

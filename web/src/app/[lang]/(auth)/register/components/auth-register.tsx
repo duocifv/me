@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormWrapper } from "@adapter/share/components/FormWrapper";
-import { SignInDto, SignInSchema } from "@adapter/auth/dto/sign-in.dto";
 import { RegisterSubmit } from "../dispatch/dispatch-auth-register";
 import { Picture } from "@/components/share/picture/ui-picture";
 import Lottie from "lottie-react";
 import animationData from "@/share/assets/hydroponic-animation.json";
-import ReCapcha from "../dispatch/dispatch-recapcha";
+// import ReCapcha from "../dispatch/dispatch-recapcha";
+import { RegisterDto, RegisterSchema } from "@adapter/auth/dto/register.dto";
+import { $t } from "@/app/lang";
+import Link from "next/link";
 
 export function RegisterForm() {
   return (
@@ -16,18 +18,35 @@ export function RegisterForm() {
       <div className="p-6 md:p-8">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center text-center">
-            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <h1 className="text-2xl font-bold">{$t`Sign up`}</h1>
             <p className="text-balance text-muted-foreground">
-              Login to your Acme Inc account
+              {$t`Create your account below`}
             </p>
           </div>
-          <FormWrapper<SignInDto>
-            schema={SignInSchema}
-            defaultValues={{ email: "", password: "" }}
+          <FormWrapper<RegisterDto>
+            schema={RegisterSchema}
+            defaultValues={{ fullName: "", email: "", password: "" }}
           >
             {(from) => (
               <>
                 <div className="grid gap-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <div className="relative">
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder="Nguyen Van A"
+                      {...from.register("fullName")}
+                    />
+                    {from.formState.errors.fullName && (
+                      <span className="text-red-500 top-[115%] text-sm leading-none absolute">
+                        {from.formState.errors.fullName.message}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-2 mt-6">
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
                     <Input
@@ -68,7 +87,7 @@ export function RegisterForm() {
                     )}
                   </div>
                   <RegisterSubmit {...from} />
-                  <ReCapcha />
+                  {/* <ReCapcha /> */}
                   <div className="relative my-4 text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                     <span className="relative z-10 bg-background px-2 text-muted-foreground">
                       Or continue with
@@ -77,9 +96,12 @@ export function RegisterForm() {
                   <LoginFormAuth />
                   <div className="text-center text-sm mt-4">
                     Don&apos;t have an account?{" "}
-                    <a href="#" className="underline underline-offset-4">
-                      Sign up
-                    </a>
+                    <Link
+                      href="/en/login/"
+                      className="underline underline-offset-4"
+                    >
+                      Sign in
+                    </Link>
                   </div>
                   <div className="relative hidden bg-muted md:block">
                     <Picture

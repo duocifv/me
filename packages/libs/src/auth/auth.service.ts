@@ -6,6 +6,7 @@ import {
   ChangePasswordSchema,
 } from "./dto/change-password.dto";
 import { LoginDto, MeDto } from "./dto/login.dto";
+import { RegisterDto } from "./dto/register.dto";
 import { ResetPasswordDto, ResetPasswordTokenDto } from "./dto/reset-password";
 import { SignInDto } from "./dto/sign-in.dto";
 
@@ -24,7 +25,7 @@ class AuthService {
     return res;
   }
 
-  async register(dto: SignInDto): Promise<UserDto> {
+  async register(dto: RegisterDto): Promise<UserDto> {
     return this.authApi.post<UserDto>("register", dto);
   }
 
