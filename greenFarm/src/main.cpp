@@ -29,21 +29,22 @@ void loop() {
   if (millis() - lastMillis > LOOP_INTERVAL_MS) {
     lastMillis = millis();
 
-    // Đọc dữ liệu cảm biến
     float t, h, wt;
     air.read(t, h);
     wt = water.readTemperature();
 
-    // Chụp ảnh
+    // Gửi cảm biến
+    uploader.sendSensorData(t, h, wt);
+
+    // Chụp và gửi ảnh
     uint8_t* imgBuf;
     size_t imgLen;
-    if (!camera.captureImage(imgBuf, imgLen)) {
+    if (camera.captureImage(imgBuf, imgLen)) {
+      uploader.sendImage(imgBuf, imgLen);
+      esp_camera_fb_return((camera_fb_t*)imgBuf);
+    } else {
       Serial.println("❌ Failed to capture image");
-      return;
     }
-
-    // Gửi ảnh và dữ liệu cảm biến lên server
-    uploader.sendSnapshot(t, h, wt, imgBuf, imgLen);
 
     // Điều khiển bơm
     if (h < 60 || wt > 30) pump.on();
