@@ -4,13 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormWrapper } from "@adapter/share/components/FormWrapper";
 import { SignInDto, SignInSchema } from "@adapter/auth/dto/sign-in.dto";
-import { LoginSubmit } from "../dispatch/dispatch-auth-login";
+import { RegisterSubmit } from "../dispatch/dispatch-auth-register";
 import { Picture } from "@/components/share/picture/ui-picture";
 import Lottie from "lottie-react";
 import animationData from "@/share/assets/hydroponic-animation.json";
 import ReCapcha from "../dispatch/dispatch-recapcha";
 
-export function LoginForm() {
+export function RegisterForm() {
   return (
     <>
       <div className="p-6 md:p-8">
@@ -67,7 +67,7 @@ export function LoginForm() {
                       </span>
                     )}
                   </div>
-                  <LoginSubmit {...from} />
+                  <RegisterSubmit {...from} />
                   <ReCapcha />
                   <div className="relative my-4 text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                     <span className="relative z-10 bg-background px-2 text-muted-foreground">

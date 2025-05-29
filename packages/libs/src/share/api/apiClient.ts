@@ -106,7 +106,7 @@ export class ApiClient {
     // if (process.env.NODE_ENV === "development") {
     //   console.log("AccessToken:", this.accessToken);
     // }
-    console.log("AccessToken:", this.accessToken);
+    // console.log("AccessToken:", this.accessToken);
 
     if (this.accessToken && isTokenExpiringSoon(this.accessToken)) {
       await this.refreshToken();
