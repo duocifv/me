@@ -3,18 +3,18 @@
 #include "WiFiService.h"
 #include "SensorAir.h"
 #include "SensorWater.h"
-#include "CameraService.h"
+// #include "CameraService.h"  // Tạm thời tắt camera
 #include "PumpControl.h"
 #include "Uploader.h"
 
-#define TEST_LOOP_INTERVAL_MS 5000  // 5 giây
+#define TEST_LOOP_INTERVAL_MS 10000  // 10 giây để tránh spam
 
 enum TestState { PUMP_ON, PUMP_OFF };
 
 WiFiService wifi(WIFI_SSID, WIFI_PASSWORD);
 SensorAir air;
 SensorWater water;
-CameraService camera;
+// CameraService camera;  // Không sử dụng
 PumpControl pump;
 Uploader uploader(SERVER_HOST, SERVER_PORT, DEVICE_TOKEN, DEVICE_ID);
 
@@ -24,7 +24,7 @@ TestState pumpState = PUMP_OFF;
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("=== 🚀 START FULL SYSTEM TEST MODE ===");
+  Serial.println("=== 🚀 START SYSTEM ===");
 
   Serial.printf("[INIT] Free heap: %u bytes\n", ESP.getFreeHeap());
 
@@ -36,23 +36,17 @@ void setup() {
     Serial.println("[❌ WiFi] FAILED to connect");
   }
 
-  // Khởi tạo cảm biến và bơm
   air.setup();
   water.setup();
   pump.setup();
   Serial.println("[✅ INIT] Sensors and pump initialized");
 
-  // Khởi tạo camera
-  if (camera.setup()) {
-    Serial.printf("[✅ Camera] Initialized. Heap: %u bytes\n", ESP.getFreeHeap());
-  } else {
-    Serial.println("[❌ Camera] Setup FAILED. Skipping camera usage.");
-  }
+  Serial.println("[ℹ️ Camera] Skipped (disabled)");
 }
 
 void loop() {
   if (!wifi.isConnected()) {
-    Serial.println("[⚠️ WiFi] Lost connection. Reconnecting...");
+    Serial.println("[⚠️ WiFi] Lost. Reconnecting...");
     wifi.connect();
     delay(500);
     return;
@@ -60,10 +54,9 @@ void loop() {
 
   if (millis() - lastMillis >= TEST_LOOP_INTERVAL_MS) {
     lastMillis = millis();
+    Serial.println("=== 🔁 SYSTEM LOOP ===");
 
-    Serial.println("=== 🔄 SYSTEM LOOP START ===");
-
-    // Điều khiển bơm ON/OFF luân phiên
+    // Điều khiển bơm ON/OFF
     if (pumpState == PUMP_OFF) {
       pump.on();
       pumpState = PUMP_ON;
@@ -74,32 +67,19 @@ void loop() {
       Serial.println("[Pump] ✅ Turned OFF");
     }
 
-    // Đọc dữ liệu cảm biến
+    // Đọc cảm biến
     float ambientTemp = NAN, humidity = NAN;
     air.read(ambientTemp, humidity);
     float waterTemp = water.readTemperature();
 
-    Serial.printf("[Sensor] 🌡️ Ambient: %.2f°C, 💧 Humidity: %.2f%%, 🌊 Water: %.2f°C\n",
+    Serial.printf("[Sensor] 🌡️ %.2f°C | 💧 %.2f%% | 🌊 %.2f°C\n",
                   ambientTemp, humidity, waterTemp);
 
-    // Gửi snapshot (sensor + ảnh)
-    Serial.printf("[Uploader] 📤 Uploading snapshot (heap before: %u bytes)...\n", ESP.getFreeHeap());
+    Serial.printf("[Uploader] ⏫ Uploading sensor data... (heap: %u)\n", ESP.getFreeHeap());
+    bool ok = uploader.sendSensorData(ambientTemp, humidity, waterTemp);
+    Serial.printf("[Uploader] 📶 Status: %s\n", ok ? "✅ SUCCESS" : "❌ FAILED");
 
-    camera_fb_t* fb = camera.captureImage();
-    const uint8_t* imgBuf = fb ? fb->buf : nullptr;
-    size_t imgLen = fb ? fb->len : 0;
-
-    bool uploadOK = uploader.sendSnapshot(ambientTemp, humidity, waterTemp, imgBuf, imgLen);
-
-    if (fb) {
-      Serial.printf("[Camera] ✅ Captured image (%u bytes)\n", fb->len);
-      esp_camera_fb_return(fb);
-    } else {
-      Serial.println("[Camera] ❌ Failed to capture image");
-    }
-
-    Serial.printf("[Uploader] 📶 Upload status: %s\n", uploadOK ? "✅ SUCCESS" : "❌ FAILED");
-    Serial.printf("[Memory] Heap after upload: %u bytes\n", ESP.getFreeHeap());
-    Serial.println("=== ✅ SYSTEM LOOP END ===\n");
+    Serial.printf("[Heap] After upload: %u bytes\n", ESP.getFreeHeap());
+    Serial.println("=== ✅ LOOP DONE ===\n");
   }
 }
