@@ -2,34 +2,21 @@
 #define UPLOADER_H
 
 #include <Arduino.h>
-#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 
-class Uploader
-{
+class Uploader {
 public:
-    Uploader(const char *deviceToken, const char *deviceId);
-
-    void sendSensorData(float waterTemp,
-                        float airTemp,
-                        float humidity,
-                        float lightIntensity = 0.0f,
-                        float ph = 0.0f,
-                        float ec = 0.0f,
-                        float orp = 0.0f);
-
-    void sendImage(const char *imagePath,
-                   const char *fieldName = "file",
-                   const char *filename = "image.png",
-                   const char *mimeType = "image/png");
+  Uploader(const char* host, int port, const char* token, const char* id);
+  
+  // Gửi dữ liệu cảm biến + ảnh (buffer nhị phân)
+  void sendSnapshot(float temp, float humid, float waterTemp, const uint8_t* imgBuf, size_t imgLen);
 
 private:
-    const char *_token;
-    const char *_deviceId;
-
-    void addCommonHeaders(HTTPClient &http);
-
-    // Declare boundary string
-    static const char *BOUNDARY;
+  const char* _host;
+  int _port;
+  const char* _token;
+  const char* _id;
+  WiFiClientSecure _tlsClient;
 };
 
-#endif // UPLOADER_H
+#endif

@@ -1,11 +1,16 @@
+// SensorWater.cpp
 #include "SensorWater.h"
+#include "config.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include <Arduino.h>
+static OneWire oneWire(ONEWIRE_PIN);
+static DallasTemperature sensors(&oneWire);
 
-void SensorWater::setup() {
-    // Khởi tạo cảm biến nước nếu cần
-}
+void SensorWater::setup(){ sensors.begin(); }
 
-float SensorWater::readTemperature() {
-    // Giả lập, thay bằng đọc cảm biến thật
-    return 28.0 + random(-20, 20) / 10.0;  // 26-30°C
+float SensorWater::readTemperature(){
+  sensors.requestTemperatures();
+  float t = sensors.getTempCByIndex(0);
+  return (t==DEVICE_DISCONNECTED_C)? NAN : t;
 }

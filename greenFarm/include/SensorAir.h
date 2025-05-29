@@ -1,10 +1,10 @@
-#ifndef SENSOR_AIR_H
-#define SENSOR_AIR_H
-
+// SensorAir.h
+#ifndef SENSORAIR_H
+#define SENSORAIR_H
+#include <DHT.h>
 class SensorAir {
 public:
-    void setup();
-    void read(float& temperature, float& humidity);
+  void setup();
+  bool read(float& temp, float& hum);
 };
-
 #endif

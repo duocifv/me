@@ -1,124 +1,63 @@
 #include "Uploader.h"
-#include <WiFi.h>
-#include <FS.h>
-#include <SPIFFS.h>
+#include <WiFiClientSecure.h>
+#include <HTTPClient.h>
+#include "mbedtls/base64.h"
 
-// Define boundary string
-const char *Uploader::BOUNDARY = "----ESP32FormBoundary";
+// Hàm encode base64 dùng mbedtls
+static String base64Encode(const uint8_t* input, size_t len) {
+  size_t outLen = 0;
+  size_t buffSize = ((len + 2) / 3) * 4 + 1;
+  unsigned char* out = (unsigned char*)malloc(buffSize);
+  if (!out) return String();
 
-Uploader::Uploader(const char *deviceToken, const char *deviceId)
-    : _token(deviceToken), _deviceId(deviceId)
-{
+  int res = mbedtls_base64_encode(out, buffSize, &outLen, input, len);
+  String encoded = "";
+  if (res == 0) {
+    encoded = String((char*)out).substring(0, outLen);
+  }
+  free(out);
+  return encoded;
 }
 
-void Uploader::addCommonHeaders(HTTPClient &http)
-{
-    http.addHeader("x-device-token", _token);
-    http.addHeader("x-device-id", _deviceId);
+// Khai báo client HTTPS chung
+static WiFiClientSecure _tlsClient;
+
+Uploader::Uploader(const char* host, int port, const char* token, const char* id)
+  : _host(host), _port(port), _token(token), _id(id) {
+  _tlsClient.setInsecure(); // bỏ kiểm tra SSL cert (chỉ dùng cho dev)
 }
 
-void Uploader::sendSensorData(float waterTemp,
-                              float airTemp,
-                              float humidity,
-                              float lightIntensity,
-                              float ph,
-                              float ec,
-                              float orp)
-{
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        Serial.println(F("⚠️ WiFi chưa kết nối, không gửi được sensor data"));
-        return;
-    }
+void Uploader::sendSnapshot(float temp, float humid, float waterTemp, const uint8_t* imgBuf, size_t imgLen) {
+  HTTPClient http;
+  String url = String("https://") + _host + ":" + String(_port) + "/upload-snapshot";
 
-    HTTPClient http;
-    http.begin("https://my.duocnv.top/v1/hydroponics/snapshots");
-    http.addHeader("Content-Type", "application/json");
-    addCommonHeaders(http);
+  if (!_tlsClient.connect(_host, _port)) {
+    Serial.println("Connection to server failed!");
+    return;
+  }
 
-    // Build JSON payload
-    char buf[256];
-    int len = snprintf(buf, sizeof(buf),
-                       "{\"sensorData\":{\"water_temperature\":%.2f,\"ambient_temperature\":%.2f,\"humidity\":%.2f,\"light_intensity\":%.2f},"
-                       "\"solutionData\":{\"ph\":%.2f,\"ec\":%.2f,\"orp\":%.2f}}",
-                       waterTemp, airTemp, humidity, lightIntensity, ph, ec, orp);
+  http.begin(_tlsClient, url);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", String("Bearer ") + _token);
 
-    int code = http.POST((uint8_t *)buf, len);
-    Serial.printf("Sensor POST => code: %d\n", code);
-    if (code > 0)
-    {
-        Serial.println(http.getString());
-    }
-    http.end();
-}
+  // Mã hóa ảnh sang base64
+  String b64Img = base64Encode(imgBuf, imgLen);
 
-void Uploader::sendImage(const char *imagePath,
-                         const char *fieldName,
-                         const char *filename,
-                         const char *mimeType)
-{
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        Serial.println(F("⚠️ WiFi chưa kết nối, không gửi được image"));
-        return;
-    }
-    if (!SPIFFS.begin(true))
-    {
-        Serial.println(F("⚠️ SPIFFS mount failed"));
-        return;
-    }
+  // Tạo JSON payload
+  String json = "{";
+  json += "\"deviceId\":\"" + String(_id) + "\",";
+  json += "\"temperature\":" + String(temp, 2) + ",";
+  json += "\"humidity\":" + String(humid, 2) + ",";
+  json += "\"waterTemp\":" + String(waterTemp, 2) + ",";
+  json += "\"image\":\"" + b64Img + "\"";
+  json += "}";
 
-    File file = SPIFFS.open(imagePath, "r");
-    if (!file || file.isDirectory())
-    {
-        Serial.println(F("⚠️ Image file not found"));
-        return;
-    }
-
-    size_t imgSize = file.size();
-    uint8_t *imgBuf = (uint8_t *)malloc(imgSize);
-    if (!imgBuf)
-    {
-        file.close();
-        Serial.println(F("⚠️ Không đủ bộ nhớ để đọc ảnh"));
-        return;
-    }
-    file.read(imgBuf, imgSize);
-    file.close();
-
-    // Build multipart header and footer
-    String header = String("--") + BOUNDARY + "\r\n";
-    header += String("Content-Disposition: form-data; name=\"") + fieldName + "\"; filename=\"" + filename + "\"\r\n";
-    header += String("Content-Type: ") + mimeType + "\r\n\r\n";
-    String footer = String("\r\n--") + BOUNDARY + "--\r\n";
-
-    size_t headerLen = header.length();
-    size_t footerLen = footer.length();
-    size_t totalLen = headerLen + imgSize + footerLen;
-
-    uint8_t *body = (uint8_t *)malloc(totalLen);
-    if (!body)
-    {
-        free(imgBuf);
-        Serial.println(F("⚠️ Không đủ bộ nhớ để xây dựng body"));
-        return;
-    }
-    memcpy(body, header.c_str(), headerLen);
-    memcpy(body + headerLen, imgBuf, imgSize);
-    memcpy(body + headerLen + imgSize, footer.c_str(), footerLen);
-    free(imgBuf);
-
-    HTTPClient http;
-    http.begin("https://my.duocnv.top/v1/hydroponics/snapshots/images");
-    http.addHeader("Content-Type", String("multipart/form-data; boundary=") + BOUNDARY);
-    addCommonHeaders(http);
-
-    int code = http.POST(body, totalLen);
-    Serial.printf("Image POST => code: %d\n", code);
-    if (code > 0)
-    {
-        Serial.println(http.getString());
-    }
-    http.end();
-    free(body);
+  int httpResponseCode = http.POST(json);
+  if (httpResponseCode > 0) {
+    String resp = http.getString();
+    Serial.printf("Upload success, response: %s\n", resp.c_str());
+  } else {
+    Serial.printf("Upload failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
+  }
+  http.end();
 }

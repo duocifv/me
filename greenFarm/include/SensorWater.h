@@ -1,10 +1,10 @@
-#ifndef SENSOR_WATER_H
-#define SENSOR_WATER_H
-
+// SensorWater.h
+#ifndef SENSORWATER_H
+#define SENSORWATER_H
+#include <DallasTemperature.h>
 class SensorWater {
 public:
-    void setup();
-    float readTemperature();
+  void setup();
+  float readTemperature();
 };
-
 #endif

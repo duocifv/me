@@ -1,15 +1,11 @@
-#ifndef PUMP_CONTROL_H
-#define PUMP_CONTROL_H
-
+// PumpControl.h
+#ifndef PUMPCONTROL_H
+#define PUMPCONTROL_H
 class PumpControl {
 public:
-    void setup();
-    void on();
-    void off();
-    bool isOn() const { return _isOn; }
-
-private:
-    bool _isOn = false;
+  void setup();
+  void on();
+  void off();
+  bool isOn();
 };
-
 #endif
