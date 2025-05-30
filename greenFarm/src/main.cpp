@@ -4,118 +4,140 @@
 #include "dht_module.h"
 #include "ds18b20_module.h"
 #include "json_builder.h"
-#include "scheduler.h"
 #include "relay_module.h"
+#include <WiFi.h>
 
-// Cấu hình WiFi và API
 const char *ssid = "Wokwi-GUEST";
 const char *password = "";
 const char *apiUrl = "https://my.duocnv.top/v1/hydroponics/snapshots";
 const char *deviceToken = "esp32";
-const char\*deviceId = "device-001";
+const char *deviceId = "device-001";
 
 #define RELAY_PIN 5
 
-// Modules
 RelayModule fan(RELAY_PIN);
 WifiModule wifi(ssid, password);
 ApiModule api(apiUrl, deviceToken, deviceId);
 DHTModule dht;
 DS18B20Module ds18b20;
 
-// Bộ đệm JSON
 static char jsonBuf[256];
+float ambientTemp, humidity, waterTemp;
+size_t jsonLen;
 
-// Gửi mỗi 30 giây
-const unsigned long SEND_INTERVAL_MS = 30000;
-Scheduler scheduler(SEND_INTERVAL_MS);
+const unsigned long RELAY_ON_DURATION_MS = 2000;
+const unsigned long CYCLE_INTERVAL_MS = 30000;
 
-// Lần đầu setup
+unsigned long relayOnMillis = 0;
+unsigned long lastCycleMillis = 0;
+
+void startCycle();
+
+void ensureWifi();
+void readSensors();
+void buildAndSendJson();
+void relayOn();
+void relayOff();
+void endConnection();
+
 void setup()
 {
   Serial.begin(115200);
   delay(500);
+  wifi.connect();
+  dht.begin();
+  ds18b20.begin();
+  ds18b20.setResolution(12);
+  api.begin();
 
-  wifi.connect();            // Kết nối WiFi
-  dht.begin();               // Khởi động DHT
-  ds18b20.begin();           // Khởi động DS18B20
-  ds18b20.setResolution(12); // Đo nhanh (~94ms)
-
-  api.begin(); // Chuẩn bị API client
+  lastCycleMillis = millis();
+  startCycle();
 }
 
-// Vòng lặp chính
 void loop()
 {
-  // Kiểm tra thời gian gửi
-  if (!scheduler.ready())
-    return;
+  // check if time for next cycle
+  if (millis() - lastCycleMillis >= CYCLE_INTERVAL_MS)
+  {
+    lastCycleMillis = millis();
+    startCycle();
+  }
 
-  // Tự động reconnect WiFi nếu rớt
+  // handle relay timing
+  if (relayOnMillis > 0 && (millis() - relayOnMillis >= RELAY_ON_DURATION_MS))
+  {
+    relayOff();
+  }
+}
+
+void startCycle()
+{
+  Serial.println("\n=== 🌱 Start new cycle ===");
+  ensureWifi();
+}
+
+void ensureWifi()
+{
   if (WiFi.status() != WL_CONNECTED)
   {
-    Serial.println("⚠ WiFi mất kết nối, thử kết nối lại...");
+    Serial.println("⚠ WiFi mất kết nối, thử lại...");
     wifi.connect();
-    delay(2000);
+    delay(1000); // ngắn cho kịp reconnect
     if (WiFi.status() != WL_CONNECTED)
     {
-      Serial.println("❌ Không thể kết nối WiFi. Bỏ qua vòng lặp.");
-      return;
+      Serial.println("❌ Bỏ qua vòng gửi do WiFi.");
+      return; // bỏ qua vòng này
     }
   }
+  Serial.println("✅ WiFi OK.");
+  readSensors();
+}
 
-  // Đọc cảm biến
-  float ambientTemp = dht.getTemperature();
-  float humidity = dht.getHumidity();
+void readSensors()
+{
+  ambientTemp = dht.getTemperature();
+  humidity = dht.getHumidity();
+  waterTemp = ds18b20.getTemperature();
+  Serial.printf("🌡 Ambient: %.2f°C  💧 Humidity: %.2f%%  💧 Water: %.2f°C\n",
+                ambientTemp, humidity, waterTemp);
+  buildAndSendJson();
+}
 
-  // Lấy nhiệt độ nước từ DS18B20 trực tiếp (wrapper tự handle request)
-  float waterTemp = ds18b20.getTemperature();
-
-  // Debug print các giá trị cảm biến
-  Serial.printf("🌡 Ambient Temp: %.2f °C\n", ambientTemp);
-  Serial.printf("💧 Humidity: %.2f %%\n", humidity);
-  Serial.printf("💧 Water Temp: %.2f °C\n", waterTemp);
-
-  // Thêm giá trị mô phỏng (có thể thay bằng sensor thực)
-  float ph = 6.50, ec = 1.20;
-  int orp = 250;
-
-  // Tạo JSON
+void buildAndSendJson()
+{
   unsigned long t0 = millis();
-  size_t len = buildJsonSnapshots(jsonBuf, sizeof(jsonBuf),
-                                  waterTemp, ambientTemp,
-                                  humidity, ph, ec, orp);
+  jsonLen = buildJsonSnapshots(jsonBuf, sizeof(jsonBuf),
+                               waterTemp, ambientTemp,
+                               humidity, 6.50, 1.20, 250);
   unsigned long t1 = millis();
-  Serial.printf("🛠 Build JSON mất %lums\n", t1 - t0);
+  Serial.printf("🛠 JSON build: %lums\n", t1 - t0);
 
-  // Gửi dữ liệu - thử tối đa 2 lần nếu lần đầu lỗi
-  bool success = false;
   unsigned long t2 = millis();
-  for (int attempt = 1; attempt <= 2 && !success; ++attempt)
-  {
-    Serial.printf("📡 Đang gửi dữ liệu (lần %d)...\n", attempt);
-    success = api.sendData(jsonBuf, len);
-    if (!success)
-      delay(500);
-  }
+  bool success = api.sendData(jsonBuf, jsonLen);
   unsigned long t3 = millis();
   Serial.printf("📤 Gửi mất %lums\n", t3 - t2);
+  Serial.println(success ? "✅ Gửi thành công!" : "❌ Gửi thất bại.");
 
-  // Kết quả
-  if (success)
-  {
-    Serial.println("✅ Gửi dữ liệu thành công!");
-  }
-  else
-  {
-    Serial.println("❌ Gửi thất bại hoàn toàn.");
-  }
+  relayOn();
+}
 
+void relayOn()
+{
   fan.turnOn();
-  Serial.println("Relay: ON");
-  delay(2000);
-  Serial.println("Relay: OFF");
+  Serial.println("🔌 Relay ON");
+  relayOnMillis = millis(); // bắt đầu đếm thời gian relay
+}
 
-  // Đóng kết nối HTTP sau mỗi lần gửi (bất kể thành công hay thất bại)
+void relayOff()
+{
+  fan.turnOff();
+  Serial.println("🔌 Relay OFF");
+  relayOnMillis = 0; // reset timer
+  endConnection();
+}
+
+void endConnection()
+{
   api.endConnection();
+  Serial.println("✅ Kết thúc vòng gửi.\n");
 }

@@ -15,7 +15,7 @@ public:
 
     void connect()
     {
-        Serial.print("Connecting to WiFi: ");
+        Serial.print("🔌 Đang kết nối WiFi: ");
         Serial.println(ssid);
 
         WiFi.begin(ssid, password);
@@ -25,15 +25,16 @@ public:
         {
             delay(500);
             Serial.print(".");
+            yield(); // Cho watchdog "thở"
             retries++;
             if (retries > 20)
             {
-                Serial.println("Failed to connect");
+                Serial.println("❌ Không kết nối được WiFi");
                 return;
             }
         }
         Serial.println("");
-        Serial.print("Connected! IP: ");
+        Serial.print("✅ Kết nối thành công! IP: ");
         Serial.println(WiFi.localIP());
     }
 };
