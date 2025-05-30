@@ -7,6 +7,7 @@ import {
   Param,
   BadRequestException,
   NotFoundException,
+  Body,
 } from '@nestjs/common';
 import { HydroponicsService } from './hydroponics.service';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
@@ -14,16 +15,13 @@ import {
   CreateCropInstanceDto,
   CreateCropInstanceSchema,
 } from '../dto/create-crop-instance.dto';
-import {
-  CreateSnapshotDto,
-  CreateSnapshotSchema,
-} from '../dto/create-snapshot.dto';
 import { DeviceTokenGuard } from '../guard/device-token.guard';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
 import { UploadFileDto } from '../dto/upload-file.dto';
 import { DeviceToken } from 'src/shared/decorators/device-token.decorator';
+import { ApiCreateSnapshot } from '../type/snapshot.swagger';
 
 @Public()
 @DeviceToken()
@@ -55,19 +53,61 @@ export class HydroponicsController {
    * Tạo snapshot mới cho crop active (deviceId → crop active → snapshot)
    */
   @Post('snapshots')
-  createSnapshot(
-    @Request() req,
-    @BodySchema(CreateSnapshotSchema) dto: CreateSnapshotDto,
-  ) {
-    return this.service.createSnapshot(req.deviceId, dto);
+  @ApiCreateSnapshot()
+  createSnapshot(@Request() req, @Body() body: any) {
+    const { sensorData, solutionData } = body;
+
+    if (
+      typeof sensorData !== 'object' ||
+      sensorData === null ||
+      typeof solutionData !== 'object' ||
+      solutionData === null
+    ) {
+      throw new BadRequestException('Invalid sensor or solution data');
+    }
+
+    const validSensors = [
+      'water_temperature',
+      'ambient_temperature',
+      'humidity',
+      // 'light_intensity', // nếu cần thì mở lại
+    ];
+
+    for (const key of Object.keys(sensorData)) {
+      if (!validSensors.includes(key)) {
+        throw new BadRequestException(`Invalid sensor key: ${key}`);
+      }
+      if (typeof sensorData[key] !== 'number') {
+        throw new BadRequestException(`Sensor ${key} must be a number`);
+      }
+    }
+
+    const validSolutionKeys = ['ph', 'ec', 'orp'];
+    for (const key of Object.keys(solutionData)) {
+      if (!validSolutionKeys.includes(key)) {
+        throw new BadRequestException(`Invalid solution key: ${key}`);
+      }
+      if (typeof solutionData[key] !== 'number') {
+        throw new BadRequestException(`Solution ${key} must be a number`);
+      }
+    }
+
+    // Gọi async service, không đợi kết quả
+    setImmediate(() => this.service.createSnapshot(req.deviceId, body));
+
+    return { success: true };
   }
 
   /**
    * Lấy tất cả snapshots của crop active
    */
   @Get('snapshots')
-  getSnapshots(@Request() req) {
-    return this.service.getSnapshotsByDevice(req.deviceId);
+  async getSnapshots(@Request() req) {
+    const deviceId = req.deviceId;
+    if (!deviceId) {
+      throw new BadRequestException('Thiếu deviceId trong request');
+    }
+    return this.service.getSnapshotsByDevice(deviceId);
   }
 
   /**

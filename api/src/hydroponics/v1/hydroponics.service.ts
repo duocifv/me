@@ -52,23 +52,29 @@ export class HydroponicsService {
   /**
    * Tạo snapshot mới cho crop active
    */
-  async createSnapshot(
-    deviceId: string,
-    dto: CreateSnapshotDto,
-  ): Promise<Snapshot> {
-    const crop = await this.cropRepo.findOne({
-      where: { deviceId, isActive: true },
-    });
-    if (!crop) {
-      throw new NotFoundException('Không tìm thấy crop active');
-    }
+  createSnapshot(deviceId: string, dto: CreateSnapshotDto): void {
+    process.nextTick(async () => {
+      try {
+        const crop = await this.cropRepo.findOne({
+          where: { deviceId, isActive: true },
+        });
 
-    const snapshot = this.snapRepo.create({
-      cropInstanceId: crop.id,
-      sensorData: dto.sensorData,
-      solutionData: dto.solutionData,
+        if (!crop) {
+          // console.warn(`Không tìm thấy crop active cho deviceId: ${deviceId}`);
+          return;
+        }
+
+        const snapshot = this.snapRepo.create({
+          cropInstanceId: crop.id,
+          sensorData: dto.sensorData,
+          solutionData: dto.solutionData,
+        });
+
+        await this.snapRepo.save(snapshot);
+      } catch {
+        // console.error('Lỗi khi lưu snapshot:', err);
+      }
     });
-    return this.snapRepo.save(snapshot);
   }
 
   /**
@@ -78,8 +84,9 @@ export class HydroponicsService {
     const crop = await this.cropRepo.findOne({
       where: { deviceId, isActive: true },
     });
+
     if (!crop) {
-      throw new NotFoundException('Không tìm thấy crop active');
+      throw new NotFoundException('Không tìm thấy crop đang active');
     }
 
     return this.snapRepo.find({
@@ -88,7 +95,6 @@ export class HydroponicsService {
       order: { timestamp: 'DESC' },
     });
   }
-
   /**
    * Lấy chi tiết snapshot theo ID
    */

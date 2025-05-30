@@ -15,7 +15,10 @@ import {
   CreatePlantTypeDto,
   CreatePlantTypeSchema,
 } from '../dto/create-plant-type.dto';
-import { UpdatePlantTypeDto, UpdatePlantTypeSchema } from '../dto/update-plant-type.dto';
+import {
+  UpdatePlantTypeDto,
+  UpdatePlantTypeSchema,
+} from '../dto/update-plant-type.dto';
 
 @Controller('plant-types')
 export class PlantTypeController {

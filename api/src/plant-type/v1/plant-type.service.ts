@@ -38,14 +38,20 @@ export class PlantTypeService {
       throw new ConflictException(`Slug '${dto.slug}' đã tồn tại`);
     }
 
-    const media = await this.mediaRepo.findOne({ where: { id: dto.mediaId } });
-    if (!media) throw new NotFoundException('MediaFile không tồn tại');
+    let media;
+    if (dto.mediaId) {
+      media = await this.mediaRepo.findOne({ where: { id: dto.mediaId } });
+      if (!media) {
+        throw new NotFoundException('MediaFile không tồn tại');
+      }
+    }
 
     const entity = this.repo.create({
       slug: dto.slug,
       displayName: dto.displayName,
-      mediaFile: media,
+      ...(media ? { mediaFile: media } : {}),
     });
+
     return this.repo.save(entity);
   }
 
