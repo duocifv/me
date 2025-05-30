@@ -25,4 +25,7 @@ constexpr int ONEWIRE_PIN = 13;
 // Loop interval (milliseconds)
 constexpr unsigned long LOOP_INTERVAL_MS = 15000;
 
+// Bật chế độ test module
+#define TEST_MODE       1    // 1 = chạy test, 0 = chạy bình thường
+#define USE_CAMERA      0
 #endif // CONFIG_H
