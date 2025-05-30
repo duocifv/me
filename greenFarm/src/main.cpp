@@ -1,91 +1,112 @@
 #include <Arduino.h>
-#include "config.h"
-#include "WiFiService.h"
-#include "SensorAir.h"
-#include "SensorWater.h"
-// #include "CameraService.h"  // Tạm thời tắt camera
-#include "PumpControl.h"
-#include "Uploader.h"
+#include "wifi_module.h"
+#include "api_module.h"
+#include "dht_module.h"
+#include "ds18b20_module.h"
+#include "json_builder.h"
+#include "scheduler.h"
 
-#define TEST_LOOP_INTERVAL_MS 10000  // 10 giây để tránh spam
+// Cấu hình WiFi và API
+const char *ssid = "Wokwi-GUEST";
+const char *password = "";
+const char *apiUrl = "https://my.duocnv.top/v1/hydroponics/snapshots";
+const char *deviceToken = "esp32";
+const char *deviceId = "device-001";
 
-enum TestState { PUMP_ON, PUMP_OFF };
+// Modules
+WifiModule wifi(ssid, password);
+ApiModule api(apiUrl, deviceToken, deviceId);
+DHTModule dht;
+DS18B20Module ds18b20;
 
-WiFiService wifi(WIFI_SSID, WIFI_PASSWORD);
-SensorAir air;
-SensorWater water;
-// CameraService camera;  // Không sử dụng
-PumpControl pump;
-Uploader uploader(SERVER_HOST, SERVER_PORT, DEVICE_TOKEN, DEVICE_ID);
+// Bộ đệm JSON
+static char jsonBuf[256];
 
-unsigned long lastMillis = 0;
-TestState pumpState = PUMP_OFF;
+// Gửi mỗi 30 giây
+const unsigned long SEND_INTERVAL_MS = 30000;
+Scheduler scheduler(SEND_INTERVAL_MS);
 
-void setup() {
+// Lần đầu setup
+void setup()
+{
   Serial.begin(115200);
-  delay(1000);
-  Serial.println("=== 🚀 START SYSTEM ===");
+  delay(500);
 
-  Serial.printf("[INIT] Free heap: %u bytes\n", ESP.getFreeHeap());
+  wifi.connect();           // Kết nối WiFi
+  dht.begin();              // Khởi động DHT
+  ds18b20.begin();          // Khởi động DS18B20
+  ds18b20.setResolution(9); // Đo nhanh (~94ms)
 
-  // Kết nối WiFi
-  wifi.connect();
-  if (wifi.isConnected()) {
-    Serial.println("[✅ WiFi] Connected");
-  } else {
-    Serial.println("[❌ WiFi] FAILED to connect");
-  }
-
-  air.setup();
-  water.setup();
-  pump.setup();
-  Serial.println("[✅ INIT] Sensors and pump initialized");
-
-  Serial.println("[ℹ️ Camera] Skipped (disabled)");
+  api.begin(); // Chuẩn bị API client
 }
 
-void loop() {
-  static int wifiRetry = 0;
+// Vòng lặp chính
+void loop()
+{
+  // Kiểm tra thời gian gửi
+  if (!scheduler.ready())
+    return;
 
-  if (!wifi.isConnected()) {
-    if (wifiRetry < 3) {
-      Serial.printf("[⚠️ WiFi] Disconnected. Attempting reconnect (%d)...\n", wifiRetry + 1);
-      wifi.connect();
-      wifiRetry++;
-    } else {
-      Serial.println("[❌ WiFi] Too many failures. Skipping this cycle.");
-      delay(TEST_LOOP_INTERVAL_MS);
+  // Tự động reconnect WiFi nếu rớt
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.println("⚠ WiFi mất kết nối, thử kết nối lại...");
+    wifi.connect();
+    delay(2000);
+    if (WiFi.status() != WL_CONNECTED)
+    {
+      Serial.println("❌ Không thể kết nối WiFi. Bỏ qua vòng lặp.");
       return;
     }
-  } else {
-    wifiRetry = 0;  // reset if connected
   }
 
-  if (millis() - lastMillis >= TEST_LOOP_INTERVAL_MS) {
-    lastMillis = millis();
-    Serial.println("=== 🔁 SYSTEM LOOP ===");
+  // Đọc cảm biến
+  float ambientTemp = dht.getTemperature();
+  float humidity = dht.getHumidity();
 
-    // Pump control
-    if (pumpState == PUMP_OFF) {
-      pump.on();
-      pumpState = PUMP_ON;
-      Serial.println("[Pump] ✅ Turned ON");
-    } else {
-      pump.off();
-      pumpState = PUMP_OFF;
-      Serial.println("[Pump] ✅ Turned OFF");
-    }
+  // Lấy nhiệt độ nước từ DS18B20 trực tiếp (wrapper tự handle request)
+  float waterTemp = ds18b20.getTemperature();
 
-    // Sensor read
-    float ambientTemp = NAN, humidity = NAN;
-    air.read(ambientTemp, humidity);
-    float waterTemp = water.readTemperature();
+  // Debug print các giá trị cảm biến
+  Serial.printf("🌡 Ambient Temp: %.2f °C\n", ambientTemp);
+  Serial.printf("💧 Humidity: %.2f %%\n", humidity);
+  Serial.printf("💧 Water Temp: %.2f °C\n", waterTemp);
 
-    Serial.printf("[Sensor] 🌡️ %.2f°C | 💧 %.2f%% | 🌊 %.2f°C\n",
-                  ambientTemp, humidity, waterTemp);
+  // Thêm giá trị mô phỏng (có thể thay bằng sensor thực)
+  float ph = 6.50, ec = 1.20;
+  int orp = 250;
 
-    bool ok = uploader.sendSensorData(ambientTemp, humidity, waterTemp);
-    Serial.printf("[Uploader] 📶 Status: %s\n", ok ? "✅ SUCCESS" : "❌ FAILED");
-    Serial.println("=== ✅ LOOP DONE ===\n");
+  // Tạo JSON
+  unsigned long t0 = millis();
+  size_t len = buildJsonSnapshots(jsonBuf, sizeof(jsonBuf),
+                                  waterTemp, ambientTemp,
+                                  humidity, ph, ec, orp);
+  unsigned long t1 = millis();
+  Serial.printf("🛠 Build JSON mất %lums\n", t1 - t0);
+
+  // Gửi dữ liệu - thử tối đa 2 lần nếu lần đầu lỗi
+  bool success = false;
+  unsigned long t2 = millis();
+  for (int attempt = 1; attempt <= 2 && !success; ++attempt)
+  {
+    Serial.printf("📡 Đang gửi dữ liệu (lần %d)...\n", attempt);
+    success = api.sendData(jsonBuf, len);
+    if (!success)
+      delay(500);
   }
+  unsigned long t3 = millis();
+  Serial.printf("📤 Gửi mất %lums\n", t3 - t2);
+
+  // Kết quả
+  if (success)
+  {
+    Serial.println("✅ Gửi dữ liệu thành công!");
+  }
+  else
+  {
+    Serial.println("❌ Gửi thất bại hoàn toàn.");
+  }
+
+  // Đóng kết nối HTTP sau mỗi lần gửi (bất kể thành công hay thất bại)
+  api.endConnection();
 }
