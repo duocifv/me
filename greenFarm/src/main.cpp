@@ -5,15 +5,19 @@
 #include "ds18b20_module.h"
 #include "json_builder.h"
 #include "scheduler.h"
+#include "relay_module.h"
 
 // Cấu hình WiFi và API
 const char *ssid = "Wokwi-GUEST";
 const char *password = "";
 const char *apiUrl = "https://my.duocnv.top/v1/hydroponics/snapshots";
 const char *deviceToken = "esp32";
-const char *deviceId = "device-001";
+const char\*deviceId = "device-001";
+
+#define RELAY_PIN 5
 
 // Modules
+RelayModule fan(RELAY_PIN);
 WifiModule wifi(ssid, password);
 ApiModule api(apiUrl, deviceToken, deviceId);
 DHTModule dht;
@@ -32,10 +36,10 @@ void setup()
   Serial.begin(115200);
   delay(500);
 
-  wifi.connect();           // Kết nối WiFi
-  dht.begin();              // Khởi động DHT
-  ds18b20.begin();          // Khởi động DS18B20
-  ds18b20.setResolution(9); // Đo nhanh (~94ms)
+  wifi.connect();            // Kết nối WiFi
+  dht.begin();               // Khởi động DHT
+  ds18b20.begin();           // Khởi động DS18B20
+  ds18b20.setResolution(12); // Đo nhanh (~94ms)
 
   api.begin(); // Chuẩn bị API client
 }
@@ -106,6 +110,11 @@ void loop()
   {
     Serial.println("❌ Gửi thất bại hoàn toàn.");
   }
+
+  fan.turnOn();
+  Serial.println("Relay: ON");
+  delay(2000);
+  Serial.println("Relay: OFF");
 
   // Đóng kết nối HTTP sau mỗi lần gửi (bất kể thành công hay thất bại)
   api.endConnection();
