@@ -1,118 +1,74 @@
 #include <Arduino.h>
 
-#include "wifi_module.h"
-#include "api_module.h"
-#include "dht_module.h"
-#include "ds18b20_module.h"
-#include "json_builder.h"
-#include "relay_module.h"
-#include "camera_module.h"
-// #include "bh1750_module.h"
-#include "led_indicator.h"
+#include "wifi_module.h"           // Module Wi-Fi của bạn
+#include "camera_module.h"         // Module chụp ảnh mới tạo
+#include "http_camera_module.h"     // Module gửi ảnh mới tạo
 
-// Thông tin WiFi và API
-const char *ssid = "Mai Lan T2";
-const char *password = "1234567899";
-const char *apiUrl = "https://my.duocnv.top/v1/hydroponics/snapshots";
-const char *deviceToken = "esp32";
-const char *deviceId = "device-001";
+// Thông tin Wi-Fi (thay bằng SSID/PASS thực tế)
+static const char* WIFI_SSID     = "Mai Lan T2";
+static const char* WIFI_PASSWORD = "1234567899";
 
-// Khởi tạo các module
-WifiModule wifi(ssid, password);
-ApiModule api(apiUrl, deviceToken, deviceId);
-DHTModule dht;
-DS18B20Module ds18b20;
-// BH1750Module lightSensor;
-RelayModule pumpRelay(12);
-LedIndicator errorLed(4);
-// CameraModule camera;
+// Thông tin server API (theo ví dụ của bạn)
+static const char* SERVER_HOST    = "my.duocnv.top";
+static const uint16_t SERVER_PORT = 443;  // HTTPS: 443 | HTTP: 80
+static const char* SERVER_PATH    = "/v1/hydroponics/snapshots/images";
 
-char jsonBuffer[512];
+// Header riêng (theo ví dụ của bạn)
+static const char* DEVICE_TOKEN = "esp32";
+static const char* DEVICE_ID    = "device-001";
 
-void indicateError(bool ds18b20Err, bool dhtErr) {
-  if (ds18b20Err) errorLed.blink(3, 200);
-  else if (dhtErr) errorLed.blink(2, 200);
-  else errorLed.off();
-}
+// Đối tượng module
+WifiModule      wifiModule(WIFI_SSID, WIFI_PASSWORD);
+CameraModule    cameraModule;
+HttpCameraModule httpModule(SERVER_HOST, SERVER_PORT, SERVER_PATH, DEVICE_TOKEN, DEVICE_ID);
+
+// Khoảng thời gian giữa các lần chụp gửi (ms)
+const unsigned long UPLOAD_INTERVAL = 20000UL; // 20 giây
 
 void setup() {
-  Serial.begin(115200);
-  delay(1000);
+    Serial.begin(115200);
+    delay(1000);
+    Serial.println("=== Bắt đầu ESP32-CAM Test ===");
 
-  wifi.connect();
-  dht.begin();
-  ds18b20.begin();
-  // lightSensor.begin();
-  api.begin();
-  // camera.begin();
+    // ---- 1. Kết nối Wi-Fi ----
+    wifiModule.connect(15000); // timeout 15s
+    if (!wifiModule.isConnected()) {
+        Serial.println("❌ Không kết nối Wi-Fi. Dừng chương trình.");
+        while (true) {
+            delay(1000);
+        }
+    }
+
+    // ---- 2. Khởi tạo camera ----
+    if (!cameraModule.init()) {
+        Serial.println("❌ Khởi tạo camera thất bại. Dừng chương trình.");
+        while (true) {
+            delay(1000);
+        }
+    }
+
+    // ---- 3. Cấu hình HttpModule (nếu muốn thay timeout) ----
+    httpModule.setTimeout(8000); // chờ tối đa 8s khi đọc response
+
+    Serial.println("🚀 Ready to capture and upload!");
 }
 
 void loop() {
-  dht.update();
-
-  // 2) Đọc DS18B20 – thêm delay để chắc chắn conversion xong
-  ds18b20.getTemperature();  // gọi requestTemperatures() bên trong
-  delay(250);                // chờ 200ms conversion cho độ phân giải 10-bit
-  float waterTemp = ds18b20.getTemperature();
-
-  // 3) Đọc DHT22 (giá trị đã lưu trong dht.update())
-  float ambientTemp = dht.getTemperature();
-  float humidity = dht.getHumidity();
-
-
-
-  bool ds18b20Error = isnan(waterTemp);
-  bool dhtError = isnan(ambientTemp) || isnan(humidity);
-
-  if (ds18b20Error) Serial.println("ERROR: DS18B20 disconnected or read failed!");
-  if (dhtError) Serial.println("ERROR: DHT22 read failed (NaN).");
-
-  indicateError(ds18b20Error, dhtError);
-
-  Serial.print("🌡️ Nhiệt độ nước: ");
-  Serial.println(ds18b20Error ? "--" : String(waterTemp) + " °C");
-
-  Serial.print("🌡️ Nhiệt độ môi trường: ");
-  Serial.println(dhtError ? "--" : String(ambientTemp) + " °C");
-
-  Serial.print("💧 Độ ẩm: ");
-  Serial.println(dhtError ? "--" : String(humidity) + " %");
-
-
-  if (!wifi.isConnected()) {
-    Serial.println("WiFi chưa kết nối, đang cố gắng kết nối lại...");
-    errorLed.blink(1, 300);
-    wifi.connect();
-  }
-
-  Serial.println("💧 Bật bơm relay trong 5 giây");
-  pumpRelay.turnOn();
-  delay(5000);
-  pumpRelay.turnOff();
-  Serial.println("💧 Đã tắt bơm relay");
-
-
-  // Dữ liệu giả định cho pH, EC, ORP
-  float ph = 7.0;
-  float ec = 1.5;
-  int orp = 400;
-
-
-  size_t jsonLen = buildJsonSnapshots(
-    jsonBuffer, sizeof(jsonBuffer),
-    waterTemp, ambientTemp, humidity,
-    ph, ec, orp);
-
-  if (jsonLen > 0) {
-    if (api.sendData(jsonBuffer, jsonLen)) {
-      Serial.println("✅ Gửi dữ liệu API thành công");
+    // ---- 4. Chụp ảnh ----
+    camera_fb_t* fb = cameraModule.capture();
+    if (fb) {
+        // ---- 5. Gửi ảnh lên server ----
+        bool ok = httpModule.send(fb);
+        if (!ok) {
+            Serial.println("❌ Gửi ảnh thất bại");
+        }
+        // ---- 6. Giải phóng buffer ----
+        cameraModule.release(fb);
     } else {
-      Serial.println("❌ Gửi dữ liệu API thất bại");
+        Serial.println("❌ Không lấy được frame để gửi");
     }
-  } else {
-    Serial.println("❌ Tạo JSON payload thất bại");
-  }
 
-  // delay 60 giây
-  delay(60000);
+    // ---- 7. Đợi trước khi chụp tiếp ----
+    Serial.printf("⏱️ Đợi %lums trước khi chụp lại...\n", UPLOAD_INTERVAL);
+    delay(UPLOAD_INTERVAL);
 }
