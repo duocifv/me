@@ -24,146 +24,95 @@ DHTModule dht;
 DS18B20Module ds18b20;
 // BH1750Module lightSensor;
 RelayModule pumpRelay(12);
-LedIndicator error(4);
-// CameraModule camera;   // Nếu cần dùng camera, mở dòng này
+LedIndicator errorLed(4);
+// CameraModule camera;
 
-// Bộ đệm JSON
 char jsonBuffer[512];
+
+void indicateError(bool ds18b20Err, bool dhtErr) {
+  if (ds18b20Err) errorLed.blink(3, 200);
+  else if (dhtErr) errorLed.blink(2, 200);
+  else errorLed.off();
+}
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  // Kết nối WiFi
   wifi.connect();
-
-  // Khởi động DHT22
   dht.begin();
-
-  // Khởi động DS18B20
   ds18b20.begin();
-
-  // Khởi động DH1750
   // lightSensor.begin();
-
-  // Khởi động API (nếu có cấu hình gì thêm)
   api.begin();
-
-  // (Tuỳ chọn) Khởi động camera
-  // if (!camera.begin()) {
-  //   Serial.println("❌ Khởi tạo camera thất bại");
-  // } else {
-  //   Serial.println("✅ Camera đã sẵn sàng");
-  // }
-
-  // Lưu ý: RelayModule và LedIndicator không có hàm begin(),
-  // nên không cần gọi pumpRelay.begin() hay error.begin() ở đây.
+  // camera.begin();
 }
 
 void loop() {
   dht.update();
 
-  // Nếu WiFi chưa kết nối, cố gắng kết nối lại
+  // 2) Đọc DS18B20 – thêm delay để chắc chắn conversion xong
+  ds18b20.getTemperature();  // gọi requestTemperatures() bên trong
+  delay(250);                // chờ 200ms conversion cho độ phân giải 10-bit
+  float waterTemp = ds18b20.getTemperature();
+
+  // 3) Đọc DHT22 (giá trị đã lưu trong dht.update())
+  float ambientTemp = dht.getTemperature();
+  float humidity = dht.getHumidity();
+
+
+
+  bool ds18b20Error = isnan(waterTemp);
+  bool dhtError = isnan(ambientTemp) || isnan(humidity);
+
+  if (ds18b20Error) Serial.println("ERROR: DS18B20 disconnected or read failed!");
+  if (dhtError) Serial.println("ERROR: DHT22 read failed (NaN).");
+
+  indicateError(ds18b20Error, dhtError);
+
+  Serial.print("🌡️ Nhiệt độ nước: ");
+  Serial.println(ds18b20Error ? "--" : String(waterTemp) + " °C");
+
+  Serial.print("🌡️ Nhiệt độ môi trường: ");
+  Serial.println(dhtError ? "--" : String(ambientTemp) + " °C");
+
+  Serial.print("💧 Độ ẩm: ");
+  Serial.println(dhtError ? "--" : String(humidity) + " %");
+
+
   if (!wifi.isConnected()) {
     Serial.println("WiFi chưa kết nối, đang cố gắng kết nối lại...");
-    error.blink(1);
+    errorLed.blink(1, 300);
     wifi.connect();
   }
 
-  // Mở bơm relay 5 giây, sau đó tắt
   Serial.println("💧 Bật bơm relay trong 5 giây");
   pumpRelay.turnOn();
   delay(5000);
   pumpRelay.turnOff();
   Serial.println("💧 Đã tắt bơm relay");
 
-  // --- Đọc nhiệt độ nước từ DS18B20 ---
-  float waterTemp = ds18b20.getTemperature();
-  if (isnan(waterTemp)) {
-    // Nếu DS18B20 trả NaN (thiết bị ngắt/lỗi), nháy LED 3 lần
-    error.blink(3);
-    Serial.println("ERROR: DS18B20 disconnected or read failed!");
-  }
 
-  // --- Đọc nhiệt độ và độ ẩm từ DHT22 ---
-  float ambientTemp = dht.getTemperature();
-  float humidity = dht.getHumidity();
-  if (isnan(ambientTemp) || isnan(humidity)) {
-    // Nếu DHT22 trả NaN (lỗi hoặc gọi quá sớm), nháy LED 2 lần
-    error.blink(2);
-    Serial.println("ERROR: DHT22 read failed (NaN).");
-  }
-
-//  float lux = lightSensor.getLux();
-//   if (isnan(lux) || lux == 0.0) {
-//       error.blink(6);
-//       Serial.println("ERROR: BH1750 read failed (NaN or zero).");
-//   } else {
-//       Serial.print("☀️ Cường độ ánh sáng: ");
-//       Serial.print(lux);
-//       Serial.println(" lux");
-//   }
-
-
-  // In ra màn hình Serial
-  Serial.print("🌡️ Nhiệt độ nước: ");
-  if (!isnan(waterTemp)) {
-    Serial.print(waterTemp);
-    Serial.println(" °C");
-  } else {
-    Serial.println("--");
-  }
-
-  Serial.print("🌡️ Nhiệt độ môi trường: ");
-  if (!isnan(ambientTemp)) {
-    Serial.print(ambientTemp);
-    Serial.println(" °C");
-  } else {
-    Serial.println("--");
-  }
-
-  Serial.print("💧 Độ ẩm: ");
-  if (!isnan(humidity)) {
-    Serial.print(humidity);
-    Serial.println(" %");
-  } else {
-    Serial.println("--");
-  }
-
-  // --- Dữ liệu giả định cho pH, EC, ORP ---
+  // Dữ liệu giả định cho pH, EC, ORP
   float ph = 7.0;
   float ec = 1.5;
   int orp = 400;
 
-  // --- Tạo JSON payload và gửi lên server ---
+
   size_t jsonLen = buildJsonSnapshots(
     jsonBuffer, sizeof(jsonBuffer),
     waterTemp, ambientTemp, humidity,
     ph, ec, orp);
 
   if (jsonLen > 0) {
-    if (!api.sendData(jsonBuffer, jsonLen)) {
-      Serial.println("❌ Gửi dữ liệu API thất bại");
-    } else {
+    if (api.sendData(jsonBuffer, jsonLen)) {
       Serial.println("✅ Gửi dữ liệu API thành công");
+    } else {
+      Serial.println("❌ Gửi dữ liệu API thất bại");
     }
   } else {
     Serial.println("❌ Tạo JSON payload thất bại");
   }
 
-  // --- (Tùy chọn) Chụp và gửi ảnh lên server ---
-  // camera_fb_t *fb = camera.capture();
-  // if (fb) {
-  //   if (api.sendImage(fb->buf, fb->len)) {
-  //     Serial.println("✅ Gửi ảnh thành công");
-  //   } else {
-  //     Serial.println("❌ Gửi ảnh thất bại");
-  //   }
-  //   camera.release(fb);  // Quan trọng
-  // } else {
-  //   Serial.println("❌ Không chụp được ảnh");
-  // }
-
-  // Chờ 60 giây trước khi lặp lại
+  // delay 60 giây
   delay(60000);
 }
