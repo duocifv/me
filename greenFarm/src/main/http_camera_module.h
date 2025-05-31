@@ -6,9 +6,10 @@
 #include "esp_camera.h"
 
 /*
-  Module HttpCameraModule chịu trách nhiệm:
-   - Thiết lập thông tin server (host, port, path, headers)
-   - Gửi ảnh JPEG (camera_fb_t*) lên server bằng POST multipart/form-data
+  HttpCameraModule (tối ưu, có đo thời gian):
+   - Không dùng String động cho header/footer
+   - Đo thời gian gửi (từ khi gửi body đến khi nhận được status line)
+   - Trả về bool để biết thành công/thất bại đồng thời trả về durationMs
 */
 
 class HttpCameraModule {
@@ -25,79 +26,114 @@ public:
         _path(path),
         _deviceToken(deviceToken),
         _deviceId(deviceId),
-        _boundary(boundary) {}
+        _boundary(boundary),
+        _timeoutMs(10000) {}
 
-    // Gửi ảnh (fb->buf, fb->len) lên server. Trả về true nếu thành công (kiểm tra qua Serial).
-    bool send(camera_fb_t* fb) {
+    // Thiết lập timeout (ms) khi chờ response (mặc định 10s)
+    void setTimeout(unsigned long timeoutMs) {
+        _timeoutMs = timeoutMs;
+    }
+
+    /*
+      Gửi ảnh lên server:
+       - fb: camera frame buffer (JPEG)
+       - durationMs: tham chiếu để ghi lại thời gian (ms) từ khi bắt đầu ghi body đến khi đọc được status line
+       - Trả về true nếu status code bắt đầu bằng "HTTP/1.1 2"
+    */
+    bool send(camera_fb_t* fb, unsigned long &durationMs) {
         if (!fb) {
-            Serial.println("❌ HttpCameraModule::send(): fb == nullptr");
+            Serial.println("❌ send(): fb == nullptr");
             return false;
         }
 
+        // 1) Khởi tạo client
         WiFiClientSecure client;
-        client.setInsecure(); // Bỏ qua xác thực chứng chỉ (TEST). Trong thực tế nên xử lý CA cert.
-
-        Serial.printf("🌐 Kết nối đến %s:%u …\n", _host, _port);
-        if (!client.connect(_host, _port)) {
-            Serial.println("❌ Kết nối tới server thất bại");
-            return false;
+        if (_port == 443) {
+            client.setInsecure(); // Bỏ qua verify TLS (chỉ TEST)
         }
 
-        // Khởi tạo phần header của multipart
-        String partHeader = String("--") + _boundary + "\r\n" +
-                            "Content-Disposition: form-data; name=\"file\"; filename=\"photo.jpg\"\r\n" +
-                            "Content-Type: image/jpeg\r\n\r\n";
+        // 2) Kết nối đến server
+        if (!client.connect(_host, _port)) {
+            Serial.println("❌ Không kết nối được server");
+            return false;
+        }
+        client.setTimeout(_timeoutMs);
 
-        String partFooter = String("\r\n--") + _boundary + "--\r\n";
+        // 3) Tạo multipart header & footer trong buffer tĩnh
+        char headerBuf[128];
+        int headerLen = snprintf(
+            headerBuf, sizeof(headerBuf),
+            "--%s\r\n"
+            "Content-Disposition: form-data; name=\"file\"; filename=\"photo.jpg\"\r\n"
+            "Content-Type: image/jpeg\r\n\r\n",
+            _boundary
+        );
 
-        size_t contentLength = partHeader.length() + fb->len + partFooter.length();
+        char footerBuf[64];
+        int footerLen = snprintf(
+            footerBuf, sizeof(footerBuf),
+            "\r\n--%s--\r\n",
+            _boundary
+        );
 
-        // Gửi request line và header
+        // 4) Tính content-length
+        size_t totalLen = (size_t)headerLen + fb->len + (size_t)footerLen;
+
+        // 5) Gửi request line + headers
         client.printf("POST %s HTTP/1.1\r\n", _path);
         client.printf("Host: %s\r\n", _host);
         client.printf("x-device-token: %s\r\n", _deviceToken);
         client.printf("x-device-id: %s\r\n", _deviceId);
         client.printf("Content-Type: multipart/form-data; boundary=%s\r\n", _boundary);
-        client.printf("Content-Length: %u\r\n", (unsigned int)contentLength);
+        client.printf("Content-Length: %u\r\n", (unsigned)totalLen);
         client.print("Connection: close\r\n");
-        client.print("\r\n"); // Kết thúc header, bắt đầu body
+        client.print("\r\n"); // Kết thúc phần header
 
-        // Gửi phần header của multipart
-        client.print(partHeader);
+        // 6) Đo thời gian: bắt đầu từ khi gửi headerBuf lần đầu
+        unsigned long t_start = millis();
 
-        // Gửi trực tiếp nhị phân ảnh JPEG
+        // Gửi headerBuf
+        client.write((const uint8_t*)headerBuf, headerLen);
+        // Gửi JPEG data
         client.write(fb->buf, fb->len);
+        // Gửi footerBuf
+        client.write((const uint8_t*)footerBuf, footerLen);
 
-        // Gửi phần footer của multipart (đóng multipart)
-        client.print(partFooter);
-
-        // Đọc và in response từ server (nếu có)
-        uint32_t start = millis();
-        while (client.connected() && millis() - start < _timeoutMs) {
-            while (client.available()) {
-                String line = client.readStringUntil('\n');
-                Serial.println(line);
-            }
+        // 7) Chờ status line (block tối đa _timeoutMs)
+        while (!client.available() && (millis() - t_start) < _timeoutMs) {
+            delay(10);
         }
+        if (!client.available()) {
+            Serial.printf("❌ Không nhận được status line (timeout %lums)\n", _timeoutMs);
+            client.stop();
+            durationMs = millis() - t_start;
+            return false;
+        }
+
+        // 8) Đọc status line
+        String statusLine = client.readStringUntil('\n');
+        statusLine.trim();  // Loại bỏ '\r'
+        unsigned long t_end = millis();
+        durationMs = t_end - t_start;  // Tính thời gian gửi
+
+        // In status line và thời gian
+        Serial.println(statusLine);
+        Serial.printf("⏱️ Thời gian gửi: %lums\n", durationMs);
+
         client.stop();
-        Serial.println("✅ Gửi ảnh xong (hoặc đã timeout đọc response).");
 
-        return true;
-    }
-
-    // Thiết lập timeout (ms) khi chờ read response (mặc định 10s)
-    void setTimeout(unsigned long timeoutMs) {
-        _timeoutMs = timeoutMs;
+        // 9) Kiểm tra status: nếu bắt đầu bằng "HTTP/1.1 2"
+        return statusLine.startsWith("HTTP/1.1 2");
     }
 
 private:
-    const char* _host;
-    uint16_t    _port;
-    const char* _path;
-    const char* _deviceToken;
-    const char* _deviceId;
-    const char* _boundary;
-    unsigned long _timeoutMs = 10000; // 10 giây mặc định
+    const char*     _host;
+    uint16_t        _port;
+    const char*     _path;
+    const char*     _deviceToken;
+    const char*     _deviceId;
+    const char*     _boundary;
+    unsigned long   _timeoutMs;
 };
 
 #endif // HTTP_CAMERA_MODULE_H

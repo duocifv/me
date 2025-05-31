@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
-#include "wifi_module.h"           // Module Wi-Fi của bạn
-#include "camera_module.h"         // Module chụp ảnh mới tạo
-#include "http_camera_module.h"     // Module gửi ảnh mới tạo
+#include "wifi_module.h"         // Module Wi-Fi của bạn
+#include "camera_module.h"       // Module chụp ảnh mới tạo
+#include "http_camera_module.h"  // Module gửi ảnh (đã bổ sung đo thời gian)
 
 // Thông tin Wi-Fi (thay bằng SSID/PASS thực tế)
 static const char* WIFI_SSID     = "Mai Lan T2";
@@ -18,8 +18,8 @@ static const char* DEVICE_TOKEN = "esp32";
 static const char* DEVICE_ID    = "device-001";
 
 // Đối tượng module
-WifiModule      wifiModule(WIFI_SSID, WIFI_PASSWORD);
-CameraModule    cameraModule;
+WifiModule       wifiModule(WIFI_SSID, WIFI_PASSWORD);
+CameraModule     cameraModule;
 HttpCameraModule httpModule(SERVER_HOST, SERVER_PORT, SERVER_PATH, DEVICE_TOKEN, DEVICE_ID);
 
 // Khoảng thời gian giữa các lần chụp gửi (ms)
@@ -28,7 +28,7 @@ const unsigned long UPLOAD_INTERVAL = 20000UL; // 20 giây
 void setup() {
     Serial.begin(115200);
     delay(1000);
-    Serial.println("=== Bắt đầu ESP32-CAM Test ===");
+    Serial.println("=== Bắt đầu ESP32-CAM Test (Có đo thời gian gửi) ===");
 
     // ---- 1. Kết nối Wi-Fi ----
     wifiModule.connect(15000); // timeout 15s
@@ -50,18 +50,26 @@ void setup() {
     // ---- 3. Cấu hình HttpModule (nếu muốn thay timeout) ----
     httpModule.setTimeout(8000); // chờ tối đa 8s khi đọc response
 
-    Serial.println("🚀 Ready to capture and upload!");
+    Serial.println("🚀 Ready to capture and upload (đo thời gian gửi)!");
 }
 
 void loop() {
     // ---- 4. Chụp ảnh ----
     camera_fb_t* fb = cameraModule.capture();
     if (fb) {
-        // ---- 5. Gửi ảnh lên server ----
-        bool ok = httpModule.send(fb);
-        if (!ok) {
+        // ---- 5. Gửi ảnh lên server và đo thời gian ----
+        unsigned long duration;  // Biến nhận thời gian gửi (ms)
+        bool ok = httpModule.send(fb, duration);
+        if (ok) {
+            Serial.println("✅ Gửi ảnh thành công");
+        } else {
             Serial.println("❌ Gửi ảnh thất bại");
         }
+
+        // Đã in thời gian gửi bên trong HttpCameraModule.send
+        // Nhưng nếu muốn in ngoài, bạn có thể:
+        // Serial.printf("⏱️ Tổng thời gian gửi: %lums\n", duration);
+
         // ---- 6. Giải phóng buffer ----
         cameraModule.release(fb);
     } else {
@@ -69,6 +77,6 @@ void loop() {
     }
 
     // ---- 7. Đợi trước khi chụp tiếp ----
-    Serial.printf("⏱️ Đợi %lums trước khi chụp lại...\n", UPLOAD_INTERVAL);
+    Serial.printf("⏱️ Đợi %lums trước khi chụp lại...\n\n", UPLOAD_INTERVAL);
     delay(UPLOAD_INTERVAL);
 }
