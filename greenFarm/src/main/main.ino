@@ -7,22 +7,24 @@
 #include "json_builder.h"
 #include "relay_module.h"
 #include "camera_module.h"
+#include "bh1750_module.h"
 #include "led_indicator.h"
 
 // Thông tin WiFi và API
-const char *ssid        = "Mai Lan";
-const char *password    = "1234567899";
-const char *apiUrl      = "https://my.duocnv.top/v1/hydroponics/snapshots";
+const char *ssid = "Mai Lan";
+const char *password = "1234567899";
+const char *apiUrl = "https://my.duocnv.top/v1/hydroponics/snapshots";
 const char *deviceToken = "esp32";
-const char *deviceId    = "device-001";
+const char *deviceId = "device-001";
 
 // Khởi tạo các module
-WifiModule    wifi(ssid, password);
-ApiModule     api(apiUrl, deviceToken, deviceId);
-DHTModule     dht;
+WifiModule wifi(ssid, password);
+ApiModule api(apiUrl, deviceToken, deviceId);
+DHTModule dht;
 DS18B20Module ds18b20;
-RelayModule   pumpRelay(12);
-LedIndicator  error(4);
+BH1750Module lightSensor;
+RelayModule pumpRelay(12);
+LedIndicator error(4);
 // CameraModule camera;   // Nếu cần dùng camera, mở dòng này
 
 // Bộ đệm JSON
@@ -40,6 +42,9 @@ void setup() {
 
   // Khởi động DS18B20
   ds18b20.begin();
+
+  // Khởi động DH1750
+  lightSensor.begin();
 
   // Khởi động API (nếu có cấu hình gì thêm)
   api.begin();
@@ -80,13 +85,23 @@ void loop() {
 
   // --- Đọc nhiệt độ và độ ẩm từ DHT22 ---
   float ambientTemp = dht.getTemperature();
-  float humidity    = dht.getHumidity();
+  float humidity = dht.getHumidity();
   if (isnan(ambientTemp) || isnan(humidity)) {
     // Nếu DHT22 trả NaN (lỗi hoặc gọi quá sớm), nháy LED 2 lần
     error.blink(2);
     Serial.println("ERROR: DHT22 read failed (NaN).");
   }
 
+  float lux = lightSensor.getLux();
+  if (isnan(lux)) {
+    error.blink(6);
+    Serial.println("ERROR: DHT22 read failed (NaN).");
+  }
+  Serial.print("☀️ Cường độ ánh sáng: ");
+  Serial.print(lux);
+  Serial.println(" lux");
+
+  
   // In ra màn hình Serial
   Serial.print("🌡️ Nhiệt độ nước: ");
   if (!isnan(waterTemp)) {
@@ -113,16 +128,15 @@ void loop() {
   }
 
   // --- Dữ liệu giả định cho pH, EC, ORP ---
-  float ph  = 7.0;
-  float ec  = 1.5;
-  int   orp = 200;
+  float ph = 7.0;
+  float ec = 1.5;
+  int orp = 200;
 
   // --- Tạo JSON payload và gửi lên server ---
   size_t jsonLen = buildJsonSnapshots(
     jsonBuffer, sizeof(jsonBuffer),
     waterTemp, ambientTemp, humidity,
-    ph, ec, orp
-  );
+    ph, ec, orp);
 
   if (jsonLen > 0) {
     if (!api.sendData(jsonBuffer, jsonLen)) {
