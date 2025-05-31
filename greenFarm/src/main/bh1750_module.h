@@ -11,7 +11,7 @@ public:
     BH1750Module() : lightMeter(0x23) {}  // Default address
 
     void begin() {
-        Wire.begin();
+        Wire.begin(14, 1);
         if (!lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
             Serial.println("❌ Không khởi động được BH1750!");
         } else {

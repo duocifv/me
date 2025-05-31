@@ -92,16 +92,17 @@ void loop() {
     Serial.println("ERROR: DHT22 read failed (NaN).");
   }
 
-  float lux = lightSensor.getLux();
-  if (isnan(lux)) {
-    error.blink(6);
-    Serial.println("ERROR: DHT22 read failed (NaN).");
+ float lux = lightSensor.getLux();
+  if (isnan(lux) || lux == 0.0) {
+      error.blink(6);
+      Serial.println("ERROR: BH1750 read failed (NaN or zero).");
+  } else {
+      Serial.print("☀️ Cường độ ánh sáng: ");
+      Serial.print(lux);
+      Serial.println(" lux");
   }
-  Serial.print("☀️ Cường độ ánh sáng: ");
-  Serial.print(lux);
-  Serial.println(" lux");
 
-  
+
   // In ra màn hình Serial
   Serial.print("🌡️ Nhiệt độ nước: ");
   if (!isnan(waterTemp)) {
@@ -130,7 +131,7 @@ void loop() {
   // --- Dữ liệu giả định cho pH, EC, ORP ---
   float ph = 7.0;
   float ec = 1.5;
-  int orp = 200;
+  int orp = lux;
 
   // --- Tạo JSON payload và gửi lên server ---
   size_t jsonLen = buildJsonSnapshots(
