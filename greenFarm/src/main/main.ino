@@ -61,6 +61,8 @@ void setup() {
 }
 
 void loop() {
+  dht.update();
+
   // Nếu WiFi chưa kết nối, cố gắng kết nối lại
   if (!wifi.isConnected()) {
     Serial.println("WiFi chưa kết nối, đang cố gắng kết nối lại...");
