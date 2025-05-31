@@ -7,11 +7,11 @@
 #include "json_builder.h"
 #include "relay_module.h"
 #include "camera_module.h"
-#include "bh1750_module.h"
+// #include "bh1750_module.h"
 #include "led_indicator.h"
 
 // Thông tin WiFi và API
-const char *ssid = "Mai Lan";
+const char *ssid = "Mai Lan T2";
 const char *password = "1234567899";
 const char *apiUrl = "https://my.duocnv.top/v1/hydroponics/snapshots";
 const char *deviceToken = "esp32";
@@ -22,7 +22,7 @@ WifiModule wifi(ssid, password);
 ApiModule api(apiUrl, deviceToken, deviceId);
 DHTModule dht;
 DS18B20Module ds18b20;
-BH1750Module lightSensor;
+// BH1750Module lightSensor;
 RelayModule pumpRelay(12);
 LedIndicator error(4);
 // CameraModule camera;   // Nếu cần dùng camera, mở dòng này
@@ -44,7 +44,7 @@ void setup() {
   ds18b20.begin();
 
   // Khởi động DH1750
-  lightSensor.begin();
+  // lightSensor.begin();
 
   // Khởi động API (nếu có cấu hình gì thêm)
   api.begin();
@@ -92,15 +92,15 @@ void loop() {
     Serial.println("ERROR: DHT22 read failed (NaN).");
   }
 
- float lux = lightSensor.getLux();
-  if (isnan(lux) || lux == 0.0) {
-      error.blink(6);
-      Serial.println("ERROR: BH1750 read failed (NaN or zero).");
-  } else {
-      Serial.print("☀️ Cường độ ánh sáng: ");
-      Serial.print(lux);
-      Serial.println(" lux");
-  }
+//  float lux = lightSensor.getLux();
+//   if (isnan(lux) || lux == 0.0) {
+//       error.blink(6);
+//       Serial.println("ERROR: BH1750 read failed (NaN or zero).");
+//   } else {
+//       Serial.print("☀️ Cường độ ánh sáng: ");
+//       Serial.print(lux);
+//       Serial.println(" lux");
+//   }
 
 
   // In ra màn hình Serial
@@ -131,7 +131,7 @@ void loop() {
   // --- Dữ liệu giả định cho pH, EC, ORP ---
   float ph = 7.0;
   float ec = 1.5;
-  int orp = lux;
+  int orp = 400;
 
   // --- Tạo JSON payload và gửi lên server ---
   size_t jsonLen = buildJsonSnapshots(

@@ -31,7 +31,22 @@ public:
         Serial.print(count);
         Serial.println(" device(s) on bus.");
 
-        // Thiết lập độ phân giải: 10-bit (khoảng 0.0625 °C, conversion ~200ms)
+        // (Tùy chọn) In thêm địa chỉ ROM của con đầu tiên
+        if (count > 0) {
+            DeviceAddress addr;
+            if (sensors.getAddress(addr, 0)) {
+                Serial.print("-> ROM Address: ");
+                for (uint8_t i = 0; i < 8; i++) {
+                    if (addr[i] < 16) Serial.print("0");
+                    Serial.print(addr[i], HEX);
+                }
+                Serial.println();
+            }
+        } else {
+            Serial.println("No DS18B20 device detected on bus!");
+        }
+
+        // Thiết lập độ phân giải: 10‐bit (khoảng 0.0625 °C, conversion ~200 ms)
         sensors.setResolution(10);
 
         // Đợi mỗi lần requestTemperatures() xong mới tiếp tục

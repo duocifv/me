@@ -14,7 +14,7 @@ public:
     }
 
     // Nháy đèn 'times' lần, mỗi lần on-off 'speed' ms
-    void blink(int times, int speed = 200) {
+    void blink(int times, int speed = 300) {
         for (int i = 0; i < times; i++) {
             digitalWrite(ledPin, HIGH);
             delay(speed);
