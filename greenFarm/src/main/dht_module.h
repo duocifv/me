@@ -24,7 +24,6 @@ public:
         hasValidData = false;
     }
 
-    // Cập nhật dữ liệu nếu đã qua 2 giây
     void update() {
         unsigned long now = millis();
         if (now - lastReadTime >= 2000 || !hasValidData) {
@@ -36,7 +35,6 @@ public:
                 lastHum = h;
                 hasValidData = true;
             } else {
-                // Nếu lỗi, giữ nguyên dữ liệu cũ
                 Serial.println("⚠️ Lỗi đọc DHT22.");
                 hasValidData = false;
             }
@@ -45,14 +43,16 @@ public:
         }
     }
 
-    // Trả về nhiệt độ gần nhất. Gọi update() trước đó để đảm bảo mới nhất.
-    float getTemperature() {
+    float getTemperature() const {
         return lastTemp;
     }
 
-    // Trả về độ ẩm gần nhất. Gọi update() trước đó để đảm bảo mới nhất.
-    float getHumidity() {
+    float getHumidity() const {
         return lastHum;
+    }
+
+    bool hasData() const {
+        return hasValidData;
     }
 };
 

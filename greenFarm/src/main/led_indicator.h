@@ -8,12 +8,13 @@ private:
     int ledPin;
 
 public:
-    LedIndicator(int pin) : ledPin(pin) {
+    explicit LedIndicator(int pin) : ledPin(pin) {
         pinMode(ledPin, OUTPUT);
         digitalWrite(ledPin, LOW);
     }
 
     // Nháy đèn 'times' lần, mỗi lần on-off 'speed' ms
+    // **Lưu ý:** hàm này là blocking vì dùng delay, nên chỉ dùng trong các trường hợp chấp nhận được.
     void blink(int times, int speed = 300) {
         for (int i = 0; i < times; i++) {
             digitalWrite(ledPin, HIGH);

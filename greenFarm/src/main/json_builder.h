@@ -21,6 +21,11 @@ inline size_t buildJsonSnapshots(char *buffer, size_t bufferSize,
     solutionData["ec"]  = ec;
     solutionData["orp"] = orp;
 
+    if (!buffer || bufferSize == 0) {
+        // Trả về kích thước cần thiết
+        return measureJson(doc);
+    }
+
     size_t len = serializeJson(doc, buffer, bufferSize);
     if (len == 0 || len >= bufferSize) {
         Serial.println("❌ Lỗi serialize JSON hoặc buffer quá nhỏ");

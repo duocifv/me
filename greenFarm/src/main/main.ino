@@ -1,82 +1,162 @@
 #include <Arduino.h>
+#include <TaskScheduler.h>
 
-#include "wifi_module.h"         // Module Wi-Fi của bạn
-#include "camera_module.h"       // Module chụp ảnh mới tạo
-#include "http_camera_module.h"  // Module gửi ảnh (đã bổ sung đo thời gian)
+#include "wifi_module.h"
+#include "http_sensors_module.h"
+#include "dht_module.h"
+#include "ds18b20_module.h"
+#include "json_builder.h"
+#include "relay_module.h"
+#include "camera_module.h"
+#include "http_camera_module.h"
+#include "led_indicator.h"
+#include "config.h"
 
-// Thông tin Wi-Fi (thay bằng SSID/PASS thực tế)
-static const char* WIFI_SSID     = "Mai Lan T2";
-static const char* WIFI_PASSWORD = "1234567899";
+// Modules
+WifiModule wifi(ssid, password);
+DHTModule dht;
+DS18B20Module ds18b20;
+RelayModule pumpRelay(12);
+LedIndicator errorLed(4);
+CameraModule cameraModule;
+HttpSensorModule httpSensor(host, port, sensorPath, deviceToken, deviceId);
+HttpCameraModule httpCamera(host, port, imgPath, deviceToken, deviceId);
 
-// Thông tin server API (theo ví dụ của bạn)
-static const char* SERVER_HOST    = "my.duocnv.top";
-static const uint16_t SERVER_PORT = 443;  // HTTPS: 443 | HTTP: 80
-static const char* SERVER_PATH    = "/v1/hydroponics/snapshots/images";
+char jsonBuffer[512];
 
-// Header riêng (theo ví dụ của bạn)
-static const char* DEVICE_TOKEN = "esp32";
-static const char* DEVICE_ID    = "device-001";
+// TaskScheduler
+Scheduler ts;
 
-// Đối tượng module
-WifiModule       wifiModule(WIFI_SSID, WIFI_PASSWORD);
-CameraModule     cameraModule;
-HttpCameraModule httpModule(SERVER_HOST, SERVER_PORT, SERVER_PATH, DEVICE_TOKEN, DEVICE_ID);
+// --- State ---
+bool pumpIsOn = false;
+float waterTemp = NAN, ambientTemp = NAN, humidity = NAN;
+bool ds18b20Err = false, dhtErr = false;
 
-// Khoảng thời gian giữa các lần chụp gửi (ms)
-const unsigned long UPLOAD_INTERVAL = 20000UL; // 20 giây
+// --- Task declarations ---
+void readSensorsCallback();
+void uploadDataCallback();
+void uploadImageCallback();
+void managePumpCallback();
+void indicateError(bool dsErr, bool dhtErr);
+
+Task tReadSensors(SENSOR_INTERVAL, TASK_FOREVER, &readSensorsCallback, &ts);
+Task tUploadData(DATA_INTERVAL, TASK_FOREVER, &uploadDataCallback, &ts);
+Task tUploadImage(IMAGE_INTERVAL, TASK_FOREVER, &uploadImageCallback, &ts);
+Task tManagePump(PUMP_CYCLE_MS, TASK_FOREVER, &managePumpCallback, &ts);
 
 void setup() {
-    Serial.begin(115200);
-    delay(1000);
-    Serial.println("=== Bắt đầu ESP32-CAM Test (Có đo thời gian gửi) ===");
+  Serial.begin(115200);
+  delay(1000);
 
-    // ---- 1. Kết nối Wi-Fi ----
-    wifiModule.connect(15000); // timeout 15s
-    if (!wifiModule.isConnected()) {
-        Serial.println("❌ Không kết nối Wi-Fi. Dừng chương trình.");
-        while (true) {
-            delay(1000);
-        }
-    }
+  wifi.connect();
+  dht.begin();
+  ds18b20.begin();
+  httpSensor.begin();
+  cameraModule.init();
+  httpCamera.setTimeout(20000);
 
-    // ---- 2. Khởi tạo camera ----
-    if (!cameraModule.init()) {
-        Serial.println("❌ Khởi tạo camera thất bại. Dừng chương trình.");
-        while (true) {
-            delay(1000);
-        }
-    }
+  Serial.println("🚀 Setup hoàn tất");
 
-    // ---- 3. Cấu hình HttpModule (nếu muốn thay timeout) ----
-    httpModule.setTimeout(8000); // chờ tối đa 8s khi đọc response
+  ts.addTask(tReadSensors);
+  ts.addTask(tUploadData);
+  ts.addTask(tUploadImage);
+  ts.addTask(tManagePump);
 
-    Serial.println("🚀 Ready to capture and upload (đo thời gian gửi)!");
+  tReadSensors.enable();
+  tUploadData.enable();
+  tUploadImage.enable();
+  tManagePump.enable();
 }
 
 void loop() {
-    // ---- 4. Chụp ảnh ----
-    camera_fb_t* fb = cameraModule.capture();
-    if (fb) {
-        // ---- 5. Gửi ảnh lên server và đo thời gian ----
-        unsigned long duration;  // Biến nhận thời gian gửi (ms)
-        bool ok = httpModule.send(fb, duration);
-        if (ok) {
-            Serial.println("✅ Gửi ảnh thành công");
-        } else {
-            Serial.println("❌ Gửi ảnh thất bại");
-        }
+  if (!wifi.isConnected()) {
+    Serial.println("⚠️ WiFi mất kết nối, đang thử lại...");
+    errorLed.blink(1, 300);
+    wifi.connect();
+  }
+  ts.execute();
+}
 
-        // Đã in thời gian gửi bên trong HttpCameraModule.send
-        // Nhưng nếu muốn in ngoài, bạn có thể:
-        // Serial.printf("⏱️ Tổng thời gian gửi: %lums\n", duration);
+// ---------- TASK FUNCTIONS ----------
 
-        // ---- 6. Giải phóng buffer ----
-        cameraModule.release(fb);
+void readSensorsCallback() {
+  dht.update();
+  waterTemp   = ds18b20.getTemperature();
+  ambientTemp = dht.getTemperature();
+  humidity    = dht.getHumidity();
+
+  ds18b20Err = isnan(waterTemp);
+  dhtErr     = isnan(ambientTemp) || isnan(humidity);
+
+  indicateError(ds18b20Err, dhtErr);
+
+  Serial.printf("🌊 Water Temp: %s°C\n", ds18b20Err ? "--" : String(waterTemp, 1).c_str());
+  Serial.printf("🌡 Ambient Temp: %s°C\n", dhtErr ? "--" : String(ambientTemp, 1).c_str());
+  Serial.printf("💧 Humidity: %s%%\n", dhtErr ? "--" : String(humidity, 1).c_str());
+}
+
+void uploadDataCallback() {
+  float ph  = 7.0;
+  float ec  = 1.5;
+  int orp   = 400;
+
+  size_t jsonLen = buildJsonSnapshots(
+    jsonBuffer, sizeof(jsonBuffer),
+    waterTemp, ambientTemp, humidity,
+    ph, ec, orp
+  );
+
+  if (jsonLen > 0) {
+    if (httpSensor.sendData(jsonBuffer, jsonLen)) {
+      Serial.println("✅ Gửi dữ liệu API thành công");
     } else {
-        Serial.println("❌ Không lấy được frame để gửi");
+      Serial.println("❌ Gửi dữ liệu API thất bại");
     }
+  } else {
+    Serial.println("❌ Tạo JSON payload thất bại");
+  }
+}
 
-    // ---- 7. Đợi trước khi chụp tiếp ----
-    Serial.printf("⏱️ Đợi %lums trước khi chụp lại...\n\n", UPLOAD_INTERVAL);
-    delay(UPLOAD_INTERVAL);
+void uploadImageCallback() {
+  if (!wifi.isConnected()) {
+    Serial.println("⚠️ Bỏ qua gửi ảnh vì mất WiFi");
+    return;
+  }
+
+  camera_fb_t* fb = cameraModule.capture();
+  if (fb) {
+    unsigned long duration;
+    if (httpCamera.send(fb, duration)) {
+      Serial.printf("✅ Gửi ảnh OK, mất %lums\n", duration);
+    } else {
+      Serial.println("❌ Gửi ảnh thất bại");
+    }
+    cameraModule.release(fb);
+  } else {
+    Serial.println("❌ Không lấy được frame để gửi");
+  }
+}
+
+void managePumpCallback() {
+  if (!pumpIsOn) {
+    pumpRelay.turnOn();
+    pumpIsOn = true;
+    Serial.println("💧 Bơm ON");
+    tManagePump.setInterval(PUMP_ON_MS);
+  } else {
+    pumpRelay.turnOff();
+    pumpIsOn = false;
+    Serial.println("💧 Bơm OFF");
+    tManagePump.setInterval(PUMP_CYCLE_MS);
+  }
+}
+
+void indicateError(bool dsErr, bool dhtErr) {
+  if (dsErr) {
+    errorLed.blink(3, 200);
+  } else if (dhtErr) {
+    errorLed.blink(2, 200);
+  } else {
+    errorLed.off();
+  }
 }
