@@ -13,12 +13,12 @@
 #include "led_indicator.h"
 
 // ----- Các mô-đun -----
-WifiModule     wifi(ssid, password);
-DHTModule      dht;
-DS18B20Module  ds18b20;
-RelayModule    pumpRelay(12, false);   // activeLow=false (board relay COM–NO cần HIGH để ON)
-LedIndicator   errorLed(4);
-CameraModule   cameraModule;
+WifiModule      wifi(ssid, password);
+DHTModule       dht;
+DS18B20Module   ds18b20;
+RelayModule     pumpRelay(12, false);   // activeLow=false → HIGH ↦ relay đóng ↦ bơm ON
+LedIndicator    errorLed(4);
+CameraModule    cameraModule;
 HttpSensorModule httpSensor(host, port, sensorPath, deviceToken, deviceId);
 HttpCameraModule httpCamera(host, port, imgPath, deviceToken, deviceId);
 
@@ -77,14 +77,14 @@ void setup() {
   tReadSensors.enable();
   tUploadData.enable();
   tUploadImage.enable();
-  tManagePump.enable();
-  Serial.println("[Setup] Các Task đã enable()");
+  tManagePump.enable();    // Lần đầu, task được lập lịch chạy sau PUMP_CYCLE_MS (60s)
 
+  Serial.println("[Setup] Các Task đã enable()");
   Serial.println("===== Setup() hoàn tất =====\n");
 }
 
 void loop() {
-  // Cập nhật LED nếu đang trong chế độ blink non‐blocking
+  // Cập nhật LED nếu đang blink non-blocking
   errorLed.update();
 
   // Thực thi TaskScheduler (kiểm tra và gọi callback khi đến thời điểm)
@@ -96,41 +96,44 @@ void loop() {
 void readSensorsCallback() {
   Serial.println("[DEBUG] => readSensorsCallback()");
 
-  // Đọc DHT (cập nhật ít nhất 2s/lần)
+  // 1) Đọc DHT22 và DS18B20
   dht.update();
-  ambientTemp = dht.getTemperature();
-  humidity    = dht.getHumidity();
+  float tempDHT  = dht.getTemperature();
+  float humDHT   = dht.getHumidity();
+  float tempDS   = ds18b20.getTemperature();
 
-  // Đọc DS18B20
-  waterTemp = ds18b20.getTemperature();
+  // 2) Bắt lỗi DHT22 và gán giá trị
+  if (!dht.hasData()) {
+    dhtErr = true;
+    Serial.println("⚠️ [readSensors] Lỗi đọc DHT22");
+  } else {
+    dhtErr      = false;
+    ambientTemp = tempDHT;
+    humidity    = humDHT;
+  }
 
-  // Xác định lỗi
-  ds18b20Err = isnan(waterTemp);
-  dhtErr     = (!dht.hasData()) || isnan(ambientTemp) || isnan(humidity);
-  wifiErr    = !wifi.isConnected();
+  // 3) Bắt lỗi DS18B20 và gán giá trị
+  if (isnan(tempDS)) {
+    ds18b20Err = true;
+    Serial.println("⚠️ [readSensors] Lỗi đọc DS18B20");
+  } else {
+    ds18b20Err = false;
+    waterTemp  = tempDS;
+  }
 
-  // Nếu WiFi chưa kết nối, thử connect lại
+  // 4) Kiểm tra WiFi
+  wifiErr = !wifi.isConnected();
   if (wifiErr) {
     Serial.println("⚠️ [readSensors] WiFi chưa kết nối, gọi wifi.connect() lại...");
     wifi.connect();
   }
 
-  // Nháy LED báo lỗi (nếu có)
+  // 5) Nháy LED nếu có lỗi
   indicateError(wifiErr, ds18b20Err, dhtErr);
 
-  // In log kết quả
-  if (ds18b20Err) {
-    Serial.println("[DEBUG] DS18B20 LỖI – trả NAN");
-  } else {
-    Serial.printf("[DEBUG] DS18B20 nhiệt độ = %.1f°C\n", waterTemp);
-  }
-
-  if (dhtErr) {
-    Serial.println("[DEBUG] DHT22 LỖI hoặc chưa có data");
-  } else {
-    Serial.printf("[DEBUG] DHT22 Temp = %.1f°C, Hum = %.1f%%\n", ambientTemp, humidity);
-  }
-
+  // 6) In log kết quả
+  Serial.printf("[DEBUG] Water Temp = %.1f°C\n", waterTemp);
+  Serial.printf("[DEBUG] Ambient Temp = %.1f°C, Humidity = %.1f%%\n", ambientTemp, humidity);
   Serial.println("---");
 }
 
@@ -187,25 +190,27 @@ void uploadImageCallback() {
 }
 
 void managePumpCallback() {
-  Serial.println("[DEBUG] => managePumpCallback()");
+  // In thêm millis() để debug nếu cần
+  Serial.printf("[DEBUG] => managePumpCallback(), millis() = %lu\n", millis());
+
   if (!pumpIsOn) {
-    // Bật bơm (relay active‐HIGH)
+    // Bật bơm (relay active-HIGH)
     pumpRelay.turnOn();
     pumpIsOn = true;
     Serial.println("💧 [Pump] BẬT");
 
-    // Sau PUMP_ON_MS sẽ tắt
+    // Đặt khoảng chờ 5s (PUMP_ON_MS) trước khi gọi lại
     tManagePump.setInterval(PUMP_ON_MS);
-    tManagePump.restart();
+    tManagePump.enableDelayed(PUMP_ON_MS);
   } else {
     // Tắt bơm
     pumpRelay.turnOff();
     pumpIsOn = false;
     Serial.println("💧 [Pump] TẮT");
 
-    // Sau PUMP_CYCLE_MS sẽ bật lại
+    // Đặt khoảng chờ 60s (PUMP_CYCLE_MS) trước khi gọi lại
     tManagePump.setInterval(PUMP_CYCLE_MS);
-    tManagePump.restart();
+    tManagePump.enableDelayed(PUMP_CYCLE_MS);
   }
 }
 

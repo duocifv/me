@@ -3,21 +3,21 @@
 
 #include <cstdint>
 
-// WiFi & API
-extern const char* ssid;
-extern const char* password;
-extern const char* deviceToken;
-extern const char* deviceId;
-extern const char* host;
-extern const uint16_t port;
-extern const char* sensorPath;
-extern const char* imgPath;
+// Thông tin WiFi & API (định nghĩa trực tiếp, không extern)
+const char* ssid         = "Mai Lan T2";
+const char* password     = "1234567899";
+const char* deviceToken  = "esp32";
+const char* deviceId     = "device-001";
+const char* host         = "my.duocnv.top";
+const uint16_t port      = 443;
+const char* sensorPath   = "/v1/hydroponics/snapshots";
+const char* imgPath      = "/v1/hydroponics/snapshots/images";
 
 // Task intervals (ms)
-extern const uint32_t SENSOR_INTERVAL;
-extern const uint32_t DATA_INTERVAL;
-extern const uint32_t IMAGE_INTERVAL;
-extern const uint32_t PUMP_CYCLE_MS;
-extern const uint32_t PUMP_ON_MS;
+const uint32_t SENSOR_INTERVAL = 5000;   // 5s đọc cảm biến
+const uint32_t DATA_INTERVAL   = 30000;  // 30s gửi data
+const uint32_t IMAGE_INTERVAL  = 20000;  // 20s gửi ảnh
+const uint32_t PUMP_CYCLE_MS   = 60000;  // 60s chu kỳ bơm OFF → ON
+const uint32_t PUMP_ON_MS      = 5000;   // 5s bơm ON
 
 #endif // CONFIG_H
