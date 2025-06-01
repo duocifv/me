@@ -190,8 +190,11 @@ void uploadImageCallback() {
 }
 
 void managePumpCallback() {
+  tManagePump.disable();
+  
   // In thêm millis() để debug nếu cần
   Serial.printf("[DEBUG] => managePumpCallback(), millis() = %lu\n", millis());
+
 
   if (!pumpIsOn) {
     // Bật bơm (relay active-HIGH)
