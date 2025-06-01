@@ -4,8 +4,8 @@
 #include <Arduino.h>
 #include <DHT.h>
 
-#define DHTPIN 16       // Chân DATA DHT22
-#define DHTTYPE DHT22   // Loại cảm biến
+#define DHTPIN 16
+#define DHTTYPE DHT22
 
 class DHTModule {
 private:
@@ -16,7 +16,12 @@ private:
     bool hasValidData;
 
 public:
-    DHTModule() : dht(DHTPIN, DHTTYPE), lastReadTime(0), lastTemp(NAN), lastHum(NAN), hasValidData(false) {}
+    DHTModule()
+      : dht(DHTPIN, DHTTYPE),
+        lastReadTime(0),
+        lastTemp(NAN),
+        lastHum(NAN),
+        hasValidData(false) {}
 
     void begin() {
         dht.begin();
@@ -32,13 +37,12 @@ public:
 
             if (!isnan(t) && !isnan(h)) {
                 lastTemp = t;
-                lastHum = h;
+                lastHum  = h;
                 hasValidData = true;
             } else {
-                Serial.println("⚠️ Lỗi đọc DHT22.");
+                Serial.println("⚠️ DHT22 read error");
                 hasValidData = false;
             }
-
             lastReadTime = now;
         }
     }

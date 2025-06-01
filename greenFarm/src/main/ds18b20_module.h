@@ -12,12 +12,11 @@ private:
     DallasTemperature sensors;
 
 public:
-    // Lưu pin vào biến thành viên để sử dụng sau này
-    DS18B20Module(uint8_t oneWirePin = 13) 
-        : _oneWirePin(oneWirePin), oneWire(oneWirePin), sensors(&oneWire) {}
+    DS18B20Module(uint8_t oneWirePin = 13)
+      : _oneWirePin(oneWirePin), oneWire(oneWirePin), sensors(&oneWire) {}
 
     void begin() {
-        pinMode(_oneWirePin, INPUT_PULLUP);  // Pull-up nội cho chân bus
+        pinMode(_oneWirePin, INPUT_PULLUP);
         sensors.begin();
 
         int count = sensors.getDeviceCount();
@@ -44,7 +43,6 @@ public:
     float getTemperature(uint8_t index = 0) {
         sensors.requestTemperatures();
         float temp = sensors.getTempCByIndex(index);
-
         if (temp == DEVICE_DISCONNECTED_C) {
             Serial.println("❌ DS18B20 disconnected or read error");
             return NAN;

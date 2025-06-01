@@ -5,35 +5,52 @@
 
 class LedIndicator {
 private:
-    int ledPin;
+    uint8_t pin;
+    uint8_t blinkCount;
+    uint16_t interval;
+    unsigned long lastToggle;
+    bool         isBlinking;
+    bool         ledState;
 
 public:
-    explicit LedIndicator(int pin) : ledPin(pin) {
-        pinMode(ledPin, OUTPUT);
-        digitalWrite(ledPin, LOW);
+    LedIndicator(uint8_t ledPin) : pin(ledPin), blinkCount(0), interval(0),
+                                   lastToggle(0), isBlinking(false), ledState(false) {
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, LOW);
     }
 
-    // Nháy đèn 'times' lần, mỗi lần on-off 'speed' ms
-    // **Lưu ý:** hàm này là blocking vì dùng delay, nên chỉ dùng trong các trường hợp chấp nhận được.
-    void blink(int times, int speed = 300) {
-        for (int i = 0; i < times; i++) {
-            digitalWrite(ledPin, HIGH);
-            delay(speed);
-            digitalWrite(ledPin, LOW);
-            delay(speed);
-        }
-        delay(1000);  // nghỉ 1 giây sau mỗi chu kỳ báo lỗi
+    // Lên lịch nháy `count` lần, mỗi lần cách nhau `interval` ms
+    void blink(uint8_t count, uint16_t msInterval) {
+        blinkCount = count * 2; // *2 để tính cả ON+OFF
+        interval   = msInterval;
+        lastToggle = millis();
+        isBlinking = true;
+        ledState   = false;
+        digitalWrite(pin, LOW);
     }
 
-    // Bật đèn cố định
-    void on() {
-        digitalWrite(ledPin, HIGH);
-    }
-
-    // Tắt đèn cố định
+    // Tắt LED (và stop blinking)
     void off() {
-        digitalWrite(ledPin, LOW);
+        isBlinking = false;
+        digitalWrite(pin, LOW);
+    }
+
+    // Gọi thường xuyên trong loop()
+    void update() {
+        if (!isBlinking) return;
+
+        unsigned long now = millis();
+        if (now - lastToggle >= interval) {
+            ledState = !ledState;
+            digitalWrite(pin, ledState ? HIGH : LOW);
+            lastToggle = now;
+            blinkCount--;
+            if (blinkCount == 0) {
+                isBlinking = false;
+                digitalWrite(pin, LOW);
+            }
+        }
     }
 };
 
-#endif  // LED_INDICATOR_H
+#endif // LED_INDICATOR_H
