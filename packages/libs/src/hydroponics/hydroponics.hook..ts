@@ -23,6 +23,7 @@ export function useSnapshotsQuery() {
     queryKey: ["snapshots"],
     queryFn: () => hydroponicsService.getSnapshots("device-001"),
     placeholderData: keepPreviousData,
+    refetchInterval: 5000,
   });
 }
 

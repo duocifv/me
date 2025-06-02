@@ -1,16 +1,17 @@
 "use client";
 
+import { Picture } from "@/components/share/picture/ui-picture";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetClose,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
+import { $t } from "@/app/lang";
 
 export default function DispatchSnapshotsDetail() {
   const selectedSnapshot = useHydroponicsStore((s) => s.selectedSnapshot);
@@ -23,25 +24,41 @@ export default function DispatchSnapshotsDetail() {
       open={!!selectedSnapshot}
       onOpenChange={() => setSelectedSnapshotById(null)}
     >
-      <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto p-4">
-        <SheetHeader>
-          <SheetTitle>Snapshot Detail</SheetTitle>
-          <SheetDescription>
-            Detailed view of the selected snapshot.
-          </SheetDescription>
-        </SheetHeader>
+      {selectedSnapshot ? (
+        <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto p-4">
+          <SheetHeader>
+            <SheetTitle>
+              {$t`Snapshot #`}
+              {selectedSnapshot.id}
+            </SheetTitle>
+          </SheetHeader>
+          <div>
+            {selectedSnapshot.images.length > 0 ? (
+              <Picture
+                src={selectedSnapshot.images[0].url}
+                className="h-20 w-full object-cover rounded-t-xl"
+              />
+            ) : (
+              <div className="h-20 w-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-md">
+                {$t`Không có hình ảnh`}
+              </div>
+            )}
+          </div>
 
-        {selectedSnapshot ? (
           <div className="mt-4 space-y-3">
             {Object.entries(selectedSnapshot).map(([key, value]) => (
               <div key={key} className="border-b pb-2">
                 <div className="font-medium capitalize">{key}</div>
                 <div className="text-sm text-gray-700 mt-1">
                   {value === null ? (
-                    <span className="italic text-gray-400">(no data)</span>
+                    <span className="italic text-gray-400">
+                      {$t`(không có dữ liệu)`}
+                    </span>
                   ) : Array.isArray(value) ? (
                     value.length === 0 ? (
-                      <span className="italic text-gray-400">(empty list)</span>
+                      <span className="italic text-gray-400">
+                        {$t`(danh sách trống)`}
+                      </span>
                     ) : (
                       <ul className="list-disc list-inside space-y-1">
                         {value.map((item, idx) => (
@@ -75,17 +92,19 @@ export default function DispatchSnapshotsDetail() {
               </div>
             ))}
           </div>
-        ) : (
-          <p className="mt-4 text-sm text-gray-500">No snapshot selected.</p>
-        )}
 
-        <SheetFooter className="mt-4">
-          <Button type="submit">Save changes</Button>
-          <SheetClose asChild>
-            <Button variant="outline">Close</Button>
-          </SheetClose>
-        </SheetFooter>
-      </SheetContent>
+          <SheetFooter className="mt-4">
+            <Button type="submit">{$t`Lưu thay đổi`}</Button>
+            <SheetClose asChild>
+              <Button variant="outline">{$t`Đóng`}</Button>
+            </SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      ) : (
+        <p className="mt-4 text-sm text-gray-500">
+          {$t`Không có snapshot nào được chọn.`}
+        </p>
+      )}
     </Sheet>
   );
 }

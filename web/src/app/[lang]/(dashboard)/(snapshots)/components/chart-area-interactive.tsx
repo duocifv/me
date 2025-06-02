@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
+import { $t } from "@/app/lang";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Card,
@@ -30,15 +31,15 @@ import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
 // Cấu hình cho biểu đồ, đã bao gồm cả humidity
 const chartConfig = {
   water_temperature: {
-    label: "Nhiệt độ nước (°C)",
+    label: $t`Nhiệt độ nước (°C)`,
     color: "#0E7490", // màu xanh biển
   },
   ambient_temperature: {
-    label: "Nhiệt độ môi trường (°C)",
+    label: $t`Nhiệt độ môi trường (°C)`,
     color: "#A21CAF", // màu tím
   },
   humidity: {
-    label: "Độ ẩm (%)",
+    label: $t`Độ ẩm (%)`,
     color: "#F59E0B", // màu vàng cam
   },
 } satisfies ChartConfig;
@@ -93,18 +94,19 @@ export function ChartAreaInteractive() {
 
   // Nhãn hiển thị trong CardDescription
   const rangeLabel = {
-    day: "24 giờ qua",
-    week: "7 ngày qua",
-    month: "30 ngày qua",
+    day: $t`24 giờ qua`,
+    week: $t`7 ngày qua`,
+    month: $t`30 ngày qua`,
   } as const;
 
   return (
-    <Card className="@container/card">
+    <Card className="@container/card border-0">
       <CardHeader className="relative">
-        <CardTitle>Biểu đồ nhiệt độ & độ ẩm</CardTitle>
+        <CardTitle>{$t`Biểu đồ nhiệt độ & độ ẩm`}</CardTitle>
         <CardDescription>
           <span className="@[540px]/card:block hidden">
-            Dữ liệu {rangeLabel[timeRange]}
+            {$t`Dữ liệu `}
+            {rangeLabel[timeRange]}
           </span>
           <span className="@[540px]/card:hidden">{rangeLabel[timeRange]}</span>
         </CardDescription>
@@ -121,13 +123,13 @@ export function ChartAreaInteractive() {
             className="@[767px]/card:flex hidden"
           >
             <ToggleGroupItem value="day" className="h-8 px-2.5">
-              24 giờ
+              {$t`24 giờ`}
             </ToggleGroupItem>
             <ToggleGroupItem value="week" className="h-8 px-2.5">
-              7 ngày
+              {$t`7 ngày`}
             </ToggleGroupItem>
             <ToggleGroupItem value="month" className="h-8 px-2.5">
-              30 ngày
+              {$t`30 ngày`}
             </ToggleGroupItem>
           </ToggleGroup>
 
@@ -138,19 +140,19 @@ export function ChartAreaInteractive() {
           >
             <SelectTrigger
               className="@[767px]/card:hidden flex w-40"
-              aria-label="Chọn khoảng thời gian"
+              aria-label={$t`Chọn khoảng thời gian`}
             >
-              <SelectValue placeholder="30 ngày" />
+              <SelectValue placeholder={$t`30 ngày`} />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="day" className="rounded-lg">
-                24 giờ
+                {$t`24 giờ`}
               </SelectItem>
               <SelectItem value="week" className="rounded-lg">
-                7 ngày
+                {$t`7 ngày`}
               </SelectItem>
               <SelectItem value="month" className="rounded-lg">
-                30 ngày
+                {$t`30 ngày`}
               </SelectItem>
             </SelectContent>
           </Select>

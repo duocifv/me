@@ -1,56 +1,69 @@
-
 "use client";
 
 import * as React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-import { Picture } from "@/components/share/picture/ui-picture";
+import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
 import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
+import { format } from "date-fns";
+import { Picture } from "@/components/share/picture/ui-picture";
+import { $t } from "@/app/lang";
 
-export default function SnapshotsList() {
+export default function SnapshotsListSimple() {
   const snapshots = useHydroponicsStore((s) => s.snapshots);
   const setSelectedSnapshotById = useHydroponicsStore(
     (s) => s.setSelectedSnapshotById
   );
+
   return (
-    <div className="p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="p-6 bg-[#ffe06f]">
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">
+        {$t`Snapshots List`}
+      </h1>
+      <ul className="space-y-4 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         {snapshots.map((snapshot) => (
-          <Card
+          <li
             key={snapshot.id}
-            className="overflow-hidden bg-white rounded-2xl shadow hover:shadow-lg transition transform hover:scale-[1.02]"
+            className="bg-[#fffeec] rounded-xl shadow p-3 flex justify-between items-center hover:shadow-md transition cursor-pointer relative border-2 border-[#293d84]"
+            onClick={() => setSelectedSnapshotById(snapshot.id)}
           >
-            {snapshot?.images.length > 0 && (
-              <Picture
-                src={snapshot?.images[0].url ?? ""}
-                className="h-48 w-full object-cover"
-              />
-            )}
-            <CardHeader className="text-center">
-              <CardTitle className="text-xl text-green-800">
-                {snapshot.isActive}
-              </CardTitle>
-              <p className="text-xs text-green-500 font-mono">
-                timestamp: {snapshot.timestamp}
-              </p>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-3 pb-4">
-              <div className="flex gap-3">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-red-500 text-red-700 hover:bg-red-100 rounded-full"
-                  onClick={() => setSelectedSnapshotById(snapshot.id)}
+            <div className="min-w-24">
+              {snapshot.images.length > 0 ? (
+                <Picture
+                  src={snapshot.images[0].url}
+                  className="h-20 w-full object-cover rounded-t-xl"
+                />
+              ) : (
+                <div className="h-20 w-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-md">
+                  {$t`No Image`}
+                </div>
+              )}
+            </div>
+            <div className="w-full ml-4">
+              <div className="absolute right-4 top-4">
+                <Badge
+                  variant={snapshot.isActive ? "default" : "secondary"}
+                  className={`text-xs bg-[#e43eb5] border-2 border-[#293d84] rounded-full ${
+                    snapshot.isActive ? "bg-[#e43eb5] text-[#faf0bc]" : ""
+                  }`}
                 >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Xem chi tiết
-                </Button>
+                  {snapshot.isActive ? $t`Active` : $t`Inactive`}
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
+              <h2 className="text-lg font-semibold text-[#293d84]">
+                {$t`Snapshot #`}
+                {snapshot.id}
+              </h2>
+
+              <div className="flex items-center space-x-4 mt-1">
+                <span className="flex items-center text-gray-500 text-sm">
+                  <Clock className="w-4 h-4 mr-1" />
+                  {format(new Date(snapshot.timestamp), "dd MMM yyyy, HH:mm")}
+                </span>
+              </div>
+            </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

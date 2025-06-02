@@ -16,6 +16,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 
+import { $t } from "@/app/lang";
 import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -38,61 +39,61 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "/en/",
+      title: $t`Bảng điều khiển`,
+      url: "/vi/",
       icon: LayoutDashboardIcon,
     },
     {
-      title: "Media Library",
-      url: "/en/media/",
+      title: $t`Thư viện phương tiện`,
+      url: "/vi/media/",
       icon: DiscAlbum,
     },
     {
-      title: "Roles and Permissions",
-      url: "/en/roles-permissions/",
+      title: $t`Vai trò và quyền`,
+      url: "/vi/roles-permissions/",
       icon: RollerCoaster,
     },
     {
-      title: "Inbox",
-      url: "/en/inbox",
+      title: $t`Hộp thư`,
+      url: "/vi/inbox",
       icon: MailCheck,
     },
     {
-      title: "User",
-      url: "/en/users",
+      title: $t`Người dùng`,
+      url: "/vi/users",
       icon: UsersIcon,
     },
   ],
   navSecondary: [
     {
-      title: "Settings",
+      title: $t`Cài đặt`,
       url: "#",
       icon: SettingsIcon,
     },
     {
-      title: "Get Help",
+      title: $t`Trợ giúp`,
       url: "#",
       icon: HelpCircleIcon,
     },
     {
-      title: "Search",
+      title: $t`Tìm kiếm`,
       url: "#",
       icon: SearchIcon,
     },
   ],
   documents: [
     {
-      name: "Plant Type",
-      url: "/en/plant-type/",
+      name: $t`Loại cây`,
+      url: "/vi/plant-type/",
       icon: DatabaseIcon,
     },
     {
-      name: "Reports",
+      name: $t`Báo cáo`,
       url: "#",
       icon: ClipboardListIcon,
     },
     {
-      name: "Word Assistant",
+      name: $t`Trợ lý văn bản`,
       url: "#",
       icon: FileIcon,
     },
