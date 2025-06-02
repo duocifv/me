@@ -1,5 +1,5 @@
 import HydroponicsList from "./components/hydroponics-table";
-import HydroponicsSyncData from "./dispatch/dispatch-hydroponics-sync-data";
+import HydroponicsSyncData from "../(snapshots)/dispatch/dispatch-snapshots-sync-data";
 
 export default function HydroponicsPage() {
   return (

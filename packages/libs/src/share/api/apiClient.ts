@@ -108,6 +108,8 @@ export class ApiClient {
     // }
     // console.log("AccessToken:", this.accessToken);
 
+    console.log("opts -------->", opts);
+
     if (this.accessToken && isTokenExpiringSoon(this.accessToken)) {
       await this.refreshToken();
     }
@@ -187,6 +189,7 @@ export class ApiClient {
     params?: Record<string, any>,
     opts?: ApiOpts<T>
   ): Promise<T> {
+    console.log("0", opts);
     return this.request<T>("GET", path, { ...opts, params });
   }
 

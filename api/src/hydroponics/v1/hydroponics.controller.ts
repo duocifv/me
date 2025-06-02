@@ -8,6 +8,7 @@ import {
   BadRequestException,
   NotFoundException,
   Body,
+  Query,
 } from '@nestjs/common';
 import { HydroponicsService } from './hydroponics.service';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
@@ -15,17 +16,12 @@ import {
   CreateCropInstanceDto,
   CreateCropInstanceSchema,
 } from '../dto/create-crop-instance.dto';
-import { DeviceTokenGuard } from '../guard/device-token.guard';
-import { Public } from 'src/shared/decorators/public.decorator';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
 import { UploadFileDto } from '../dto/upload-file.dto';
-import { DeviceToken } from 'src/shared/decorators/device-token.decorator';
+import { DeviceAuth } from 'src/shared/decorators/device-token.decorator';
 import { ApiCreateSnapshot } from '../type/snapshot.swagger';
 
-@Public()
-@DeviceToken()
-@UseGuards(DeviceTokenGuard)
 @Controller('hydroponics')
 export class HydroponicsController {
   constructor(private readonly service: HydroponicsService) {}
@@ -34,6 +30,7 @@ export class HydroponicsController {
    * Tạo crop instance mới → tự động đánh dấu active
    */
   @Post('crop-instances')
+  @DeviceAuth()
   createCrop(
     @BodySchema(CreateCropInstanceSchema) dto: CreateCropInstanceDto,
     @Request() req,
@@ -53,6 +50,7 @@ export class HydroponicsController {
    * Tạo snapshot mới cho crop active (deviceId → crop active → snapshot)
    */
   @Post('snapshots')
+  @DeviceAuth()
   @ApiCreateSnapshot()
   createSnapshot(@Request() req, @Body() body: any) {
     const { sensorData, solutionData } = body;
@@ -101,9 +99,9 @@ export class HydroponicsController {
   /**
    * Lấy tất cả snapshots của crop active
    */
-  @Get('snapshots')
-  async getSnapshots(@Request() req) {
-    const deviceId = req.deviceId;
+
+  @Get('snapshots/by-device')
+  async getSnapshots(@Query('id') deviceId: string) {
     if (!deviceId) {
       throw new BadRequestException('Thiếu deviceId trong request');
     }
@@ -125,6 +123,7 @@ export class HydroponicsController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UploadFileDto })
   @Post('snapshots/images')
+  @DeviceAuth()
   async uploadLatestSnapshotImage(
     @Request() req,
     @Request() fastifyReq: FastifyRequest,

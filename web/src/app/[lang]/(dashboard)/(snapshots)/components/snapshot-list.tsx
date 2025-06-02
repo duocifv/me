@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -6,14 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { Picture } from "@/components/share/picture/ui-picture";
 import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
-import { $t } from "@/app/lang";
 
-export default function HydroponicsList() {
+export default function SnapshotsList() {
   const snapshots = useHydroponicsStore((s) => s.snapshots);
-  const setSelectedSnapshotId = useHydroponicsStore(
+  const setSelectedSnapshotById = useHydroponicsStore(
     (s) => s.setSelectedSnapshotById
   );
-
   return (
     <div className="p-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -22,26 +21,18 @@ export default function HydroponicsList() {
             key={snapshot.id}
             className="overflow-hidden bg-white rounded-2xl shadow hover:shadow-lg transition transform hover:scale-[1.02]"
           >
-            {snapshot?.images &&
-              snapshot.images.length > 0 &&
-              snapshot.images.map((item) => (
-                <Picture
-                  key={item.id}
-                  src={item.url}
-                  className="h-48 w-full object-cover"
-                />
-              ))}
+            {snapshot?.images.length > 0 && (
+              <Picture
+                src={snapshot?.images[0].url ?? ""}
+                className="h-48 w-full object-cover"
+              />
+            )}
             <CardHeader className="text-center">
               <CardTitle className="text-xl text-green-800">
-                {snapshot.timestamp}
+                {snapshot.isActive}
               </CardTitle>
               <p className="text-xs text-green-500 font-mono">
-                Sensor:
-                {snapshot?.sensorData ? (
-                  <pre>{JSON.stringify(snapshot?.sensorData, null, 2)}</pre>
-                ) : (
-                  $t`Không có tín hiệu`
-                )}
+                timestamp: {snapshot.timestamp}
               </p>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-3 pb-4">
@@ -50,10 +41,10 @@ export default function HydroponicsList() {
                   size="sm"
                   variant="outline"
                   className="border-red-500 text-red-700 hover:bg-red-100 rounded-full"
-                  onClick={() => setSelectedSnapshotId(snapshot.id)}
+                  onClick={() => setSelectedSnapshotById(snapshot.id)}
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
-                  Delete
+                  Xem chi tiết
                 </Button>
               </div>
             </CardContent>

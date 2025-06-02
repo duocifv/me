@@ -19,7 +19,6 @@ import {
 import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/app/[lang]/(dashboard)/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +28,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { NavUser } from "./nav-user";
 
 const data = {
   user: {

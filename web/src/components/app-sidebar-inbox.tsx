@@ -11,7 +11,6 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { NavUser } from "@/app/[lang]/(dashboard)/components/nav-user";
 import { Label } from "@/components/ui/label";
 import {
   Sidebar,
@@ -29,6 +28,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Button } from "./ui/button";
 import Link from "next/link";
+import { NavUser } from "@/app/[lang]/(dashboard)/components/nav-user";
 
 // This is sample data
 const data = {
@@ -232,7 +232,7 @@ export function AppSidebarInbox({
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <NavUser/>
+          <NavUser />
         </SidebarFooter>
       </Sidebar>
 

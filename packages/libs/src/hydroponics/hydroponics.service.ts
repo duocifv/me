@@ -8,12 +8,16 @@ class HydroponicsService {
   async getCropInstances(): Promise<CropInstance[]> {
     return await this.hydroponics.get<CropInstance[]>("crop-instances");
   }
-  async getSnapshots(): Promise<Snapshot[]> {
-    return await this.hydroponics.get<Snapshot[]>("snapshots");
+
+  async getSnapshots(id: string): Promise<Snapshot[]> {
+    return this.hydroponics.get<Snapshot[]>("snapshots/by-device", {
+      id,
+    });
   }
 
   async getByIdSnapshots(id: string): Promise<Snapshot> {
-    return this.hydroponics.get<Snapshot>(`snapshots/${id}`);
+    const data = this.hydroponics.get<Snapshot>(`snapshots/${id}`);
+    return data;
   }
 }
 

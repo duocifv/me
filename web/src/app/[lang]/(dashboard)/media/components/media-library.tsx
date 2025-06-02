@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { ImageManager } from "./media-table";
 import dynamic from "next/dynamic";
-import AppLoading from "../../components/app-loading";
 import { ButtonMediaDeleteMany } from "../dispatch/dispatch-media-delete-many";
+import AppLoading from "../../components/app-loading";
 
 const ButtonMediaDelete = dynamic(
   () => import("../dispatch/dispatch-media-delete-one")

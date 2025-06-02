@@ -94,7 +94,6 @@ export class AuthService {
       await this.fakeDelay();
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
-
     // CAPTCHA sau 3 lần thất bại
     if (user.failedLoginAttempts >= this.CAPTCHA_THRESHOLD) {
       const token = captchaToken;
@@ -120,7 +119,6 @@ export class AuthService {
 
     // Đăng nhập thành công: reset counter
     await this.accountSecurityService.resetFailedLogin(user);
-
     return UserWithPermissionsSchema.parse(user);
   }
 

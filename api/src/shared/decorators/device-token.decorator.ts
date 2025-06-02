@@ -1,5 +1,6 @@
-import { applyDecorators } from '@nestjs/common';
+import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
 import { ApiHeader } from '@nestjs/swagger';
+import { DeviceTokenGuard } from 'src/hydroponics/guard/device-token.guard';
 
 /**
  * Thêm header `x-device-token` vào tài liệu Swagger.
@@ -11,8 +12,10 @@ import { ApiHeader } from '@nestjs/swagger';
  *
  * Ví dụ: `esp`
  */
-export function DeviceToken() {
+export function DeviceAuth() {
   return applyDecorators(
+    SetMetadata('isPublic', true),
+    UseGuards(DeviceTokenGuard),
     ApiHeader({
       name: 'x-device-token',
       description: `Token xác thực đại diện cho thiết bị gửi dữ liệu (ví dụ: ESP32).

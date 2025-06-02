@@ -1,8 +1,9 @@
 "use client";
-import { AppSidebar } from "@/app/[lang]/(dashboard)/components/app-sidebar";
+
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import LoginPage from "../(auth)/login/page";
 import { AuthGuard } from "@adapter/auth/auth.guard";
+import { AppSidebar } from "./components/app-sidebar";
 
 export default function RootLayout({
   children,

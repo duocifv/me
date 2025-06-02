@@ -15,8 +15,8 @@ import {
   CreateUserDto,
   CreateUserSchema,
 } from "@adapter/users/dto/create-user.dto";
-import AppLoading from "../../components/app-loading";
 import dynamic from "next/dynamic";
+import AppLoading from "../../components/app-loading";
 
 const CreateUserSubmit = dynamic(
   () => import("../dispatch/dispatch-user-create"),

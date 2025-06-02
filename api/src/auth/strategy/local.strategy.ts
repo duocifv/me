@@ -28,7 +28,6 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     password: string,
   ): Promise<any> {
     const { captchaToken } = req.body as Partial<SignInDto>;
-
     try {
       const user = await this.authService.validateUser({
         email,

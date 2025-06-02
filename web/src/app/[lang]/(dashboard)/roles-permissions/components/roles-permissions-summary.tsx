@@ -54,7 +54,6 @@ export default function RolesAndPermissionsSummary() {
   return (
     isSuccess && (
       <div className="space-y-6">
-
         <div className="relative px-4 lg:px-6">
           <Carousel>
             <CarouselContent className="flex -ml-4">

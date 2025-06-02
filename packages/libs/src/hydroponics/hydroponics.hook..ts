@@ -19,15 +19,9 @@ export function useHydroponicsQuery() {
 }
 
 export function useSnapshotsQuery() {
-  const setSnapshots = useHydroponicsStore((s) => s.setSnapshots);
-
   return useQuery({
     queryKey: ["snapshots"],
-    queryFn: async () => {
-      const data = await hydroponicsService.getSnapshots();
-      setSnapshots(data);
-      return data;
-    },
+    queryFn: () => hydroponicsService.getSnapshots("device-001"),
     placeholderData: keepPreviousData,
   });
 }

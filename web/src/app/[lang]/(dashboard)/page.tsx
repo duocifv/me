@@ -1,12 +1,14 @@
-import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { DataTable } from "@/components/data-table";
-import { SectionCards } from "@/components/section-cards";
 import { SiteHeader } from "@/components/site-header";
-import data from "./data.json";
+import HydroponicsSyncData from "./(snapshots)/dispatch/dispatch-snapshots-sync-data";
+import { SectionCards } from "./(snapshots)/components/section-cards";
+import { ChartAreaInteractive } from "./(snapshots)/components/chart-area-interactive";
+import SnapshotsList from "./(snapshots)/components/snapshot-list";
+import DispatchSnapshotsDetail from "./(snapshots)/dispatch/dispatch-snapshots-detail";
 
 export default function Page() {
   return (
     <>
+      <HydroponicsSyncData />
       <SiteHeader />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
@@ -15,7 +17,8 @@ export default function Page() {
             <div className="px-4 lg:px-6">
               <ChartAreaInteractive />
             </div>
-            <DataTable data={data} />
+            <SnapshotsList />
+            <DispatchSnapshotsDetail />
           </div>
         </div>
       </div>
