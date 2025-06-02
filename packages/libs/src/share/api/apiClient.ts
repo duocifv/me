@@ -72,8 +72,8 @@ export class ApiClient {
 
           if (error || !data?.accessToken) {
             this.clearToken();
-            this.storage.logout();
-            this.redirectLogin();
+            //this.storage.logout();
+            // this.redirectLogin();
             throw new ApiError("RefreshExpired", 401, "RefreshExpired");
           }
           this.setToken(data.accessToken);
@@ -107,8 +107,6 @@ export class ApiClient {
     //   console.log("AccessToken:", this.accessToken);
     // }
     // console.log("AccessToken:", this.accessToken);
-
-    console.log("opts -------->", opts);
 
     if (this.accessToken && isTokenExpiringSoon(this.accessToken)) {
       await this.refreshToken();
