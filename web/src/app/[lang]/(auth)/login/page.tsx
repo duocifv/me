@@ -1,10 +1,13 @@
-import { Suspense } from "react";
 import { LoginForm } from "./components/auth-login";
+import WrapperAuth from "../components/wrapper-auth";
+import { Suspense } from "react";
 
 export default function LoginPage() {
   return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
+    <WrapperAuth>
+      <Suspense>
+        <LoginForm />
+      </Suspense>
+    </WrapperAuth>
   );
 }

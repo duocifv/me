@@ -7,6 +7,7 @@ import {
   OneToMany,
   CreateDateColumn,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { PlantType } from '../../plant-type/entity/plant-type.entity';
 import { Snapshot } from './snapshot.entity';
@@ -16,7 +17,8 @@ export class CropInstance {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 100 })
+  @Index('IDX_CROP_DEVICE')
   deviceId: string;
 
   @ManyToOne(() => PlantType, (pt) => pt.cropInstances, {
@@ -27,16 +29,15 @@ export class CropInstance {
   plantType: PlantType;
 
   @Column()
+  @Index('IDX_CROP_PLANTTYPE')
   plantTypeId: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 100 })
   name: string;
 
-  // Timestamp khi tạo
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
-  // Flag chỉ 1 crop active cho mỗi thiết bị
   @Column({ default: true })
   isActive: boolean;
 

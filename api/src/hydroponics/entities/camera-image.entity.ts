@@ -5,6 +5,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Snapshot } from './snapshot.entity';
 
@@ -21,14 +22,21 @@ export class CameraImage {
   snapshot: Snapshot;
 
   @Column()
+  @Index('IDX_IMAGE_SNAPSHOT')
   snapshotId: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   filename: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 500 })
   url: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50 })
   mimetype: string;
+
+  @Column({ type: 'int', nullable: true })
+  size: number | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  category: string | null;
 }

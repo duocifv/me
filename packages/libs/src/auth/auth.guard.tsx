@@ -16,7 +16,6 @@ export function AuthGuard({
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const setLogin = useAuthStore((s) => s.setLogin);
   const setLogout = useAuthStore((s) => s.setLogout);
-
   useEffect(() => {
     setLogin(isStogareLoggedIn);
   }, [isLoggedIn, setLogin]);

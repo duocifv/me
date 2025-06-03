@@ -129,7 +129,7 @@ export class ApiClient {
     });
 
     // Handle expired token: refresh and retry once
-    if (status === 401 && retry && this.storage.is()) {
+    if (status === 401 && retry && this.storage.is() === true) {
       await this.refreshToken();
       return this.request(method, path, opts, false);
     }
@@ -151,8 +151,6 @@ export class ApiClient {
         status === 401 ? "Unauthorized" : "ApiError"
       );
     }
-
-    console.log("data ------------>", data);
 
     if (data == null) {
       throw new ApiError("Empty response", status ?? 500, "NoData");
@@ -205,6 +203,19 @@ export class ApiClient {
 
   delete<T>(path: string, opts?: ApiOpts<T>): Promise<T> {
     return this.request<T>("DELETE", path, opts);
+  }
+
+  async logout(): Promise<void> {
+    this.request<void>(
+      "DELETE",
+      "/auth/logout",
+      { credentials: "include", useFingerprint: true },
+      false // không retry khi 401
+    ).catch((e) => console.warn("Logout API lỗi:", e));
+
+    this.clearToken();
+    this.storage.logout();
+    this.redirectLogin();
   }
 }
 

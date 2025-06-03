@@ -8,6 +8,7 @@ import {
   mkdirSync,
   readdirSync,
   unlinkSync,
+  statSync,
 } from 'fs';
 import { join, extname, normalize } from 'path';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -17,11 +18,15 @@ import type { Readable } from 'stream';
 import { Jimp } from 'jimp';
 import { v4 as uuidv4 } from 'uuid';
 import { uploadConfig } from './config';
+import fastifyStatic from '@fastify/static';
 
 export interface FileManager {
-  saveEsp32Image(
-    part: MultipartFile,
-  ): Promise<{ filename: string; url: string }>;
+  saveEsp32Image(part: MultipartFile): Promise<{
+    filename: string;
+    url: string;
+    size: number | null;
+    finalPath: string;
+  }>;
   saveFile(part: MultipartFile): Promise<Record<string, string>>;
   listFiles(): string[];
   getStream(filename: string): Readable;
@@ -52,7 +57,7 @@ export const fileManagerPlugin = fp(async (fastify: FastifyInstance) => {
   if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
 
   const fileManager: FileManager = {
-    async saveEsp32Image(part) {
+    async saveEsp32Image(part: MultipartFile) {
       const { filename, mimetype, file } = part;
 
       // a) Kiểm tra MIME
@@ -60,20 +65,29 @@ export const fileManagerPlugin = fp(async (fastify: FastifyInstance) => {
         throw new BadRequestException('ESP32 chỉ hỗ trợ JPEG/PNG');
       }
 
-      // b) Tạo tên file đơn giản theo UUID
       const id = uuidv4();
-      const ext = extname(filename) || '.jpg'; // fallback .jpg
+      const ext = extname(filename).toLowerCase() || '.jpg';
       const finalName = `${id}${ext}`;
-      const finalPath = normalize(join(esp32Dir, finalName)); // Lưu vào /uploads/esp32/
+      const finalPath = normalize(join(esp32Dir, finalName));
 
-      // c) Lưu stream vào disk
       try {
-        await pipeline(file, createWriteStream(finalPath));
-      } catch {
+        const writeStream = createWriteStream(finalPath);
+        await pipeline(file, writeStream);
+      } catch (err) {
+        console.error('Lỗi khi lưu ảnh ESP32:', err);
         throw new BadRequestException('Không thể lưu ảnh từ ESP32');
       }
 
-      return { filename: finalName, url: `/uploads/esp32/${finalName}` };
+      // Lấy size file đã lưu (bytes)
+      let size: number | null;
+      try {
+        size = statSync(finalPath).size;
+      } catch {
+        size = null;
+      }
+
+      const url = `/uploads/esp32/${finalName}`;
+      return { filename: finalName, url, size, finalPath };
     },
 
     async saveFile(part) {
@@ -181,4 +195,9 @@ export const fileManagerPlugin = fp(async (fastify: FastifyInstance) => {
 
 export default async function fileManager(app) {
   await app.register(fileManagerPlugin);
+  // await app.register(fastifyStatic, {
+  //   root: join(__dirname, '..', '..', 'uploads'),
+  //   serve: false,
+  //   decorateReply: true,
+  // });
 }

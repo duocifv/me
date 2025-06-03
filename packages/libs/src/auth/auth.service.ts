@@ -56,17 +56,7 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
-    try {
-      await this.authApi.delete<void>("logout", {
-        credentials: "include",
-        useFingerprint: true,
-      });
-      api.clearToken();
-      api.storage.logout();
-      api.redirectLogin();
-    } catch (error: any) {
-      throw new Error(error.message);
-    }
+    await api.logout();
   }
 }
 

@@ -11,39 +11,44 @@ import {
 } from 'typeorm';
 import { CropInstance } from './crop-instance.entity';
 import { CameraImage } from './camera-image.entity';
-import { SensorData, SolutionData } from '../type/snapshot.type';
+import { SensorReading } from './sensor-reading.entity';
+import { SolutionReading } from './solution-reading.entity';
 
 @Entity({ name: 'snapshots' })
-@Index('IDX_CROP_INSTANCE', ['cropInstanceId'])
+@Index('IDX_SNAPSHOT_CROP_TIME', ['cropInstanceId', 'timestamp'])
 export class Snapshot {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('increment')
   id: number;
 
   @ManyToOne(() => CropInstance, (ci) => ci.snapshots, {
     nullable: false,
     onDelete: 'CASCADE',
-    eager: false,
   })
   @JoinColumn({ name: 'cropInstanceId' })
   cropInstance: CropInstance;
 
-  @Column({ name: 'cropInstanceId' })
+  @Column({ name: 'cropInstanceId', type: 'bigint' })
   cropInstanceId: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp' })
+  @Index('IDX_SNAPSHOT_TIME')
   timestamp: Date;
 
-  @Column({ type: 'json', nullable: true })
-  sensorData: SensorData;
-
-  @Column({ type: 'json', nullable: true })
-  solutionData: SolutionData;
-
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
   @OneToMany(() => CameraImage, (img) => img.snapshot, {
     cascade: ['insert', 'remove'],
   })
   images: CameraImage[];
+
+  @OneToMany(() => SensorReading, (sr) => sr.snapshot, {
+    cascade: ['insert', 'remove'],
+  })
+  sensorReadings: SensorReading[];
+
+  @OneToMany(() => SolutionReading, (sol) => sol.snapshot, {
+    cascade: ['insert', 'remove'],
+  })
+  solutionReadings: SolutionReading[];
 }

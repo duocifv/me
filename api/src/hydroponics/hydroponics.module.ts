@@ -9,6 +9,8 @@ import { User } from 'src/user/entities/user.entity';
 import { HydroponicsController } from './v1/hydroponics.controller';
 import { HydroponicsService } from './v1/hydroponics.service';
 import { PlantTypeModule } from 'src/plant-type/plant-type.module';
+import { SolutionReading } from './entities/solution-reading.entity';
+import { SensorReading } from './entities/sensor-reading.entity';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { PlantTypeModule } from 'src/plant-type/plant-type.module';
       CropInstance,
       Snapshot,
       CameraImage,
+      SolutionReading,
+      SensorReading,
     ]),
   ],
   controllers: [HydroponicsController],
