@@ -62,7 +62,11 @@ export class HydroponicsController {
     @BodySchema(CreateSnapshotSchema) dto: CreateSnapshotDto,
     @Req() req,
   ) {
-    this.service.createSnapshot(req.deviceId, dto);
+      this.service.createSnapshot(req.deviceId, dto).catch((err) => {
+      // Ghi log lỗi nếu có
+      console.error('Error when saving snapshot (fire-and-forget):', err);
+    });
+
     return { success: true };
   }
 

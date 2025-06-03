@@ -74,71 +74,36 @@ export class HydroponicsService {
     });
   }
 
-  /**
-   * Tạo một Snapshot mới (metadata) cho crop đang active của deviceId.
-   * Sau đó chèn từng dòng SensorReading và SolutionReading.
-   * Được chạy bất đồng bộ qua process.nextTick để không block request chính.
-   */
-  createSnapshot(deviceId: string, dto: CreateSnapshotDto): void {
-    process.nextTick(async () => {
-      try {
-        // 1. Tìm crop instance đang active
-        const crop = await this.cropRepo.findOne({
+  async createSnapshot(deviceId: string, dto: CreateSnapshotDto): Promise<void> {
+    const cropInstance = await this.cropRepo.findOne({
           where: { deviceId, isActive: true },
         });
-
-        if (!crop) {
+        if (!cropInstance) {
           this.logger.warn(
             `Không tìm thấy crop active cho deviceId: ${deviceId}. Bỏ qua tạo snapshot.`,
           );
           return;
         }
-
-        // 2. Tạo Snapshot metadata
-        const snapshot = this.snapRepo.create({
-          cropInstanceId: crop.id,
-        });
-        const savedSnapshot = await this.snapRepo.save(snapshot);
-        const recordedAt = savedSnapshot.timestamp;
-
-        // 3. Tạo SensorReading (mỗi key:value thành 1 dòng)
-        if (dto.sensorData) {
-          const sensorRows: SensorReading[] = [];
-          for (const [key, val] of Object.entries(dto.sensorData)) {
-            const sr = this.sensorRepo.create({
-              snapshotId: savedSnapshot.id,
-              metricKey: key,
-              metricValue: val,
-              recordedAt,
-            });
-            sensorRows.push(sr);
-          }
-          await this.sensorRepo.save(sensorRows);
-        }
-
-        // 4. Tạo SolutionReading
-        if (dto.solutionData) {
-          const solRows: SolutionReading[] = [];
-          for (const [key, val] of Object.entries(dto.solutionData)) {
-            const sol = this.solutionRepo.create({
-              snapshotId: savedSnapshot.id,
-              paramKey: key,
-              paramValue: val,
-              recordedAt,
-            });
-            solRows.push(sol);
-          }
-          await this.solutionRepo.save(solRows);
-        }
-
-        this.logger.log(
-          `Tạo snapshot id=${savedSnapshot.id} thành công (cropInstanceId=${crop.id}).`,
-        );
-      } catch (err) {
-        this.logger.error('Lỗi khi lưu snapshot và readings:', err);
-      }
+    const snapshot = this.snapRepo.create({
+      cropInstanceId: cropInstance.id,
+      waterTemp: dto.waterTemp,
+      ambientTemp: dto.ambientTemp,
+      humidity: dto.humidity,
+      ph: dto.ph,
+      ec: dto.ec,
+      orp: dto.orp,
     });
+
+    // Lưu
+    await this.snapRepo.save(snapshot);
   }
+
+  /**
+   * Tạo một Snapshot mới (metadata) cho crop đang active của deviceId.
+   * Sau đó chèn từng dòng SensorReading và SolutionReading.
+   * Được chạy bất đồng bộ qua process.nextTick để không block request chính.
+   */
+ 
 
   /**
    * Lấy danh sách các Snapshot (metadata) của crop đang active theo deviceId

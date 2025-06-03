@@ -1,12 +1,12 @@
 // src/dto/create-snapshot.dto.ts
 import { z } from 'zod';
 
+  // cropInstanceId: z
+  //   .number({ invalid_type_error: 'cropInstanceId phải là số' })
+  //   .int({ message: 'cropInstanceId phải là số nguyên' })
+  //   .positive({ message: 'cropInstanceId phải lớn hơn 0' }),
 
 export const CreateSnapshotSchema = z.object({
-  cropInstanceId: z
-    .number({ invalid_type_error: 'cropInstanceId phải là số' })
-    .int({ message: 'cropInstanceId phải là số nguyên' })
-    .positive({ message: 'cropInstanceId phải lớn hơn 0' }),
 
   waterTemp: z
     .number({ invalid_type_error: 'waterTemp phải là số' })
