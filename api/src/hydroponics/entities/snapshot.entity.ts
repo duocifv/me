@@ -6,13 +6,11 @@ import {
   ManyToOne,
   OneToMany,
   CreateDateColumn,
-  JoinColumn,
   Index,
+  JoinColumn,
 } from 'typeorm';
 import { CropInstance } from './crop-instance.entity';
 import { CameraImage } from './camera-image.entity';
-import { SensorReading } from './sensor-reading.entity';
-import { SolutionReading } from './solution-reading.entity';
 
 @Entity({ name: 'snapshots' })
 @Index('IDX_SNAPSHOT_CROP_TIME', ['cropInstanceId', 'timestamp'])
@@ -24,31 +22,40 @@ export class Snapshot {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'cropInstanceId' })
+ 
+  @JoinColumn({ name: 'crop_instance_id' })
   cropInstance: CropInstance;
 
-  @Column({ name: 'cropInstanceId', type: 'bigint' })
+  @Column({ name: 'crop_instance_id', type: 'bigint' })
   cropInstanceId: number;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ name: 'timestamp', type: 'timestamp' })
   @Index('IDX_SNAPSHOT_TIME')
   timestamp: Date;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
+
+  @Column({ name: 'water_temp', type: 'float' })
+  waterTemp: number;
+
+  @Column({ name: 'ambient_temp', type: 'float' })
+  ambientTemp: number;
+
+  @Column({ name: 'humidity', type: 'float' })
+  humidity: number;
+
+  @Column({ name: 'ph', type: 'float' })
+  ph: number;
+
+  @Column({ name: 'ec', type: 'float' })
+  ec: number;
+
+  @Column({ name: 'orp', type: 'float' })
+  orp: number;
 
   @OneToMany(() => CameraImage, (img) => img.snapshot, {
     cascade: ['insert', 'remove'],
   })
   images: CameraImage[];
-
-  @OneToMany(() => SensorReading, (sr) => sr.snapshot, {
-    cascade: ['insert', 'remove'],
-  })
-  sensorReadings: SensorReading[];
-
-  @OneToMany(() => SolutionReading, (sol) => sol.snapshot, {
-    cascade: ['insert', 'remove'],
-  })
-  solutionReadings: SolutionReading[];
 }

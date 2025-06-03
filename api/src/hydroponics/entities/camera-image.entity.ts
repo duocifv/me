@@ -10,33 +10,24 @@ import {
 import { Snapshot } from './snapshot.entity';
 
 @Entity({ name: 'camera_images' })
+@Index('IDX_IMAGE_SNAPSHOT', ['snapshotId'])
 export class CameraImage {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @ManyToOne(() => Snapshot, (s) => s.images, {
+  @ManyToOne(() => Snapshot, (snapshot) => snapshot.images, {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'snapshotId' })
+  @JoinColumn({ name: 'snapshot_id' })
   snapshot: Snapshot;
 
-  @Column()
-  @Index('IDX_IMAGE_SNAPSHOT')
+  @Column({ name: 'snapshot_id', type: 'bigint' })
   snapshotId: number;
 
-  @Column({ type: 'varchar', length: 255 })
-  filename: string;
+  @Column({ name: 'file_path', type: 'varchar', length: 500 })
+  filePath: string;
 
-  @Column({ type: 'varchar', length: 500 })
-  url: string;
-
-  @Column({ type: 'varchar', length: 50 })
-  mimetype: string;
-
-  @Column({ type: 'int', nullable: true })
-  size: number | null;
-
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  category: string | null;
+  @Column({ name: 'size', type: 'int', nullable: true })
+  size: number;
 }

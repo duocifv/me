@@ -153,7 +153,6 @@ export class HydroponicsService {
     const crop = await this.cropRepo.findOne({
       where: { deviceId, isActive: true },
     });
-    console.log('crop --------------->>>>>', deviceId, crop);
     if (!crop) {
       throw new NotFoundException(
         'Không tìm thấy crop đang active với deviceId đó',
