@@ -10,8 +10,12 @@ const char* deviceToken  = "esp32";
 const char* deviceId     = "device-001";
 const char* host         = "my.duocnv.top";
 const uint16_t port      = 443;
-const char* sensorPath   = "/v1/hydroponics/snapshots";
-const char* imgPath      = "/v1/hydroponics/snapshots/images";
+
+// Đường dẫn API
+const char* configPath   = "/v1/device/config";                  // Lấy cấu hình động
+const char* errorPath    = "/v1/device/error";                   // Báo lỗi
+const char* sensorPath   = "/v1/hydroponics/snapshots";        // Gửi dữ liệu cảm biến
+const char* imgPath      = "/v1/hydroponics/snapshots/images"; // Gửi ảnh
 
 // Task intervals (ms)
 const uint32_t SENSOR_INTERVAL = 5000;   // 5s đọc cảm biến
