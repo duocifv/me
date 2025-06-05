@@ -1,6 +1,7 @@
 #include <Arduino.h>
-#include <TaskScheduler.h>
-
+#include "driver/rtc_io.h"
+#include "esp_sleep.h"      // cần include để gọi esp_sleep_enable_timer_wakeup()
+    
 #include "config.h"
 #include "wifi_module.h"
 #include "http_sensors_module.h"
@@ -12,107 +13,75 @@
 #include "http_camera_module.h"
 #include "led_indicator.h"
 
-// ----- Các mô-đun -----
+// ----- Các hằng số Deep Sleep -----
+// Ví dụ: ngủ 5 phút = 5*60 giây = 300 giây = 300e6 microseconds
+#define DEEP_SLEEP_INTERVAL_US  (5ULL * 60ULL * 1000000ULL)
+
+// Thời gian chạy bơm mỗi lần wake (5 giây)
+#define PUMP_ON_TIME_MS         5000
+
+// ----- Các mô-đun (giữ nguyên) -----
 WifiModule      wifi(ssid, password);
 DHTModule       dht;
 DS18B20Module   ds18b20;
-RelayModule     pumpRelay(12, false);   // activeLow=false → HIGH ↦ relay đóng ↦ bơm ON
+RelayModule     pumpRelay(12, false);   // activeLow = false → HIGH bật bơm
 LedIndicator    errorLed(4);
 CameraModule    cameraModule;
 HttpSensorModule httpSensor(host, port, sensorPath, deviceToken, deviceId);
 HttpCameraModule httpCamera(host, port, imgPath, deviceToken, deviceId);
 
+// Buffer để chứa JSON
 char jsonBuffer[512];
 
-// ----- TaskScheduler -----
-Scheduler ts;
+// ----- Biến trạng thái (lưu qua RTC memory nếu cần) -----
+RTC_DATA_ATTR bool pumpHasRun = false;  
+// Nếu bạn muốn mỗi lần wake chỉ chạy bơm 1 lần, dùng biến này để không chạy lại nhiều lần.
 
-// ----- Trạng thái chung -----
-bool pumpIsOn    = false;
-float waterTemp  = NAN, ambientTemp = NAN, humidity = NAN;
-bool ds18b20Err  = false, dhtErr     = false;
+// Trạng thái lỗi
 bool wifiErr     = false;
+bool ds18b20Err  = false, dhtErr = false;
 
-// ----- Khai báo callback cho TaskScheduler -----
-void readSensorsCallback();
-void uploadDataCallback();
-void uploadImageCallback();
-void managePumpCallback();
+// Giá trị sensor để log
+float waterTemp = NAN, ambientTemp = NAN, humidity = NAN;
+
+// ----- Prototype hàm phụ -----
 void indicateError(bool wifiErr, bool dsErr, bool dhtErr);
-
-// Tạo các Task, chỉ định khoảng interval
-Task tReadSensors(  SENSOR_INTERVAL, TASK_FOREVER, &readSensorsCallback, &ts);
-Task tUploadData(   DATA_INTERVAL,   TASK_FOREVER, &uploadDataCallback, &ts);
-Task tUploadImage(  IMAGE_INTERVAL,  TASK_FOREVER, &uploadImageCallback, &ts);
-Task tManagePump(   PUMP_CYCLE_MS,   TASK_FOREVER, &managePumpCallback, &ts);
 
 void setup() {
   Serial.begin(115200);
   delay(500);
+  Serial.println("\n===== Wake from Deep Sleep (setup) =====");
 
-  Serial.println("\n===== Bắt đầu setup() =====");
-
-  // 1) Kết nối WiFi lần đầu
+  // 1) Kết nối WiFi
   wifi.connect();
-  Serial.println("[Setup] Đã gọi wifi.connect()");
+  if (!wifi.isConnected()) {
+    Serial.println("⚠️ [Setup] WiFi không kết nối được");
+    wifiErr = true;
+  } else {
+    wifiErr = false;
+    Serial.println("[Setup] WiFi đã kết nối");
+  }
 
   // 2) Khởi động cảm biến
   dht.begin();
   ds18b20.begin();
-  Serial.println("[Setup] DHT & DS18B20 đã begin()");
+  delay(200); // cho cảm biến ổn định
+  Serial.println("[Setup] Cảm biến DHT & DS18B20 đã begin()");
 
-  // 3) Khởi động HTTP modules
-  httpSensor.begin();
-  cameraModule.init();
-  httpCamera.setTimeout(20000);
-  Serial.println("[Setup] HTTP modules đã begin()");
-
-  // 4) Thêm Task vào Scheduler
-  ts.addTask(tReadSensors);
-  ts.addTask(tUploadData);
-  ts.addTask(tUploadImage);
-  ts.addTask(tManagePump);
-
-  // 5) Kích hoạt các Task
-  tReadSensors.enable();
-  tUploadData.enable();
-  tUploadImage.enable();
-  tManagePump.enable();    // Lần đầu, task được lập lịch chạy sau PUMP_CYCLE_MS (60s)
-
-  Serial.println("[Setup] Các Task đã enable()");
-  Serial.println("===== Setup() hoàn tất =====\n");
-}
-
-void loop() {
-  // Cập nhật LED nếu đang blink non-blocking
-  errorLed.update();
-
-  // Thực thi TaskScheduler (kiểm tra và gọi callback khi đến thời điểm)
-  ts.execute();
-}
-
-// ---------- TASK FUNCTIONS ----------
-
-void readSensorsCallback() {
-  Serial.println("[DEBUG] => readSensorsCallback()");
-
-  // 1) Đọc DHT22 và DS18B20
+  // 3) Đọc sensor ngay
+  // --- Đọc DHT22 ---
   dht.update();
-  float tempDHT  = dht.getTemperature();
-  float humDHT   = dht.getHumidity();
-  float tempDS   = ds18b20.getTemperature();
-
-  // 2) Bắt lỗi DHT22 và gán giá trị
   if (!dht.hasData()) {
     dhtErr = true;
     Serial.println("⚠️ [readSensors] Lỗi đọc DHT22");
   } else {
     dhtErr      = false;
-    ambientTemp = tempDHT;
-    humidity    = humDHT;
+    ambientTemp = dht.getTemperature();
+    humidity    = dht.getHumidity();
   }
 
-  // 3) Bắt lỗi DS18B20 và gán giá trị
+  // --- Đọc DS18B20 ---
+  float tempDS = ds18b20.getTemperature();
   if (isnan(tempDS)) {
     ds18b20Err = true;
     Serial.println("⚠️ [readSensors] Lỗi đọc DS18B20");
@@ -121,102 +90,89 @@ void readSensorsCallback() {
     waterTemp  = tempDS;
   }
 
-  // 4) Kiểm tra WiFi
-  wifiErr = !wifi.isConnected();
-  if (wifiErr) {
-    Serial.println("⚠️ [readSensors] WiFi chưa kết nối, gọi wifi.connect() lại...");
-    wifi.connect();
-  }
-
-  // 5) Nháy LED nếu có lỗi
+  // 4) Nháy LED báo lỗi (nếu có)
   indicateError(wifiErr, ds18b20Err, dhtErr);
 
-  // 6) In log kết quả
-  Serial.printf("[DEBUG] Water Temp = %.1f°C\n", waterTemp);
-  Serial.printf("[DEBUG] Ambient Temp = %.1f°C, Humidity = %.1f%%\n", ambientTemp, humidity);
-  Serial.println("---");
-}
+  // 5) Nếu WiFi ok và sensor ok, gửi dữ liệu lên server
+  if (!wifiErr && !dhtErr && !ds18b20Err) {
+    // Giả lập pH, EC, ORP
+    float ph  = 7.0;
+    float ec  = 1.5;
+    int   orp = 400;
 
-void uploadDataCallback() {
-  Serial.println("[DEBUG] => uploadDataCallback()");
+    size_t jsonLen = buildJsonSnapshots(
+      jsonBuffer, sizeof(jsonBuffer),
+      waterTemp, ambientTemp, humidity,
+      ph, ec, orp
+    );
+    Serial.printf("[Setup] buildJsonSnapshots() length = %u\n", (unsigned)jsonLen);
 
-  // Giả lập pH, EC, ORP
-  float ph  = 7.0;
-  float ec  = 1.5;
-  int   orp = 400;
-
-  size_t jsonLen = buildJsonSnapshots(
-    jsonBuffer, sizeof(jsonBuffer),
-    waterTemp, ambientTemp, humidity,
-    ph, ec, orp
-  );
-  Serial.printf("[DEBUG] buildJsonSnapshots() trả về length = %u\n", (unsigned)jsonLen);
-
-  if (jsonLen > 0) {
-    bool ok = httpSensor.sendData(jsonBuffer, jsonLen);
-    Serial.printf("[DEBUG] httpSensor.sendData() trả về %s\n", ok ? "true" : "false");
-    if (ok) {
-      Serial.println("✅ [uploadData] Gửi dữ liệu API thành công");
+    if (jsonLen > 0) {
+      bool ok = httpSensor.sendData(jsonBuffer, jsonLen);
+      Serial.printf("[Setup] httpSensor.sendData() → %s\n", ok ? "true" : "false");
+      if (ok) {
+        Serial.println("✅ [uploadData] Gửi dữ liệu API thành công");
+      } else {
+        Serial.println("❌ [uploadData] Gửi dữ liệu API thất bại");
+      }
     } else {
-      Serial.println("❌ [uploadData] Gửi dữ liệu API thất bại");
+      Serial.println("❌ [uploadData] Tạo JSON payload thất bại");
     }
   } else {
-    Serial.println("❌ [uploadData] Tạo JSON payload thất bại");
+    Serial.println("⚠️ [uploadData] Bỏ qua gửi dữ liệu do có lỗi WiFi hoặc sensor");
   }
-}
 
-void uploadImageCallback() {
-  Serial.println("[DEBUG] => uploadImageCallback()");
+  // 6) Chụp ảnh và gửi (nếu WiFi vẫn còn)
+  if (!wifiErr) {
+    cameraModule.init(); // Khởi động module camera (ESP32-CAM cần init mỗi lần wake)
+    httpCamera.setTimeout(20000);
 
-  if (!wifi.isConnected()) {
+    camera_fb_t* fb = cameraModule.capture();
+    if (fb) {
+      unsigned long duration;
+      bool ok = httpCamera.send(fb, duration);
+      Serial.printf("[Setup] httpCamera.send() → %s, time = %lums\n", ok ? "true" : "false", duration);
+      if (ok) {
+        Serial.printf("✅ [uploadImage] Gửi ảnh OK, mất %lums\n", duration);
+      } else {
+        Serial.println("❌ [uploadImage] Gửi ảnh thất bại");
+      }
+      cameraModule.release(fb);
+    } else {
+      Serial.println("❌ [uploadImage] Không chụp được frame");
+    }
+  } else {
     Serial.println("⚠️ [uploadImage] Bỏ qua gửi ảnh vì WiFi mất kết nối");
-    return;
   }
 
-  camera_fb_t* fb = cameraModule.capture();
-  if (fb) {
-    unsigned long duration;
-    bool ok = httpCamera.send(fb, duration);
-    Serial.printf("[DEBUG] httpCamera.send() trả về %s, thời gian = %lums\n", ok ? "true" : "false", duration);
-    if (ok) {
-      Serial.printf("✅ [uploadImage] Gửi ảnh OK, mất %lums\n", duration);
-    } else {
-      Serial.println("❌ [uploadImage] Gửi ảnh thất bại");
-    }
-    cameraModule.release(fb);
-  } else {
-    Serial.println("❌ [uploadImage] Không chụp được frame");
-  }
-}
-
-void managePumpCallback() {
-  tManagePump.disable();
-  
-  // In thêm millis() để debug nếu cần
-  Serial.printf("[DEBUG] => managePumpCallback(), millis() = %lu\n", millis());
-
-
-  if (!pumpIsOn) {
-    // Bật bơm (relay active-HIGH)
+  // 7) Quản lý bơm: nếu chưa chạy lần nào (pumpHasRun = false), bật bơm 5s rồi tắt
+  if (!pumpHasRun) {
+    Serial.println("💧 [Pump] Lần wake đầu tiên: BẬT bơm 5 giây");
     pumpRelay.turnOn();
-    pumpIsOn = true;
-    Serial.println("💧 [Pump] BẬT");
-
-    // Đặt khoảng chờ 5s (PUMP_ON_MS) trước khi gọi lại
-    tManagePump.setInterval(PUMP_ON_MS);
-    tManagePump.enableDelayed(PUMP_ON_MS);
-  } else {
-    // Tắt bơm
+    delay(PUMP_ON_TIME_MS);
     pumpRelay.turnOff();
-    pumpIsOn = false;
-    Serial.println("💧 [Pump] TẮT");
-
-    // Đặt khoảng chờ 60s (PUMP_CYCLE_MS) trước khi gọi lại
-    tManagePump.setInterval(PUMP_CYCLE_MS);
-    tManagePump.enableDelayed(PUMP_CYCLE_MS);
+    Serial.println("💧 [Pump] Đã TẮT bơm sau 5 giây");
+    pumpHasRun = true;
+  } else {
+    Serial.println("💧 [Pump] Đã chạy bơm rồi, lần này bỏ qua");
   }
+
+  // 8) Chuẩn bị đi vào Deep Sleep
+  Serial.println("===== Tất cả các công việc đã xong, ESP sẽ vào Deep Sleep =====");
+  delay(500); // cho Serial kịp gửi hết dữ liệu
+
+  // **Chú ý**: đổi tên hàm gọi wake‐up từ timer
+  esp_sleep_enable_timer_wakeup(DEEP_SLEEP_INTERVAL_US);
+  esp_deep_sleep_start();
+
+  // Sau khi gọi esp_deep_sleep_start(), ESP lập tức reset và chạy lại từ setup()
 }
 
+void loop() {
+  // Không bao giờ chạy, vì toàn bộ logic nằm trong setup()
+}
+
+// --------- Hàm phụ: LED báo lỗi (không blocking) ----------
 void indicateError(bool wifiErr, bool dsErr, bool dhtErr) {
   if (wifiErr) {
     Serial.println("[LED] Nháy báo lỗi WiFi (4 lần)");
