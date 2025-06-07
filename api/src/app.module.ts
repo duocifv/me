@@ -28,7 +28,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 // import { TerminusModule } from '@nestjs/terminus';
 // import { HttpModule } from '@nestjs/axios';
 import { HydroponicsModule } from './hydroponics/hydroponics.module';
-import { DeviceConfigModule } from './device-config/device-config.module';
+import { DeviceConfigModule } from './device/device-config.module';
 
 @Module({
   imports: [
