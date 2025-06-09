@@ -128,7 +128,13 @@ export class ApiClient {
       headers: mergedHeaders,
     });
 
-    // Handle expired token: refresh and retry once
+    // Trường hợp 403: không retry, xóa token & ném lỗi Forbidden
+    if (status === 403) {
+      this.clearToken();
+      throw new ApiError("Forbidden", 403, "Forbidden");
+    }
+
+    // Trường hợp 401: retry 1 lần nếu còn retry flag và người dùng đang login
     if (status === 401 && retry && this.storage.is() === true) {
       await this.refreshToken();
       return this.request(method, path, opts, false);

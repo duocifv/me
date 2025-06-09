@@ -1,6 +1,6 @@
 import { api } from "../share/api/apiClient";
-import { CropInstance } from "./dto/crop-instance.dto";
-import { Snapshot } from "./dto/snapshot.dto";
+import { CropInstance } from "./dto_/crop-instance.dto";
+import { Snapshot, SnapshotResponse } from "./dto/snapshot.dto";
 
 class HydroponicsService {
   private hydroponics = api.group("hydroponics");
@@ -9,9 +9,9 @@ class HydroponicsService {
     return await this.hydroponics.get<CropInstance[]>("crop-instances");
   }
 
-  async getSnapshots(id: string): Promise<Snapshot[]> {
-    return this.hydroponics.get<Snapshot[]>("snapshots/by-device", {
-      id,
+  async getSnapshots(deviceId: string): Promise<SnapshotResponse> {
+    return this.hydroponics.get<SnapshotResponse>("snapshots/by-device", {
+      deviceId,
     });
   }
 

@@ -20,7 +20,7 @@ export default function SnapshotsListSimple() {
         {$t`Snapshots List`}
       </h1>
       <ul className="space-y-4 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        {snapshots.map((snapshot) => (
+        {snapshots.items.map((snapshot) => (
           <li
             key={snapshot.id}
             className="bg-[#fffeec] rounded-xl shadow p-3 flex justify-between items-center hover:shadow-md transition cursor-pointer relative border-2 border-[#293d84]"

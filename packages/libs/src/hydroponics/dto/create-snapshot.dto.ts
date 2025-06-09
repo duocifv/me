@@ -1,44 +1,37 @@
+// src/dto/create-snapshot.dto.ts
 import { z } from 'zod';
 
-// Định nghĩa các loại sensor
-export const SensorTypeSchema = z.enum([
-  'water_temperature', // nhiệt độ nước
-  'ambient_temperature', // nhiệt độ không khí
-  'humidity', // độ ẩm
-  'light_intensity', // cường độ ánh sáng
-]);
-
-// Định nghĩa các thông số dung dịch (nutrient solution)
-export const SolutionParamSchema = z.enum([
-  'ph', // độ pH
-  'ec', // conductivity (điện dẫn suất)
-  'orp', // oxidation-reduction potential
-]);
+// cropInstanceId: z
+//   .number({ invalid_type_error: 'cropInstanceId phải là số' })
+//   .int({ message: 'cropInstanceId phải là số nguyên' })
+//   .positive({ message: 'cropInstanceId phải lớn hơn 0' }),
 
 export const CreateSnapshotSchema = z.object({
-  sensorData: z.record(
-    SensorTypeSchema,
-    z.number({
-      required_error: 'sensorData phải chứa giá trị số cho mỗi sensor',
-      invalid_type_error: 'Giá trị sensorData phải là số',
-    }),
-    {
-      required_error: 'sensorData là bắt buộc',
-      invalid_type_error: 'sensorData phải là object với key là loại sensor',
-    },
-  ),
-  solutionData: z.record(
-    SolutionParamSchema,
-    z.number({
-      required_error: 'solutionData phải chứa giá trị số cho mỗi thông số',
-      invalid_type_error: 'Giá trị solutionData phải là số',
-    }),
-    {
-      required_error: 'solutionData là bắt buộc',
-      invalid_type_error:
-        'solutionData phải là object với key là thông số dung dịch',
-    },
-  ),
+  waterTemp: z
+    .number({ invalid_type_error: 'waterTemp phải là số' })
+    .min(-50, { message: 'waterTemp tối thiểu -50' })
+    .max(150, { message: 'waterTemp tối đa 150' }),
+
+  ambientTemp: z
+    .number({ invalid_type_error: 'ambientTemp phải là số' })
+    .min(-50, { message: 'ambientTemp tối thiểu -50' })
+    .max(150, { message: 'ambientTemp tối đa 150' }),
+
+  humidity: z
+    .number({ invalid_type_error: 'humidity phải là số' })
+    .min(0, { message: 'humidity tối thiểu 0' })
+    .max(100, { message: 'humidity tối đa 100' }),
+
+  ph: z
+    .number({ invalid_type_error: 'ph phải là số' })
+    .min(0, { message: 'ph tối thiểu 0' })
+    .max(14, { message: 'ph tối đa 14' }),
+
+  ec: z
+    .number({ invalid_type_error: 'ec phải là số' })
+    .min(0, { message: 'ec không được âm' }),
+
+  orp: z.number({ invalid_type_error: 'orp phải là số' }),
 });
 
 export type CreateSnapshotDto = z.infer<typeof CreateSnapshotSchema>;

@@ -14,7 +14,7 @@ import {
 import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
 
 export function SectionCards() {
-  const [snapshots] = useHydroponicsStore((s) => s.snapshots);
+  const snapshots = useHydroponicsStore((s) => s.snapshots);
 
   return (
     <div className="*:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4 grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card lg:px-6 ">
@@ -22,7 +22,7 @@ export function SectionCards() {
         <CardHeader className="relative">
           <CardDescription>{$t`độ ẩm`}</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            {snapshots?.sensorData?.humidity ?? 0} %
+            {snapshots.items[0]?.humidity ?? 0} %
           </CardTitle>
           <div className="absolute right-4 top-4">
             <Badge
@@ -48,7 +48,7 @@ export function SectionCards() {
         <CardHeader className="relative">
           <CardDescription>{$t`nhiệt độ môi trường`}</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            {snapshots?.sensorData?.ambient_temperature ?? 0} °C
+            {snapshots.items[0]?.ambientTemp ?? 0} °C
           </CardTitle>
           <div className="absolute right-4 top-4">
             <Badge
@@ -72,7 +72,7 @@ export function SectionCards() {
         <CardHeader className="relative">
           <CardDescription>{$t`nhiệt độ nước`}</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            {snapshots?.sensorData?.water_temperature ?? 0} °C
+            {snapshots.items[0]?.waterTemp ?? 0} °C
           </CardTitle>
           <div className="absolute right-4 top-4">
             <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
@@ -89,11 +89,11 @@ export function SectionCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card bg-[#fdfbcf] border-2 border-0 text-[#293d84]">
+      <Card className="@container/card bg-[#fdfbcf] border-0 text-[#293d84]">
         <CardHeader className="relative">
           <CardDescription>{$t`pH dung dịch`}</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            {snapshots?.solutionData?.ph ?? 0}
+            {snapshots.items[0]?.ph ?? 0}
           </CardTitle>
         </CardHeader>
         <CardFooter className="text-muted-foreground">
@@ -105,7 +105,7 @@ export function SectionCards() {
         <CardHeader className="relative">
           <CardDescription>{$t`Độ dẫn điện (EC)`}</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            {snapshots?.solutionData?.ec ?? 0} mS/cm
+            {snapshots.items[0]?.ec ?? 0} mS/cm
           </CardTitle>
         </CardHeader>
         <CardFooter className="text-muted-foreground">
@@ -117,7 +117,7 @@ export function SectionCards() {
         <CardHeader className="relative">
           <CardDescription>{$t`ORP (oxi hóa khử)`}</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            {snapshots?.solutionData?.orp ?? 0} mV
+            {snapshots.items[0]?.orp ?? 0} mV
           </CardTitle>
         </CardHeader>
         <CardFooter className="text-muted-foreground">

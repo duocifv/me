@@ -30,11 +30,11 @@ import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
 
 // Cấu hình cho biểu đồ, đã bao gồm cả humidity
 const chartConfig = {
-  water_temperature: {
+  waterTemp: {
     label: $t`Nhiệt độ nước (°C)`,
     color: "#0E7490", // màu xanh biển
   },
-  ambient_temperature: {
+  ambientTemp: {
     label: $t`Nhiệt độ môi trường (°C)`,
     color: "#A21CAF", // màu tím
   },
@@ -62,13 +62,12 @@ export function ChartAreaInteractive() {
 
   // Chuyển mảng snapshots thành mảng dữ liệu cho Recharts
   const allData = React.useMemo(() => {
-    return snapshots
-      .filter((snap) => snap.sensorData !== null)
+    return snapshots.items
       .map((snap) => ({
-        date: snap.timestamp,
-        water_temperature: snap.sensorData!.water_temperature,
-        ambient_temperature: snap.sensorData!.ambient_temperature,
-        humidity: snap.sensorData!.humidity,
+        date: snap!.timestamp,
+        waterTemp: snap!.waterTemp,
+        ambientTemp: snap!.ambientTemp,
+        humidity: snap!.humidity,
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [snapshots]);
@@ -166,16 +165,15 @@ export function ChartAreaInteractive() {
         >
           <AreaChart data={filteredData}>
             <defs>
-              {/* Gradient cho Nhiệt độ nước */}
               <linearGradient id="fillWater" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor={chartConfig.water_temperature.color}
+                  stopColor={chartConfig.waterTemp.color}
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="95%"
-                  stopColor={chartConfig.water_temperature.color}
+                  stopColor={chartConfig.waterTemp.color}
                   stopOpacity={0.1}
                 />
               </linearGradient>
@@ -183,12 +181,12 @@ export function ChartAreaInteractive() {
               <linearGradient id="fillAmbient" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor={chartConfig.ambient_temperature.color}
+                  stopColor={chartConfig.ambientTemp.color}
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="95%"
-                  stopColor={chartConfig.ambient_temperature.color}
+                  stopColor={chartConfig.waterTemp.color}
                   stopOpacity={0.1}
                 />
               </linearGradient>
@@ -248,19 +246,19 @@ export function ChartAreaInteractive() {
             />
             {/* Vẽ các miền (Area) */}
             <Area
-              dataKey="water_temperature"
+              dataKey="waterTemp"
               type="monotone"
               fill="url(#fillWater)"
-              stroke={chartConfig.water_temperature.color}
-              name={chartConfig.water_temperature.label}
+              stroke={chartConfig.waterTemp.color}
+              name={chartConfig.waterTemp.label}
               stackId="1"
             />
             <Area
-              dataKey="ambient_temperature"
+              dataKey="ambientTemp"
               type="monotone"
               fill="url(#fillAmbient)"
-              stroke={chartConfig.ambient_temperature.color}
-              name={chartConfig.ambient_temperature.label}
+              stroke={chartConfig.ambientTemp.color}
+              name={chartConfig.ambientTemp.label}
               stackId="1"
             />
             <Area

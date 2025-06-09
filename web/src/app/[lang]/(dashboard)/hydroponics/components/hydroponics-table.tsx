@@ -17,7 +17,7 @@ export default function HydroponicsList() {
   return (
     <div className="p-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {snapshots.map((snapshot) => (
+        {snapshots.items.map((snapshot) => (
           <Card
             key={snapshot.id}
             className="overflow-hidden bg-white rounded-2xl shadow hover:shadow-lg transition transform hover:scale-[1.02]"
@@ -37,8 +37,8 @@ export default function HydroponicsList() {
               </CardTitle>
               <p className="text-xs text-green-500 font-mono">
                 Sensor:
-                {snapshot?.sensorData ? (
-                  <pre>{JSON.stringify(snapshot?.sensorData, null, 2)}</pre>
+                {snapshot ? (
+                  <pre>{JSON.stringify(snapshot, null, 2)}</pre>
                 ) : (
                   $t`Không có tín hiệu`
                 )}
