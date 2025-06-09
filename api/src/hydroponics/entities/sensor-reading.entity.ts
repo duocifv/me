@@ -21,10 +21,10 @@ export class SensorReading {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'snapshotId' })
+  @JoinColumn({ name: 'snapshot_id' })
   snapshot: Snapshot;
 
-  @Column({ type: 'bigint' })
+  @Column({ name: 'snapshot_id', type: 'bigint' })
   snapshotId: number;
 
   @Column({ type: 'varchar', length: 50 })

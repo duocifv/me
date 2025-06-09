@@ -13,12 +13,11 @@ import { DeviceErrorEntity } from './dto/device-error.entity';
 import { ReportDeviceErrorDto } from './dto/report-device-error.dto';
 
 @Injectable()
-export class DeviceConfigService {
-  private readonly logger = new Logger(DeviceConfigService.name);
+export class DeviceService {
+  private readonly logger = new Logger(DeviceService.name);
 
-  
   constructor(
-     @InjectRepository(DeviceConfigEntity)
+    @InjectRepository(DeviceConfigEntity)
     private readonly cfgRepo: Repository<DeviceConfigEntity>,
 
     @InjectRepository(DeviceErrorEntity)
@@ -44,10 +43,10 @@ export class DeviceConfigService {
 
     // log thêm
     this.logger.error(
-      `[ESP32][${dto.device_id}] code=${dto.error_code} msg="${dto.error_message}" ts=${dto.timestamp || 'n/a'}`
+      `[ESP32][${dto.device_id}] code=${dto.error_code} msg="${dto.error_message}" ts=${dto.timestamp || 'n/a'}`,
     );
   }
-  
+
   /**
    * Lấy config theo device_id. Nếu không tồn tại thì ném NotFoundException.
    */

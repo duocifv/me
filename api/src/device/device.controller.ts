@@ -3,20 +3,19 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
   Post,
   Query,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { DeviceConfigService } from './device-config.service';
+import { DeviceConfigService } from './device.service';
 import { CreateDeviceConfigDto } from './dto/create-device-config.dto';
 import { ReportDeviceErrorDto } from './dto/report-device-error.dto';
 import { DeviceConfigEntity } from './entities/device-config.entity';
 
 @Controller('device')
-export class DeviceConfigController {
-  constructor(private readonly configService: DeviceConfigService) { }
+export class DeviceController {
+  constructor(private readonly configService: DeviceConfigService) {}
 
   @Post('error')
   async reportError(@Body() dto: ReportDeviceErrorDto): Promise<void> {

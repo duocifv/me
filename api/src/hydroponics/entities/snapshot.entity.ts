@@ -11,6 +11,8 @@ import {
 } from 'typeorm';
 import { CropInstance } from './crop-instance.entity';
 import { CameraImage } from './camera-image.entity';
+import { SolutionReading } from './solution-reading.entity';
+import { SensorReading } from './sensor-reading.entity';
 
 @Entity({ name: 'snapshots' })
 @Index('IDX_SNAPSHOT_CROP_TIME', ['cropInstanceId', 'timestamp'])
@@ -22,7 +24,6 @@ export class Snapshot {
     nullable: false,
     onDelete: 'CASCADE',
   })
- 
   @JoinColumn({ name: 'crop_instance_id' })
   cropInstance: CropInstance;
 
@@ -58,4 +59,14 @@ export class Snapshot {
     cascade: ['insert', 'remove'],
   })
   images: CameraImage[];
+
+  @OneToMany(() => SolutionReading, (sr) => sr.snapshot, {
+    cascade: ['insert', 'remove'],
+  })
+  solutionReadings: SolutionReading[];
+
+  @OneToMany(() => SensorReading, (sr) => sr.snapshot, {
+    cascade: ['insert', 'remove'],
+  })
+  sensorReadings: SensorReading[];
 }
