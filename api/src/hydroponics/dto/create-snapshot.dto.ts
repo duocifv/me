@@ -1,13 +1,12 @@
 // src/dto/create-snapshot.dto.ts
 import { z } from 'zod';
 
-  // cropInstanceId: z
-  //   .number({ invalid_type_error: 'cropInstanceId phải là số' })
-  //   .int({ message: 'cropInstanceId phải là số nguyên' })
-  //   .positive({ message: 'cropInstanceId phải lớn hơn 0' }),
+// cropInstanceId: z
+//   .number({ invalid_type_error: 'cropInstanceId phải là số' })
+//   .int({ message: 'cropInstanceId phải là số nguyên' })
+//   .positive({ message: 'cropInstanceId phải lớn hơn 0' }),
 
 export const CreateSnapshotSchema = z.object({
-
   waterTemp: z
     .number({ invalid_type_error: 'waterTemp phải là số' })
     .min(-50, { message: 'waterTemp tối thiểu -50' })
@@ -32,8 +31,7 @@ export const CreateSnapshotSchema = z.object({
     .number({ invalid_type_error: 'ec phải là số' })
     .min(0, { message: 'ec không được âm' }),
 
-  orp: z
-    .number({ invalid_type_error: 'orp phải là số' }),
+  orp: z.number({ invalid_type_error: 'orp phải là số' }),
 });
 
 export type CreateSnapshotDto = z.infer<typeof CreateSnapshotSchema>;

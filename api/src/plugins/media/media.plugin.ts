@@ -18,7 +18,6 @@ import type { Readable } from 'stream';
 import { Jimp } from 'jimp';
 import { v4 as uuidv4 } from 'uuid';
 import { uploadConfig } from './config';
-import fastifyStatic from '@fastify/static';
 
 export interface FileManager {
   saveEsp32Image(part: MultipartFile): Promise<{

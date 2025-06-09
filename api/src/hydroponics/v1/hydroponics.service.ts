@@ -74,16 +74,19 @@ export class HydroponicsService {
     });
   }
 
-  async createSnapshot(deviceId: string, dto: CreateSnapshotDto): Promise<void> {
+  async createSnapshot(
+    deviceId: string,
+    dto: CreateSnapshotDto,
+  ): Promise<void> {
     const cropInstance = await this.cropRepo.findOne({
-          where: { deviceId, isActive: true },
-        });
-        if (!cropInstance) {
-          this.logger.warn(
-            `Không tìm thấy crop active cho deviceId: ${deviceId}. Bỏ qua tạo snapshot.`,
-          );
-          return;
-        }
+      where: { deviceId, isActive: true },
+    });
+    if (!cropInstance) {
+      this.logger.warn(
+        `Không tìm thấy crop active cho deviceId: ${deviceId}. Bỏ qua tạo snapshot.`,
+      );
+      return;
+    }
     const snapshot = this.snapRepo.create({
       cropInstanceId: cropInstance.id,
       waterTemp: dto.waterTemp,
@@ -103,7 +106,6 @@ export class HydroponicsService {
    * Sau đó chèn từng dòng SensorReading và SolutionReading.
    * Được chạy bất đồng bộ qua process.nextTick để không block request chính.
    */
- 
 
   /**
    * Lấy danh sách các Snapshot (metadata) của crop đang active theo deviceId
@@ -208,11 +210,8 @@ export class HydroponicsService {
     // 3. Tạo và lưu CameraImage
     const image = this.imgRepo.create({
       snapshotId: latestSnapshot.id,
-      filename: dto.filename,
-      url: dto.url,
-      mimetype: dto.mimetype,
-      size: dto.size ?? null,
-      category: dto.category ?? null,
+      filePath: dto.filePath,
+      size: dto.size,
     });
     return this.imgRepo.save(image);
   }

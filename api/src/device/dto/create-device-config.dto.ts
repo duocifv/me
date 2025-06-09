@@ -1,51 +1,21 @@
-// src/device-config/dto/create-device-config.dto.ts
-import { IsString, IsInt } from 'class-validator';
-import { Type } from 'class-transformer';
+// src/device-config/dto/create-device-config.schema.ts
+import { z } from 'zod';
 
-export class CreateDeviceConfigDto {
-  @IsString()
-  deviceId: string;
+export const CreateDeviceConfigSchema = z.object({
+  deviceId: z.string(),
+  wifiSsid: z.string(),
+  wifiPassword: z.string(),
+  deepSleepIntervalUs: z.preprocess((val) => Number(val), z.number().int()),
+  pumpOnTimeMs: z.preprocess((val) => Number(val), z.number().int()),
+  sensorEndpoint: z.string(),
+  cameraEndpoint: z.string(),
+  deviceToken: z.string(),
+  sensorInterval: z.preprocess((val) => Number(val), z.number().int()),
+  dataInterval: z.preprocess((val) => Number(val), z.number().int()),
+  imageInterval: z.preprocess((val) => Number(val), z.number().int()),
+  pumpCycleMs: z.preprocess((val) => Number(val), z.number().int()),
+  pumpOnMs: z.preprocess((val) => Number(val), z.number().int()),
+});
 
-  @IsString()
-  wifiSsid: string;
-
-  @IsString()
-  wifiPassword: string;
-
-  @Type(() => Number)
-  @IsInt()
-  deepSleepIntervalUs: number;
-
-  @Type(() => Number)
-  @IsInt()
-  pumpOnTimeMs: number;
-
-  @IsString()
-  sensorEndpoint: string;
-
-  @IsString()
-  cameraEndpoint: string;
-
-  @IsString()
-  deviceToken: string;
-
-  @Type(() => Number)
-  @IsInt()
-  sensorInterval: number;
-
-  @Type(() => Number)
-  @IsInt()
-  dataInterval: number;
-
-  @Type(() => Number)
-  @IsInt()
-  imageInterval: number;
-
-  @Type(() => Number)
-  @IsInt()
-  pumpCycleMs: number;
-
-  @Type(() => Number)
-  @IsInt()
-  pumpOnMs: number;
-}
+// Tạo type từ schema
+export type CreateDeviceConfigDto = z.infer<typeof CreateDeviceConfigSchema>;

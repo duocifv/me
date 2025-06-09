@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateDeviceConfigDto } from './dto/create-device-config.dto';
-import { DeviceConfigEntity } from './entities/device-config.entity';
-import { DeviceErrorEntity } from './dto/device-error.entity';
-import { ReportDeviceErrorDto } from './dto/report-device-error.dto';
+import { CreateDeviceConfigDto } from '../dto/create-device-config.dto';
+import { DeviceConfigEntity } from '../entities/device-config.entity';
+import { DeviceErrorEntity } from '../entities/device-error.entity';
+import { ReportDeviceErrorDto } from '../dto/report-device-error.dto';
 
 @Injectable()
 export class DeviceService {
@@ -24,27 +24,29 @@ export class DeviceService {
     private readonly errRepo: Repository<DeviceErrorEntity>,
   ) {}
 
-  async reportDeviceError(dto: ReportDeviceErrorDto): Promise<void> {
-    // Build data object, chỉ include reportedAt nếu có timestamp
-    const data: Partial<DeviceErrorEntity> = {
-      deviceId: dto.device_id,
-      deviceToken: dto.device_token,
+  async reportDeviceError(
+    dto: ReportDeviceErrorDto,
+    deviceId: string,
+  ): Promise<{ sussess: boolean }> {
+    const errEntity = this.errRepo.create({
+      deviceId: deviceId,
       errorCode: dto.error_code,
       errorMessage: dto.error_message,
-      // không gán reportedAt nếu dto.timestamp undefined/null
-      ...(dto.timestamp && { reportedAt: new Date(dto.timestamp) }),
-    };
-
-    // tạo entity từ data (object, không phải array)
-    const errEntity = this.errRepo.create(data);
+    });
 
     // lưu vào DB
     await this.errRepo.save(errEntity);
 
-    // log thêm
-    this.logger.error(
-      `[ESP32][${dto.device_id}] code=${dto.error_code} msg="${dto.error_message}" ts=${dto.timestamp || 'n/a'}`,
-    );
+    return {
+      sussess: true,
+    };
+  }
+
+  async getDeviceErrors(deviceId: string): Promise<DeviceErrorEntity[]> {
+    return this.errRepo.find({
+      where: { deviceId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   /**
@@ -97,7 +99,7 @@ export class DeviceService {
         });
         return await this.cfgRepo.save(newEntity);
       }
-    } catch (err) {
+    } catch {
       throw new InternalServerErrorException('Lỗi khi lưu config vào DB');
     }
   }

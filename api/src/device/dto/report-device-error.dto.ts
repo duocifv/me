@@ -1,23 +1,9 @@
-import {
-  IsString,
-  IsOptional,
-  IsISO8601,
-} from 'class-validator';
+// src/device-error/dto/report-device-error.schema.ts
+import { z } from 'zod';
 
-export class ReportDeviceErrorDto {
-  @IsString()
-  device_id: string;
+export const ReportDeviceErrorSchema = z.object({
+  error_code: z.string(),
+  error_message: z.string(),
+});
 
-  @IsString()
-  device_token: string;
-
-  @IsString()
-  error_code: string;
-
-  @IsString()
-  error_message: string;
-
-  @IsISO8601()
-  @IsOptional()
-  timestamp?: string;
-}
+export type ReportDeviceErrorDto = z.infer<typeof ReportDeviceErrorSchema>;

@@ -36,12 +36,6 @@ export class DeviceConfigEntity {
   @Column({ name: 'camera_endpoint', type: 'varchar', length: 128 })
   cameraEndpoint: string;
 
-  // Device token để xác thực API
-  @Column({ name: 'device_token', type: 'varchar', length: 64 })
-  deviceToken: string;
-
-  // --- Các khoảng thời gian động (milliseconds) trả về từ server ---
-
   // Khoảng thời gian giữa hai lần đọc sensor
   @Column({ name: 'SENSOR_INTERVAL', type: 'int', default: 0 })
   sensorInterval: number;

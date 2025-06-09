@@ -7,8 +7,6 @@ import {
   Param,
   BadRequestException,
   NotFoundException,
-  Res,
-  Body,
   Req,
 } from '@nestjs/common';
 import { HydroponicsService } from './hydroponics.service';
@@ -23,15 +21,11 @@ import {
 } from '../dto/create-snapshot.dto';
 import { CreateCameraImageDto } from '../dto/create-camera-image.dto';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyRequest } from 'fastify';
 import { UploadFileDto } from '../dto/upload-file.dto';
 import { DeviceAuth } from 'src/shared/decorators/device-token.decorator';
 import { QuerySchema } from 'src/shared/decorators/query-schema.decorator';
 import { GetSnapshotsDto, GetSnapshotsSchema } from '../dto/get-snapshots.dto';
-import path, { join, normalize, resolve } from 'path';
-import { PermissionName } from 'src/permissions/dto/permission.enum';
-import { Permissions } from 'src/permissions/permissions.decorator';
-import { existsSync } from 'fs';
 
 @Controller('hydroponics')
 export class HydroponicsController {
@@ -58,15 +52,11 @@ export class HydroponicsController {
    */
   @Post('snapshots')
   @DeviceAuth()
-  createSnapshot(
+  async createSnapshot(
     @BodySchema(CreateSnapshotSchema) dto: CreateSnapshotDto,
     @Req() req,
   ) {
-      this.service.createSnapshot(req.deviceId, dto).catch((err) => {
-      // Ghi log lỗi nếu có
-      console.error('Error when saving snapshot (fire-and-forget):', err);
-    });
-
+    await this.service.createSnapshot(req.deviceId, dto);
     return { success: true };
   }
 
@@ -128,38 +118,33 @@ export class HydroponicsController {
     }
 
     // Lưu ảnh (ví dụ với fileManager của Fastify plugin)
-    const { url, size, filename } =
+    const { size, filename } =
       await fastifyReq.server.fileManager.saveEsp32Image(part);
     // Tạo DTO cho CameraImage
     const imageDto: CreateCameraImageDto = {
-      filename,
-      url,
-      mimetype: part.mimetype,
-      size: size ?? null,
+      filePath: filename,
+      size: size ?? 0,
     };
 
     return this.service.addImageToLatestSnapshot(req.deviceId, imageDto);
   }
 
-  @Get('/image/:filename')
-  getImage(@Param('filename') filename: string, @Res() res: FastifyReply) {
-    const esp32Folder = resolve('uploads/esp32');
-    const filePath = normalize(join(esp32Folder, filename));
+  // @Get('/image/:filename')
+  // getImage(@Param('filename') filename: string, @Res() res: FastifyReply) {
+  //   const esp32Folder = resolve('uploads/esp32');
+  //   const filePath = normalize(join(esp32Folder, filename));
 
-    console.log('filePath', filePath);
+  //   // Ngăn path traversal
+  //   if (!filePath.startsWith(esp32Folder + path.sep)) {
+  //     throw new BadRequestException('Invalid filename');
+  //   }
 
-    // Ngăn path traversal
-    if (!filePath.startsWith(esp32Folder + path.sep)) {
-      throw new BadRequestException('Invalid filename');
-    }
+  //   // Kiểm tra file có tồn tại không
+  //   if (!existsSync(filePath)) {
+  //     throw new NotFoundException('File not found');
+  //   }
 
-    // Kiểm tra file có tồn tại không
-    if (!existsSync(filePath)) {
-      throw new NotFoundException('File not found');
-    }
-
-    // Trả về file từ path tương đối (relative) từ thư mục 'uploads'
-    const relativePath = join('esp32', filename);
-    return res.sendFile(relativePath);
-  }
+  //   const relativePath = join('esp32', filename);
+  //   return res.sendFile(relativePath);
+  // }
 }
