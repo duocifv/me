@@ -3,27 +3,32 @@
 
 #include <Arduino.h>
 
-class RelayModule {
+class RelayModule
+{
 private:
     uint8_t pin;
     bool activeLow;
 
 public:
     RelayModule(uint8_t relayPin, bool isActiveLow = true)
-      : pin(relayPin), activeLow(isActiveLow) {
+        : pin(relayPin), activeLow(isActiveLow)
+    {
         pinMode(pin, OUTPUT);
-        turnOff();
+        this->off();
     }
 
-    void turnOn() {
+    void on()
+    {
         digitalWrite(pin, activeLow ? LOW : HIGH);
     }
 
-    void turnOff() {
+    void off()
+    {
         digitalWrite(pin, activeLow ? HIGH : LOW);
     }
 
-    bool isOn() const {
+    bool isOn() const
+    {
         return digitalRead(pin) == (activeLow ? LOW : HIGH);
     }
 };
