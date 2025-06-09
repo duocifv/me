@@ -3,13 +3,15 @@ import { z } from 'zod';
 
 export const CreateDeviceConfigSchema = z.object({
   deviceId: z.string(),
+  deviceToken: z.string(),
   wifiSsid: z.string(),
   wifiPassword: z.string(),
+  host: z.string(),
+  port: z.preprocess((val) => Number(val), z.number().int()),
   deepSleepIntervalUs: z.preprocess((val) => Number(val), z.number().int()),
   pumpOnTimeMs: z.preprocess((val) => Number(val), z.number().int()),
   sensorEndpoint: z.string(),
   cameraEndpoint: z.string(),
-  deviceToken: z.string(),
   sensorInterval: z.preprocess((val) => Number(val), z.number().int()),
   dataInterval: z.preprocess((val) => Number(val), z.number().int()),
   imageInterval: z.preprocess((val) => Number(val), z.number().int()),

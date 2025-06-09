@@ -76,6 +76,8 @@ export class DeviceService {
     const fieldsToUpdate = {
       wifiSsid: dto.wifiSsid,
       wifiPassword: dto.wifiPassword,
+      host: dto.host,
+      port: dto.port,
       deepSleepIntervalUs: dto.deepSleepIntervalUs,
       pumpOnTimeMs: dto.pumpOnTimeMs,
       sensorEndpoint: dto.sensorEndpoint,

@@ -20,6 +20,13 @@ export class DeviceConfigEntity {
   @Column({ name: 'wifi_password', type: 'varchar', length: 64 })
   wifiPassword: string;
 
+  // Host và port của API backend
+  @Column({ name: 'host', type: 'varchar', length: 128, default: '' })
+  host: string;
+
+  @Column({ name: 'port', type: 'int', default: 0 })
+  port: number;
+
   // Thời gian deep sleep (microseconds)
   @Column({ name: 'deep_sleep_interval_us', type: 'bigint' })
   deepSleepIntervalUs: number;
@@ -37,23 +44,23 @@ export class DeviceConfigEntity {
   cameraEndpoint: string;
 
   // Khoảng thời gian giữa hai lần đọc sensor
-  @Column({ name: 'SENSOR_INTERVAL', type: 'int', default: 0 })
+  @Column({ name: 'sensor_interval', type: 'int', default: 0 })
   sensorInterval: number;
 
   // Khoảng thời gian giữa hai lần gửi dữ liệu
-  @Column({ name: 'DATA_INTERVAL', type: 'int', default: 0 })
+  @Column({ name: 'data_interval', type: 'int', default: 0 })
   dataInterval: number;
 
   // Khoảng thời gian giữa hai lần gửi ảnh
-  @Column({ name: 'IMAGE_INTERVAL', type: 'int', default: 0 })
+  @Column({ name: 'image_interval', type: 'int', default: 0 })
   imageInterval: number;
 
   // Khoảng thời gian giữa hai chu kỳ bơm (OFF→ON)
-  @Column({ name: 'PUMP_CYCLE_MS', type: 'int', default: 0 })
+  @Column({ name: 'pump_cycle_ms', type: 'int', default: 0 })
   pumpCycleMs: number;
 
   // Thời gian bơm bật trong mỗi chu kỳ (thường trùng với pumpOnTimeMs)
-  @Column({ name: 'PUMP_ON_MS', type: 'int', default: 0 })
+  @Column({ name: 'pump_on_ms', type: 'int', default: 0 })
   pumpOnMs: number;
 
   // Timestamps tự động ghi nhận khi bản ghi được tạo/cập nhật
