@@ -4,22 +4,27 @@
 
 #include "http_config_module.h"
 #include "http_error_module.h"
-
+#include "http_sensors_module.h"
+#include "http_camera_module.h"
+#include <PCF8574.h>
 #include "config.h"
 #include "wifi_module.h"
-#include "http_sensors_module.h"
 #include "dht_module.h"
 #include "ds18b20_module.h"
 #include "json_builder.h"
 #include "relay_module.h"
 #include "camera_module.h"
-#include "http_camera_module.h"
+#include "relay_ioexpander_module.h"
 
-// ----- Constants for Deep Sleep & Pump defaults -----
-#define DEFAULT_DEEP_SLEEP_INTERVAL_US (5ULL * 60ULL * 1000000ULL)
-#define DEFAULT_PUMP_ON_TIME_MS (PUMP_ON_MS)
+// Khai báo IO Expander PCF8574
+PCF8574 ioExpander;
 
-// Modules
+// ----- Hằng số cấu hình -----
+#define DEFAULT_DEEP_SLEEP_INTERVAL_US (5ULL * 60ULL * 1000000ULL) // 5 phút
+#define DEFAULT_PUMP_ON_TIME_MS (PUMP_ON_MS)                      // Từ config
+#define LED_ON_TIME_MS (30UL * 60UL * 1000UL)                     // 30 phút
+
+// Khai báo các module
 WifiModule wifi(ssid, password);
 HttpConfigModule httpConfig(host, port, configPath, deviceToken, deviceId);
 HttpErrorModule httpError(host, port, errorPath, deviceToken, deviceId);
@@ -28,12 +33,21 @@ HttpCameraModule *httpCamera = nullptr;
 
 DHTModule dht;
 DS18B20Module ds18b20;
-RelayModule pumpRelay(12, false);
-CameraModule cameraModule;
+RelayIOExpanderModule pumpRelay(0x20, 0);
+RelayIOExpanderModule ledRelay(0x20, 1);
 
+
+// Buffer chứa JSON dữ liệu cảm biến
 char jsonBuffer[512];
+
+// Biến lưu trạng thái qua Deep Sleep (RTC memory)
 RTC_DATA_ATTR bool pumpHasRun = false;
+RTC_DATA_ATTR bool ledHasRun = false;
+RTC_DATA_ATTR uint64_t ledStartTime = 0; // thời gian bật LED (microseconds)
+CameraModule cameraModule;
+// Biến trạng thái lỗi
 bool wifiErr = false, dsErr = false, dhtErr = false;
+// Biến dữ liệu cảm biến
 float waterTemp = NAN, ambientTemp = NAN, humidity = NAN;
 
 void setup()
@@ -42,7 +56,27 @@ void setup()
   delay(500);
   Serial.println("\n===== Wake từ Deep Sleep: setup() =====");
 
-  // Step 0: temporary WiFi to fetch config
+  // Khởi động IO Expander PCF8574
+  int ioStatus = ioExpander.begin(0x20);
+  if (ioStatus != 0) {
+    Serial.println("❌ [PCF8574] Không khởi tạo được PCF8574!");
+    httpError.sendError("IOExpander", "Không khởi tạo được PCF8574");
+  }
+
+  // Khởi tạo relay trên IO Expander
+  pumpRelay.begin();
+  ledRelay.begin();
+
+  // Nếu wake từ deep sleep và LED chưa chạy thì bật LED
+  if (esp_reset_reason() == ESP_RST_DEEPSLEEP && !ledHasRun)
+  {
+    Serial.println("[LED] Wake từ deep sleep, bật LED...");
+    ledRelay.on();
+    ledStartTime = esp_timer_get_time();
+    ledHasRun = true;
+  }
+
+  // Kết nối WiFi tạm để lấy cấu hình
   Serial.print("[Setup] Kết nối tạm WiFi: ");
   WiFi.begin(ssid, password);
   uint8_t retry = 0;
@@ -70,7 +104,7 @@ void setup()
   WiFi.disconnect(true);
   delay(200);
 
-  // Step 1: connect official WiFi
+  // Kết nối WiFi chính thức theo cấu hình
   String useS = httpConfig.wifi_ssid.length() > 0 ? httpConfig.wifi_ssid : String(ssid);
   String useP = httpConfig.wifi_password.length() > 0 ? httpConfig.wifi_password : String(password);
   Serial.printf("[Setup] Kết nối WiFi chính thức: SSID='%s' ... ", useS.c_str());
@@ -89,13 +123,13 @@ void setup()
     wifiErr = false;
   }
 
-  // Step 2: init sensors
+  // Khởi tạo cảm biến
   dht.begin();
   ds18b20.begin();
   delay(200);
   Serial.println("[Setup] DHT & DS18B20 begin() xong");
 
-  // Step 3: setup HTTP modules
+  // Khởi tạo HTTP modules với đường dẫn cấu hình
   const char *sp = httpConfig.sensorPath.length() > 0 ? httpConfig.sensorPath.c_str() : sensorPath;
   const char *ip = httpConfig.imgPath.length() > 0 ? httpConfig.imgPath.c_str() : imgPath;
   const char *uh = httpConfig.configured_host.length() > 0 ? httpConfig.configured_host.c_str() : host;
@@ -117,7 +151,7 @@ void setup()
   httpCamera = new HttpCameraModule(uh, up, ip, deviceToken, deviceId);
   httpCamera->setTimeout(20000);
 
-  // Step 4: read sensors
+  // Đọc dữ liệu cảm biến DHT và DS18B20
   dht.update();
   if (!dht.hasData())
   {
@@ -144,7 +178,7 @@ void setup()
     waterTemp = tds;
   }
 
-  // Step 6: send sensor data
+  // Gửi dữ liệu cảm biến nếu không có lỗi
   if (!wifiErr && !dhtErr && !dsErr)
   {
     size_t len = buildJsonSnapshots(jsonBuffer, sizeof(jsonBuffer), waterTemp, ambientTemp, humidity, 7.0, 1.5, 400);
@@ -169,7 +203,7 @@ void setup()
       httpError.sendError("HTTP-Sensor", "Bỏ qua gửi do WiFi lỗi");
   }
 
-  // Step 7: send camera
+  // Gửi ảnh camera nếu không lỗi WiFi
   if (!wifiErr && httpCamera)
   {
     cameraModule.init();
@@ -196,7 +230,7 @@ void setup()
       httpError.sendError("HTTP-Camera", "Bỏ qua gửi ảnh do WiFi lỗi");
   }
 
-  // Step 8: pump control
+  // Điều khiển bơm
   uint32_t pt = httpConfig.pump_on_time_ms > 0 ? httpConfig.pump_on_time_ms : DEFAULT_PUMP_ON_TIME_MS;
   if (!pumpHasRun)
   {
@@ -212,15 +246,27 @@ void setup()
     Serial.println("[Pump] Đã chạy bơm trước đó, không chạy lại");
   }
 
-  // Step 9: deep sleep
+  // Kiểm tra và tắt LED nếu quá thời gian bật
+  if (ledHasRun)
+  {
+    uint64_t currentTime = esp_timer_get_time();
+    if ((currentTime - ledStartTime) > (uint64_t)LED_ON_TIME_MS * 1000ULL)
+    {
+      Serial.println("[LED] Đã đủ thời gian bật, tắt LED");
+      ledRelay.off();
+      ledHasRun = false;
+    }
+  }
+
+  // Deep sleep
   uint64_t st = httpConfig.deep_sleep_interval_us > 0 ? httpConfig.deep_sleep_interval_us : DEFAULT_DEEP_SLEEP_INTERVAL_US;
   Serial.printf("[Sleep] Kích hoạt timer wakeup %llu us, rồi ngủ\n", st);
+  // cameraModule.deinit();
   esp_sleep_enable_timer_wakeup(st);
-  cameraModule.deinit();
   esp_deep_sleep_start();
 }
 
 void loop()
 {
-  // empty
+  // Không làm gì trong loop, vì thiết bị ngủ sâu
 }

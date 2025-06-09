@@ -4,7 +4,7 @@
 #include <cstdint>
 
 // Thông tin WiFi & API (định nghĩa trực tiếp, không extern)
-const char* ssid         = "Mai Lan T2";
+const char* ssid         = "Mai Lan";
 const char* password     = "1234567899";
 const char* deviceToken  = "esp32";
 const char* deviceId     = "device-001";

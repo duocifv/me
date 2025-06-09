@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <DHT.h>
 
-#define DHTPIN 14
+#define DHTPIN 12
 #define DHTTYPE DHT22
 
 class DHTModule {
