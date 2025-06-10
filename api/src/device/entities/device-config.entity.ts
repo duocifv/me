@@ -51,7 +51,7 @@ export class DeviceConfigEntity {
   pumpStartHour: number;
 
   @Column({ name: 'pump_end_hour', type: 'int', default: 18 })
-  pumpdEndHour: number;
+  pumpEndHour: number;
 
   @Column({ name: 'led_cycle_ms', type: 'int', default: 0 })
   ledCycleMs: number;
