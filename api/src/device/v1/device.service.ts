@@ -53,7 +53,12 @@ export class DeviceService {
    * Lấy config theo device_id. Nếu không tồn tại thì ném NotFoundException.
    */
   async getConfig(deviceId: string): Promise<DeviceConfigEntity> {
-    const cfg = await this.cfgRepo.findOne({ where: { deviceId } });
+    const cfg = await this.cfgRepo.findOne({
+      where: { deviceId },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
     if (!cfg) {
       throw new NotFoundException(
         `Config của device '${deviceId}' chưa tồn tại`,
@@ -79,15 +84,19 @@ export class DeviceService {
       host: dto.host,
       port: dto.port,
       deepSleepIntervalUs: dto.deepSleepIntervalUs,
-      pumpOnTimeMs: dto.pumpOnTimeMs,
       sensorEndpoint: dto.sensorEndpoint,
       cameraEndpoint: dto.cameraEndpoint,
-      deviceToken: dto.deviceToken,
       sensorInterval: dto.sensorInterval,
       dataInterval: dto.dataInterval,
       imageInterval: dto.imageInterval,
       pumpCycleMs: dto.pumpCycleMs,
       pumpOnMs: dto.pumpOnMs,
+      pumpStartHour: dto.pumpStartHour,
+      pumpEndHour: dto.pumpEndHour,
+      ledCycleMs: dto.ledCycleMs,
+      ledOnMs: dto.ledOnMs,
+      ledStartHour: dto.ledStartHour,
+      ledEndHour: dto.ledEndHour,
     };
 
     try {

@@ -1,0 +1,18 @@
+import { api } from "../share/api/apiClient";
+import { CreateDeviceConfigDto } from "./dto/create-device-config.dto";
+
+class DeviceConfigService {
+  private device = api.group("device");
+
+  async getByConfig(deviceId = "device-001"): Promise<CreateDeviceConfigDto> {
+    return this.device.get<CreateDeviceConfigDto>(`config/${deviceId}`);
+  }
+
+  async createByConfig(
+    dto: CreateDeviceConfigDto
+  ): Promise<CreateDeviceConfigDto> {
+    return this.device.post<CreateDeviceConfigDto>("config", dto);
+  }
+}
+
+export const deviceConfigService = new DeviceConfigService();

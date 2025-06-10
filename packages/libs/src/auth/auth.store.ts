@@ -39,6 +39,7 @@ export const useAuthStore = create<AuthState>()(
       setLogin: (isLoggedIn) => set({ isLoggedIn }),
       setLogout: () => {
         set({ user: null, isLoggedIn: null });
+        api.storage.logout();
       },
       setCaptcha: (captcha) => set({ captcha }),
     })),

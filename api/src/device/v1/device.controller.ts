@@ -1,5 +1,5 @@
 // src/device-config/device-config.controller.ts
-import { Controller, Get, HttpCode, Post, Req } from '@nestjs/common';
+import { Controller, Get, HttpCode, Param, Post, Req } from '@nestjs/common';
 import {
   CreateDeviceConfigDto,
   CreateDeviceConfigSchema,
@@ -32,7 +32,6 @@ export class DeviceController {
    * POST /device-config
    */
   @Post('config')
-  @DeviceAuth()
   async createOrUpdate(
     @BodySchema(CreateDeviceConfigSchema) createDto: CreateDeviceConfigDto,
   ): Promise<Partial<DeviceConfigEntity>> {
@@ -46,6 +45,13 @@ export class DeviceController {
   @DeviceAuth()
   async getConfig(@Req() req): Promise<Partial<DeviceConfigEntity>> {
     return this.configService.getConfig(req.deviceId);
+  }
+
+  @Get('config/:deviceId')
+  async getConfigForAdmin(
+    @Param('deviceId') deviceId: string,
+  ): Promise<DeviceConfigEntity> {
+    return this.configService.getConfig(deviceId);
   }
 
   @Get('error')

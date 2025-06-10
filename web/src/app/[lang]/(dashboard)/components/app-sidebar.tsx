@@ -67,7 +67,7 @@ const data = {
   navSecondary: [
     {
       title: $t`Cài đặt`,
-      url: "#",
+      url: "/vi/settings",
       icon: SettingsIcon,
     },
     {
