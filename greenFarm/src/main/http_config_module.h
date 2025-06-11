@@ -9,7 +9,160 @@
 struct DynamicIntervals
 {
   uint32_t SENSOR_INTERVAL;
-  uint32_t DATA_INTERVAL;
+  uint32_t DATA_INTERVAL;#include <Arduino.h>
+#include <Wire.h>
+#include <PCF8574.h>
+#include <DHT.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include "wifi_module.h"
+#include "http_config_module.h"
+#include "http_sensors_module.h"
+#include "http_camera_module.h"
+#include "camera_module.h"
+#include "config.h"   // chứa ssid, password, host, port, configPath, deviceToken, deviceId
+
+// Nếu config.h chưa có, định nghĩa:
+static const char* sensorEndpoint = "/v1/hydroponics/snapshots";
+static const char* cameraEndpoint = "/v1/hydroponics/snapshots/images";
+
+// —— CẤU HÌNH PHẦN CỨNG ——
+#define I2C_SDA        21
+#define I2C_SCL        22
+#define EXP_ADDR       0x20
+#define EXP_LED_PIN    0
+#define DHT_PIN        4
+#define DHT_TYPE       DHT22
+#define ONE_WIRE_BUS   15
+#define WIFI_FAIL_LED  4
+#define WAKE_LED_PIN   33
+#define SLEEP_TIME_US  (10ULL * 1000000ULL)
+
+// —— RTC DATA ——
+RTC_DATA_ATTR uint32_t wakeCount = 0;
+
+// —— OBJECTS ——
+PCF8574           expander(EXP_ADDR);
+DHT               dht(DHT_PIN, DHT_TYPE);
+OneWire           oneWire(ONE_WIRE_BUS);
+DallasTemperature ds18b20(&oneWire);
+WifiModule        wifi(ssid, password);
+HttpConfigModule  httpConfig(host, port, configPath, deviceToken, deviceId);
+HttpSensorsModule *httpSensor = nullptr;
+HttpCameraModule  *httpCamera = nullptr;
+CameraModule      cameraModule;
+
+void setup() {
+  Serial.begin(115200);
+  delay(200);
+
+  pinMode(WAKE_LED_PIN, OUTPUT);
+  pinMode(WIFI_FAIL_LED, OUTPUT);
+  digitalWrite(WAKE_LED_PIN, LOW);
+  digitalWrite(WIFI_FAIL_LED, LOW);
+
+  // 1) Wake count + LED báo
+  wakeCount++;
+  Serial.printf("\n--- Wake #%u (reason=%d) ---\n", wakeCount, esp_reset_reason());
+  digitalWrite(WAKE_LED_PIN, HIGH);
+  delay(150);
+  digitalWrite(WAKE_LED_PIN, LOW);
+
+  // 2) I2C scan + expander test
+  Wire.begin(I2C_SDA, I2C_SCL);
+  Serial.println("I2C scan:");
+  for (uint8_t addr = 1; addr < 127; addr++) {
+    Wire.beginTransmission(addr);
+    if (Wire.endTransmission() == 0) {
+      Serial.printf("  Found @ 0x%02X\n", addr); delay(5);
+    }
+  }
+  if (expander.begin() != 0) { Serial.println("❌ PCF8574 init failed!"); while(1) delay(500); }
+  Serial.println("✅ PCF8574 ready");
+  for (int i=0;i<3;i++){ expander.write(EXP_LED_PIN,HIGH); delay(150); expander.write(EXP_LED_PIN,LOW); delay(150); }
+
+  // 3) Sensors test
+  dht.begin();
+  float h = dht.readHumidity(), t=dht.readTemperature();
+  Serial.printf("DHT22 → %s\n", (!isnan(h)&&!isnan(t)) ? String(t,1)+"°C, "+String(h,1)+"%" : "❌ failed");
+  ds18b20.begin(); ds18b20.requestTemperatures();
+  float tw = ds18b20.getTempCByIndex(0);
+  Serial.printf("DS18B20 → %s\n", tw!=DEVICE_DISCONNECTED_C ? String(tw,1)+"°C" : "❌ failed");
+
+  // 4) Camera test
+  cameraModule.init();
+  camera_fb_t *fb = cameraModule.capture();
+  Serial.println(fb ? "✅ Camera OK" : "❌ Camera FAILED");
+  if(fb) cameraModule.release(fb);
+
+  // 5) WiFi connect
+  Serial.print("Connecting WiFi");
+  wifi.connect();
+  uint32_t t0=millis();
+  while(!wifi.isConnected() && millis()-t0<10000){ Serial.print("."); delay(500); }
+  if(!wifi.isConnected()){
+    Serial.println("\n❌ WiFi failed! Blink LED4");
+    for(int i=0;i<5;i++){ digitalWrite(WIFI_FAIL_LED,HIGH); delay(200); digitalWrite(WIFI_FAIL_LED,LOW); delay(200); }
+  } else {
+    Serial.println("\n✅ WiFi connected");
+
+    // 6) Test HttpConfigModule
+    Serial.println("Fetching remote config...");
+    if(httpConfig.fetchConfig()){
+      Serial.println("✅ Config fetched:");
+      Serial.printf("  wifi_ssid: %s\n", httpConfig.wifi_ssid.c_str());
+      Serial.printf("  wifi_password: %s\n", httpConfig.wifi_password.c_str());
+      Serial.printf("  deepSleepIntervalUs: %llu\n", httpConfig.deep_sleep_interval_us);
+      Serial.printf("  pumpOnTimeMs: %u\n", httpConfig.pump_on_time_ms);
+      Serial.printf("  sensorPath: %s\n", httpConfig.sensorPath.c_str());
+      Serial.printf("  imgPath: %s\n", httpConfig.imgPath.c_str());
+      Serial.printf("  host: %s\n", httpConfig.configured_host.c_str());
+      Serial.printf("  port: %u\n", httpConfig.configured_port);
+    } else {
+      Serial.println("❌ Config fetch failed");
+    }
+
+    // 7) Send sensor data
+    snprintf(jsonBuf, sizeof(jsonBuf),
+      "{\"deviceId\":\"%s\",\"ambientTemp\":%s,\"humidity\":%s,\"waterTemp\":%s}",
+      deviceId,
+      (!isnan(t) ? String(t,1).c_str() : "null"),
+      (!isnan(h) ? String(h,1).c_str() : "null"),
+      (tw!=DEVICE_DISCONNECTED_C ? String(tw,1).c_str() : "null")
+    );
+    httpSensor = new HttpSensorsModule(httpConfig.configured_host.c_str(),
+                                       httpConfig.configured_port,
+                                       httpConfig.sensorPath.c_str(),
+                                       deviceToken, deviceId);
+    Serial.print("Sending sensor data... ");
+    Serial.println(httpSensor->sendData(jsonBuf, strlen(jsonBuf)) ? "✅" : "❌");
+    delete httpSensor;
+
+    // 8) Send camera image
+    if(fb){
+      httpCamera = new HttpCameraModule(httpConfig.configured_host.c_str(),
+                                        httpConfig.configured_port,
+                                        httpConfig.imgPath.c_str(),
+                                        deviceToken, deviceId);
+      httpCamera->setTimeout(20000);
+      unsigned long dur;
+      Serial.print("Sending camera image... ");
+      Serial.println(httpCamera->send(fb, dur) ? "✅":"❌");
+      delete httpCamera;
+    }
+  }
+
+  // 9) Deep sleep
+  Serial.printf("Sleeping %llu us...\n", SLEEP_TIME_US);
+  delay(100);
+  esp_sleep_enable_timer_wakeup(SLEEP_TIME_US);
+  esp_deep_sleep_start();
+}
+
+void loop() {
+  // not used
+}
+
   uint32_t IMAGE_INTERVAL;
   uint32_t PUMP_CYCLE_MS;
   uint32_t PUMP_ON_MS;
