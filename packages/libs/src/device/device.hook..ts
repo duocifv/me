@@ -16,6 +16,13 @@ export function useDeviceConfigQuery() {
   });
 }
 
+export function useDeviceErrorQuery() {
+  return useQuery({
+    queryKey: ["deviceError"],
+    queryFn: () => deviceConfigService.getError(),
+  });
+}
+
 export function useCreateDeviceConfigMutation() {
   const queryClient = useQueryClient();
   return useMutation({

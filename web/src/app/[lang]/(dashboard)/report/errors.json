@@ -1,0 +1,135 @@
+[
+  {
+    "id": 22,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "Lỗi chuẩn ngữ",
+    "createdAt": "2025-06-12T06:48:17.276Z"
+  },
+  {
+    "id": 21,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:26:01.125Z"
+  },
+  {
+    "id": 20,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:25:06.035Z"
+  },
+  {
+    "id": 21,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:26:01.125Z"
+  },
+  {
+    "id": 20,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:25:06.035Z"
+  },
+  {
+    "id": 21,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:26:01.125Z"
+  },
+  {
+    "id": 20,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:25:06.035Z"
+  },
+  {
+    "id": 21,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:26:01.125Z"
+  },
+  {
+    "id": 20,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:25:06.035Z"
+  },
+  {
+    "id": 21,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:26:01.125Z"
+  },
+  {
+    "id": 20,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:25:06.035Z"
+  },
+  {
+    "id": 21,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:26:01.125Z"
+  },
+  {
+    "id": 20,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:25:06.035Z"
+  },
+  {
+    "id": 21,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:26:01.125Z"
+  },
+  {
+    "id": 20,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:25:06.035Z"
+  },
+  {
+    "id": 21,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:26:01.125Z"
+  },
+  {
+    "id": 20,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:25:06.035Z"
+  },
+  {
+    "id": 21,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:26:01.125Z"
+  },
+  {
+    "id": 20,
+    "deviceId": "device-001",
+    "errorCode": "string",
+    "errorMessage": "string",
+    "createdAt": "2025-06-09T03:25:06.035Z"
+  }
+]

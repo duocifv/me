@@ -27,7 +27,7 @@ export class DeviceConfigEntity {
   @Column({ name: 'port', type: 'int', default: 0 })
   port: number;
 
-  @Column({ name: 'deep_sleep_interval_us', type: 'bigint', default: 0 })
+  @Column({ name: 'deep_sleep_interval_us', type: 'int', default: 0 })
   deepSleepIntervalUs: number;
 
   @Column({ name: 'sensor_endpoint', type: 'varchar', length: 128 })

@@ -21,6 +21,7 @@ import { DeviceErrorEntity } from '../entities/device-error.entity';
 import { DeviceAuth } from 'src/shared/decorators/device-token.decorator';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import { DeviceService } from './device.service';
+import { ApiParam } from '@nestjs/swagger';
 
 @Controller('device')
 export class DeviceController {
@@ -44,14 +45,22 @@ export class DeviceController {
 
   /** Lấy config mới nhất theo deviceId (admin) */
   @Get('config/:deviceId')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
   async getConfigForAdmin(
     @Param('deviceId') deviceId: string,
   ): Promise<DeviceConfigEntity> {
-    return this.deviceService.getLatestConfig(deviceId);
+    return this.deviceService.getLatestConfigbyDevice(deviceId);
   }
 
   /** Danh sách version */
   @Get('config/:deviceId/versions')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
   async listVersions(
     @Param('deviceId') deviceId: string,
   ): Promise<{ version: number; createdAt: Date }[]> {
@@ -60,6 +69,10 @@ export class DeviceController {
 
   /** Rollback về version cụ thể */
   @Post('config/:deviceId/rollback/:version')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
   @HttpCode(200)
   async rollback(
     @Param('deviceId') deviceId: string,
@@ -73,6 +86,18 @@ export class DeviceController {
   @DeviceAuth()
   async getErrors(@Req() req): Promise<DeviceErrorEntity[]> {
     return this.deviceService.getDeviceErrors(req.deviceId);
+  }
+
+  /** Lấy config mới nhất theo deviceId (admin) */
+  @Get('error/:deviceId')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
+  async getErrorsForAdmin(
+    @Param('deviceId') deviceId: string,
+  ): Promise<DeviceErrorEntity[]> {
+    return this.deviceService.getDeviceErrors(deviceId);
   }
 
   /** Thiết bị báo lỗi */

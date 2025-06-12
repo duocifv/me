@@ -1,0 +1,28 @@
+export type CreateDeviceConfigDto = {
+  deviceId: string;
+  wifiSsid: string;
+  wifiPassword: string;
+  host: string;
+  port: number;
+  deepSleepIntervalUs: number;
+  sensorEndpoint: string;
+  cameraEndpoint: string;
+  sensorInterval: number;
+  dataInterval: number;
+  imageInterval: number;
+  pumpCycleMs: number;
+  pumpOnMs: number;
+  pumpOffMs: number;
+  pumpStartHour: number;
+  pumpEndHour: number;
+  ledCycleMs: number;
+  ledOnMs: number;
+  ledOffMs: number;
+  ledStartHour: number;
+  ledEndHour: number;
+  fanSmallOnMs: number;
+  fanSmallOffMs: number;
+  fanLargeContinuous: boolean;
+  fanLargeOnMs: number;
+  fanLargeOffMs: number;
+};

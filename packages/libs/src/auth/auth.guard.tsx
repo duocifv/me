@@ -42,11 +42,10 @@ export function AuthGuard({
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   const { data, isSuccess, isError } = useAuthLogoutQuery();
   const setUser = useAuthStore((s) => s.setUser);
-  const setLogout = useAuthStore((s) => s.setLogout);
 
   useEffect(() => {
     if (isSuccess && data) setUser(data);
-    if (isError) setLogout();
+    if (isError) setUser(null);
   }, [isSuccess, isError, data, setUser]);
 
   return <>{children}</>;

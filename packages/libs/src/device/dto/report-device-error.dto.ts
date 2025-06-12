@@ -1,5 +1,5 @@
 // src/device-error/dto/report-device-error.schema.ts
-import { z } from 'zod';
+import { z } from "zod";
 
 export const ReportDeviceErrorSchema = z.object({
   error_code: z.string(),
@@ -7,3 +7,11 @@ export const ReportDeviceErrorSchema = z.object({
 });
 
 export type ReportDeviceErrorDto = z.infer<typeof ReportDeviceErrorSchema>;
+
+export interface DeviceErrorEntity {
+  id: number;
+  deviceId: string;
+  errorCode: string;
+  errorMessage: string;
+  createdAt: string;
+}
