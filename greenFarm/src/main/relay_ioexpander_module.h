@@ -1,26 +1,40 @@
 #include <PCF8574.h>
 
-class RelayIOExpanderModule {
+class RelayIOExpanderModule
+{
+  static constexpr uint8_t DEFAULT_ADDR = 0x20; // Đặt địa chỉ I2C cố định tại đây
   PCF8574 expander;
   int pin;
   bool activeLow;
 
 public:
-  RelayIOExpanderModule(uint8_t addr, int pin, bool activeLow = false)
-    : expander(addr), pin(pin), activeLow(activeLow) {}
+  RelayIOExpanderModule(int pin, bool activeLow = false)
+      : expander(DEFAULT_ADDR), pin(pin), activeLow(activeLow) {}
 
-  void begin() {
+  void begin()
+  {
     expander.begin();
-    // Không gọi pinMode vì thư viện không có hàm này
-    // Thiết lập trạng thái chân relay ban đầu (tắt relay)
-    expander.write(pin, activeLow ? HIGH : LOW);
+    expander.write(pin, activeLow ? HIGH : LOW); // tắt relay ban đầu
   }
 
-  void on() {
+  void on()
+  {
     expander.write(pin, activeLow ? LOW : HIGH);
   }
 
-  void off() {
+  void off()
+  {
     expander.write(pin, activeLow ? HIGH : LOW);
+  }
+
+  bool readState()
+  {
+    return expander.read(pin) == (activeLow ? LOW : HIGH);
+  }
+
+  void toggle()
+  {
+    bool current = expander.read(pin);
+    expander.write(pin, !current);
   }
 };

@@ -27,14 +27,9 @@ public:
 
   bool begin()
   {
-    // Nếu cần init thêm thì đặt ở đây
     return true;
   }
 
-  /**
-   * Gửi payload JSON đã chuẩn bị sẵn.
-   * Trả về true nếu request được gửi, false nếu lỗi trước khi gửi.
-   */
   bool sendData(const char *payload, size_t length)
   {
     if (WiFi.status() != WL_CONNECTED)
@@ -58,7 +53,7 @@ public:
     // Xây dựng request
     String request = String("POST ") + path + " HTTP/1.1\r\n" +
                      "Host: " + host + "\r\n" +
-                     "Content-Type: application/json\r\n" +
+                     "Content-Type: application/json; charset=utf-8\r\n" +
                      "x-device-token: " + deviceToken + "\r\n" +
                      "x-device-id: " + deviceId + "\r\n" +
                      "Content-Length: " + String(length) + "\r\n" +
@@ -92,17 +87,11 @@ public:
    */
   bool sendError(const char *errorCode, const char *errorMessage)
   {
-    // Tạo JSON lỗi
-    char buf[256];
-    int len = snprintf(buf, sizeof(buf),
-                       "{\"deviceId\":\"%s\",\"error_code\":\"%s\",\"error_message\":\"%s\"}",
-                       deviceId, errorCode, errorMessage);
-    if (len <= 0)
-    {
-      Serial.println("🚫 Lỗi sinh JSON lỗi");
-      return false;
-    }
-    return sendData(buf, len);
+    String json = String("{\"deviceId\":\"") + deviceId +
+                  "\",\"error_code\":\"" + errorCode +
+                  "\",\"error_message\":\"" + errorMessage + "\"}";
+
+    return sendData(json.c_str(), json.length());
   }
 
   void endConnection()

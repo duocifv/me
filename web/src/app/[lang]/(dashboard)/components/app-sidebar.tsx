@@ -89,7 +89,7 @@ const data = {
     },
     {
       name: $t`Báo cáo`,
-      url: "#",
+      url: "/vi/report/",
       icon: ClipboardListIcon,
     },
     {
