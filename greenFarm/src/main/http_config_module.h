@@ -5,366 +5,246 @@
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 
-// Nếu server trả về các khoảng thời gian (ms), lưu vào struct này
-struct DynamicIntervals
-{
-  uint32_t SENSOR_INTERVAL;
-  uint32_t DATA_INTERVAL;#include <Arduino.h>
-#include <Wire.h>
-#include <PCF8574.h>
-#include <DHT.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#include "wifi_module.h"
-#include "http_config_module.h"
-#include "http_sensors_module.h"
-#include "http_camera_module.h"
-#include "camera_module.h"
-#include "config.h"   // chứa ssid, password, host, port, configPath, deviceToken, deviceId
-
-// Nếu config.h chưa có, định nghĩa:
-static const char* sensorEndpoint = "/v1/hydroponics/snapshots";
-static const char* cameraEndpoint = "/v1/hydroponics/snapshots/images";
-
-// —— CẤU HÌNH PHẦN CỨNG ——
-#define I2C_SDA        21
-#define I2C_SCL        22
-#define EXP_ADDR       0x20
-#define EXP_LED_PIN    0
-#define DHT_PIN        4
-#define DHT_TYPE       DHT22
-#define ONE_WIRE_BUS   15
-#define WIFI_FAIL_LED  4
-#define WAKE_LED_PIN   33
-#define SLEEP_TIME_US  (10ULL * 1000000ULL)
-
-// —— RTC DATA ——
-RTC_DATA_ATTR uint32_t wakeCount = 0;
-
-// —— OBJECTS ——
-PCF8574           expander(EXP_ADDR);
-DHT               dht(DHT_PIN, DHT_TYPE);
-OneWire           oneWire(ONE_WIRE_BUS);
-DallasTemperature ds18b20(&oneWire);
-WifiModule        wifi(ssid, password);
-HttpConfigModule  httpConfig(host, port, configPath, deviceToken, deviceId);
-HttpSensorsModule *httpSensor = nullptr;
-HttpCameraModule  *httpCamera = nullptr;
-CameraModule      cameraModule;
-
-void setup() {
-  Serial.begin(115200);
-  delay(200);
-
-  pinMode(WAKE_LED_PIN, OUTPUT);
-  pinMode(WIFI_FAIL_LED, OUTPUT);
-  digitalWrite(WAKE_LED_PIN, LOW);
-  digitalWrite(WIFI_FAIL_LED, LOW);
-
-  // 1) Wake count + LED báo
-  wakeCount++;
-  Serial.printf("\n--- Wake #%u (reason=%d) ---\n", wakeCount, esp_reset_reason());
-  digitalWrite(WAKE_LED_PIN, HIGH);
-  delay(150);
-  digitalWrite(WAKE_LED_PIN, LOW);
-
-  // 2) I2C scan + expander test
-  Wire.begin(I2C_SDA, I2C_SCL);
-  Serial.println("I2C scan:");
-  for (uint8_t addr = 1; addr < 127; addr++) {
-    Wire.beginTransmission(addr);
-    if (Wire.endTransmission() == 0) {
-      Serial.printf("  Found @ 0x%02X\n", addr); delay(5);
-    }
-  }
-  if (expander.begin() != 0) { Serial.println("❌ PCF8574 init failed!"); while(1) delay(500); }
-  Serial.println("✅ PCF8574 ready");
-  for (int i=0;i<3;i++){ expander.write(EXP_LED_PIN,HIGH); delay(150); expander.write(EXP_LED_PIN,LOW); delay(150); }
-
-  // 3) Sensors test
-  dht.begin();
-  float h = dht.readHumidity(), t=dht.readTemperature();
-  Serial.printf("DHT22 → %s\n", (!isnan(h)&&!isnan(t)) ? String(t,1)+"°C, "+String(h,1)+"%" : "❌ failed");
-  ds18b20.begin(); ds18b20.requestTemperatures();
-  float tw = ds18b20.getTempCByIndex(0);
-  Serial.printf("DS18B20 → %s\n", tw!=DEVICE_DISCONNECTED_C ? String(tw,1)+"°C" : "❌ failed");
-
-  // 4) Camera test
-  cameraModule.init();
-  camera_fb_t *fb = cameraModule.capture();
-  Serial.println(fb ? "✅ Camera OK" : "❌ Camera FAILED");
-  if(fb) cameraModule.release(fb);
-
-  // 5) WiFi connect
-  Serial.print("Connecting WiFi");
-  wifi.connect();
-  uint32_t t0=millis();
-  while(!wifi.isConnected() && millis()-t0<10000){ Serial.print("."); delay(500); }
-  if(!wifi.isConnected()){
-    Serial.println("\n❌ WiFi failed! Blink LED4");
-    for(int i=0;i<5;i++){ digitalWrite(WIFI_FAIL_LED,HIGH); delay(200); digitalWrite(WIFI_FAIL_LED,LOW); delay(200); }
-  } else {
-    Serial.println("\n✅ WiFi connected");
-
-    // 6) Test HttpConfigModule
-    Serial.println("Fetching remote config...");
-    if(httpConfig.fetchConfig()){
-      Serial.println("✅ Config fetched:");
-      Serial.printf("  wifi_ssid: %s\n", httpConfig.wifi_ssid.c_str());
-      Serial.printf("  wifi_password: %s\n", httpConfig.wifi_password.c_str());
-      Serial.printf("  deepSleepIntervalUs: %llu\n", httpConfig.deep_sleep_interval_us);
-      Serial.printf("  pumpOnTimeMs: %u\n", httpConfig.pump_on_time_ms);
-      Serial.printf("  sensorPath: %s\n", httpConfig.sensorPath.c_str());
-      Serial.printf("  imgPath: %s\n", httpConfig.imgPath.c_str());
-      Serial.printf("  host: %s\n", httpConfig.configured_host.c_str());
-      Serial.printf("  port: %u\n", httpConfig.configured_port);
-    } else {
-      Serial.println("❌ Config fetch failed");
-    }
-
-    // 7) Send sensor data
-    snprintf(jsonBuf, sizeof(jsonBuf),
-      "{\"deviceId\":\"%s\",\"ambientTemp\":%s,\"humidity\":%s,\"waterTemp\":%s}",
-      deviceId,
-      (!isnan(t) ? String(t,1).c_str() : "null"),
-      (!isnan(h) ? String(h,1).c_str() : "null"),
-      (tw!=DEVICE_DISCONNECTED_C ? String(tw,1).c_str() : "null")
-    );
-    httpSensor = new HttpSensorsModule(httpConfig.configured_host.c_str(),
-                                       httpConfig.configured_port,
-                                       httpConfig.sensorPath.c_str(),
-                                       deviceToken, deviceId);
-    Serial.print("Sending sensor data... ");
-    Serial.println(httpSensor->sendData(jsonBuf, strlen(jsonBuf)) ? "✅" : "❌");
-    delete httpSensor;
-
-    // 8) Send camera image
-    if(fb){
-      httpCamera = new HttpCameraModule(httpConfig.configured_host.c_str(),
-                                        httpConfig.configured_port,
-                                        httpConfig.imgPath.c_str(),
-                                        deviceToken, deviceId);
-      httpCamera->setTimeout(20000);
-      unsigned long dur;
-      Serial.print("Sending camera image... ");
-      Serial.println(httpCamera->send(fb, dur) ? "✅":"❌");
-      delete httpCamera;
-    }
-  }
-
-  // 9) Deep sleep
-  Serial.printf("Sleeping %llu us...\n", SLEEP_TIME_US);
-  delay(100);
-  esp_sleep_enable_timer_wakeup(SLEEP_TIME_US);
-  esp_deep_sleep_start();
-}
-
-void loop() {
-  // not used
-}
-
-  uint32_t IMAGE_INTERVAL;
-  uint32_t PUMP_CYCLE_MS;
-  uint32_t PUMP_ON_MS;
+struct DynamicIntervals {
+  uint32_t sensorInterval;
+  uint32_t dataInterval;
+  uint32_t imageInterval;
+  uint32_t pumpCycleMs;
+  uint32_t pumpOnMs;
+  uint32_t pumpOffMs;
+  uint32_t ledCycleMs;
+  uint32_t ledOnMs;
+  uint32_t ledOffMs;
 };
 
-class HttpConfigModule
-{
+struct ScheduleHours {
+  uint8_t pumpStartHour;
+  uint8_t pumpEndHour;
+  uint8_t ledStartHour;
+  uint8_t ledEndHour;
+};
+
+struct FanSchedule {
+  uint32_t smallOnMs;
+  uint32_t smallOffMs;
+  bool     largeContinuous;
+  uint32_t largeOnMs;
+  uint32_t largeOffMs;
+};
+
+class HttpConfigModule {
 private:
-  const char *host;
+  const char* host;
   const int port;
-  const char *path; // Ví dụ "/device-config"
-  const char *deviceToken;
-  const char *deviceId;
+  const char* path;
+  const char* deviceToken;
+  const char* deviceId;
   WiFiClientSecure client;
   String rawResponse;
 
-public:
-  // Các trường sẽ được gán khi parse JSON
-  String wifi_ssid;
-  String wifi_password;
-  String configured_host;
-  uint16_t configured_port;
-  String sensorPath; // Đổi tên cho khớp với main
-  String imgPath;    // Đổi tên cho khớp với main
-
-  // Nếu server trả các khoảng thời gian động, lưu ở đây; nếu không = 0
-  DynamicIntervals intervals;
-
-  // Nếu server trả deep sleep (us) và pump time (ms), lưu ở đây; nếu không = 0
-  uint64_t deep_sleep_interval_us;
-  uint32_t pump_on_time_ms;
-
-  HttpConfigModule(const char *h, int p, const char *pa, const char *token, const char *id)
-      : host(h), port(p), path(pa), deviceToken(token), deviceId(id)
-  {
-    client.setInsecure();
-    wifi_ssid = "";
-    wifi_password = "";
-    configured_host = "";
-    configured_port = 0;
-    sensorPath = "";
-    imgPath = "";
-    deep_sleep_interval_us = 0;
-    pump_on_time_ms = 0;
-    intervals.SENSOR_INTERVAL = 0;
-    intervals.DATA_INTERVAL = 0;
-    intervals.IMAGE_INTERVAL = 0;
-    intervals.PUMP_CYCLE_MS = 0;
-    intervals.PUMP_ON_MS = 0;
+  template<typename T>
+  T safeAssign(T value, T minVal, T maxVal, T defaultVal) {
+    return (value >= minVal && value <= maxVal) ? value : defaultVal;
   }
 
-  /**
-   * Gửi GET /device-config?device_id=...&device_token=...
-   * Parse JSON body, gán vào các biến public.
-   * Trả về true nếu thành công, false nếu có lỗi.
-   */
-  bool fetchConfig()
-  {
+public:
+  String wifiSsid;
+  String wifiPassword;
+  String configuredHost;
+  uint16_t configuredPort;
+  String sensorEndpoint;
+  String cameraEndpoint;
+
+  uint8_t version;
+  DynamicIntervals intervals;
+  ScheduleHours schedule;
+  FanSchedule fanSchedule;
+  uint64_t deepSleepIntervalUs;
+  String createdAt;
+  String updatedAt;
+
+  HttpConfigModule(const char* h, int p, const char* pa, const char* token, const char* id)
+    : host(h), port(p), path(pa), deviceToken(token), deviceId(id) {
+    client.setInsecure();
+    wifiSsid = "";
+    wifiPassword = "";
+    configuredHost = "";
+    configuredPort = 0;
+    sensorEndpoint = "";
+    cameraEndpoint = "";
+    deepSleepIntervalUs = 10ULL * 1000000ULL;
+    version = 0;
+
+    intervals = {
+      .sensorInterval = 5000UL,
+      .dataInterval   = 5000UL,
+      .imageInterval  = 60000UL,
+      .pumpCycleMs    = 10000UL,
+      .pumpOnMs       = 1000UL,
+      .pumpOffMs      = 9000UL,
+      .ledCycleMs     = 60000UL,
+      .ledOnMs        = 10000UL,
+      .ledOffMs       = 50000UL,
+    };
+
+    schedule = {
+      .pumpStartHour = static_cast<uint8_t>(6),
+      .pumpEndHour   = static_cast<uint8_t>(18),
+      .ledStartHour  = static_cast<uint8_t>(7),
+      .ledEndHour    = static_cast<uint8_t>(19),
+    };
+
+    fanSchedule = {
+      .smallOnMs        = 5000UL,
+      .smallOffMs       = 5000UL,
+      .largeContinuous  = false,
+      .largeOnMs        = 10000UL,
+      .largeOffMs       = 10000UL,
+    };
+  }
+
+  bool fetchConfig() {
     rawResponse = "";
 
-    if (WiFi.status() != WL_CONNECTED)
-    {
+    if (WiFi.status() != WL_CONNECTED) {
       Serial.println("🚫 [Config] WiFi chưa kết nối");
       return false;
     }
 
-    // Ghi log, path là const char*
     Serial.printf("🛠 [Config] Kết nối SSL tới %s:%d (GET %s)\n", host, port, path);
-    if (!client.connect(host, port))
-    {
+    if (!client.connect(host, port)) {
       Serial.println("❌ [Config] Kết nối SSL thất bại");
       return false;
     }
 
-    // Tạo request GET HTTP/1.1
     String request = String("GET ") + path + " HTTP/1.1\r\n" +
                      "Host: " + host + "\r\n" +
                      "Content-Type: application/json\r\n" +
-                     "x-device-token: " + deviceToken + "\r\n" +
-                     "x-device-id: " + deviceId + "\r\n" +
+                     "x-device-id: " + String(deviceId) + "\r\n" +
+                     "x-device-token: " + String(deviceToken) + "\r\n" +
                      "Connection: close\r\n\r\n";
 
     client.print(request);
+
     unsigned long timeout = millis();
-    while (client.connected() && millis() - timeout < 5000)
-    {
-      while (client.available())
-      {
-        String line = client.readStringUntil('\n');
-        rawResponse += line + "\n";
+    while (client.connected() && millis() - timeout < 5000UL) {
+      while (client.available()) {
+        rawResponse += client.readStringUntil('\n') + "\n";
         timeout = millis();
       }
       delay(10);
     }
     client.stop();
 
-    if (rawResponse.length() == 0)
-    {
+    if (rawResponse.length() == 0) {
       Serial.println("⚠️ [Config] Không nhận được response");
       return false;
     }
 
-    Serial.println("📥 [Config] Response thô:");
-    Serial.println(rawResponse);
-
-    // Tách phần body JSON (sau dấu "\r\n\r\n")
     int idx = rawResponse.indexOf("\r\n\r\n");
-    if (idx < 0)
-    {
+    if (idx < 0) {
       Serial.println("❌ [Config] Không tách được phần body JSON");
       return false;
     }
     String jsonPart = rawResponse.substring(idx + 4);
 
-    Serial.println("🔍 [Config] JSON Body:");
-    Serial.println(jsonPart);
-
-    StaticJsonDocument<1024> doc;
+    StaticJsonDocument<3072> doc;
     DeserializationError err = deserializeJson(doc, jsonPart);
-    if (err)
-    {
+    if (err) {
       Serial.print("❌ [Config] Lỗi parse JSON: ");
       Serial.println(err.f_str());
       return false;
     }
 
-    // Gán từng trường nếu tồn tại
+    if (doc.containsKey("version"))
+      version = doc["version"].as<uint8_t>();
     if (doc.containsKey("wifiSsid"))
-    {
-      wifi_ssid = String((const char *)doc["wifiSsid"]);
-    }
+      wifiSsid = doc["wifiSsid"].as<const char*>();
     if (doc.containsKey("wifiPassword"))
-    {
-      wifi_password = String((const char *)doc["wifiPassword"]);
-    }
+      wifiPassword = doc["wifiPassword"].as<const char*>();
     if (doc.containsKey("host"))
-    {
-      configured_host = String((const char *)doc["host"]);
-    }
+      configuredHost = doc["host"].as<const char*>();
     if (doc.containsKey("port"))
-    {
-      configured_port = doc["port"].as<uint16_t>();
-    }
+      configuredPort = doc["port"].as<uint16_t>();
     if (doc.containsKey("sensorEndpoint"))
-    {
-      sensorPath = String((const char *)doc["sensorEndpoint"]);
-    }
+      sensorEndpoint = doc["sensorEndpoint"].as<const char*>();
     if (doc.containsKey("cameraEndpoint"))
-    {
-      imgPath = String((const char *)doc["cameraEndpoint"]);
-    }
-    // Lấy các interval (ms) nếu server có trả
+      cameraEndpoint = doc["cameraEndpoint"].as<const char*>();
+
     if (doc.containsKey("sensorInterval"))
-    {
-      intervals.SENSOR_INTERVAL = doc["sensorInterval"].as<uint32_t>();
-    }
+      intervals.sensorInterval = safeAssign(doc["sensorInterval"].as<uint32_t>(), 1000UL, 600000UL, 5000UL);
     if (doc.containsKey("dataInterval"))
-    {
-      intervals.DATA_INTERVAL = doc["dataInterval"].as<uint32_t>();
-    }
+      intervals.dataInterval = safeAssign(doc["dataInterval"].as<uint32_t>(), 1000UL, 600000UL, 5000UL);
     if (doc.containsKey("imageInterval"))
-    {
-      intervals.IMAGE_INTERVAL = doc["imageInterval"].as<uint32_t>();
-    }
+      intervals.imageInterval = safeAssign(doc["imageInterval"].as<uint32_t>(), 10000UL, 3600000UL, 60000UL);
     if (doc.containsKey("pumpCycleMs"))
-    {
-      intervals.PUMP_CYCLE_MS = doc["pumpCycleMs"].as<uint32_t>();
-    }
+      intervals.pumpCycleMs = safeAssign(doc["pumpCycleMs"].as<uint32_t>(), 1000UL, 3600000UL, 10000UL);
     if (doc.containsKey("pumpOnMs"))
-    {
-      intervals.PUMP_ON_MS = doc["pumpOnMs"].as<uint32_t>();
-    }
-    // Lấy deep sleep (us) và pump_on_time_ms (ms) nếu có
-    if (doc.containsKey("deepSleepIntervalUs"))
-    {
-      deep_sleep_interval_us = doc["deepSleepIntervalUs"].as<uint64_t>();
-    }
-    if (doc.containsKey("pumpOnTimeMs"))
-    {
-      pump_on_time_ms = doc["pumpOnTimeMs"].as<uint32_t>();
+      intervals.pumpOnMs = safeAssign(doc["pumpOnMs"].as<uint32_t>(), 100UL, intervals.pumpCycleMs, 1000UL);
+    if (doc.containsKey("pumpOffMs"))
+      intervals.pumpOffMs = safeAssign(doc["pumpOffMs"].as<uint32_t>(), 100UL, intervals.pumpCycleMs, 9000UL);
+    if (doc.containsKey("ledCycleMs"))
+      intervals.ledCycleMs = safeAssign(doc["ledCycleMs"].as<uint32_t>(), 1000UL, 86400000UL, 60000UL);
+    if (doc.containsKey("ledOnMs"))
+      intervals.ledOnMs = safeAssign(doc["ledOnMs"].as<uint32_t>(), 100UL, intervals.ledCycleMs, 10000UL);
+    if (doc.containsKey("ledOffMs"))
+      intervals.ledOffMs = safeAssign(doc["ledOffMs"].as<uint32_t>(), 100UL, intervals.ledCycleMs, 50000UL);
+
+    if (doc.containsKey("pumpStartHour"))
+      schedule.pumpStartHour = safeAssign(doc["pumpStartHour"].as<uint8_t>(), static_cast<uint8_t>(0), static_cast<uint8_t>(23), static_cast<uint8_t>(6));
+    if (doc.containsKey("pumpEndHour"))
+      schedule.pumpEndHour   = safeAssign(doc["pumpEndHour"].as<uint8_t>(), static_cast<uint8_t>(0), static_cast<uint8_t>(23), static_cast<uint8_t>(18));
+    if (doc.containsKey("ledStartHour"))
+      schedule.ledStartHour  = safeAssign(doc["ledStartHour"].as<uint8_t>(), static_cast<uint8_t>(0), static_cast<uint8_t>(23), static_cast<uint8_t>(7));
+    if (doc.containsKey("ledEndHour"))
+      schedule.ledEndHour    = safeAssign(doc["ledEndHour"].as<uint8_t>(), static_cast<uint8_t>(0), static_cast<uint8_t>(23), static_cast<uint8_t>(19));
+
+    if (doc.containsKey("fanSmallOnMs"))
+      fanSchedule.smallOnMs   = safeAssign(doc["fanSmallOnMs"].as<uint32_t>(), 100UL, 3600000UL, 5000UL);
+    if (doc.containsKey("fanSmallOffMs"))
+      fanSchedule.smallOffMs  = safeAssign(doc["fanSmallOffMs"].as<uint32_t>(), 100UL, 3600000UL, 5000UL);
+    if (doc.containsKey("fanLargeMode"))
+      fanSchedule.largeContinuous = String(doc["fanLargeMode"].as<const char*>()) == "continuous";
+    if (doc.containsKey("fanLargeOnMs"))
+      fanSchedule.largeOnMs   = safeAssign(doc["fanLargeOnMs"].as<uint32_t>(), 100UL, 3600000UL, 10000UL);
+    if (doc.containsKey("fanLargeOffMs"))
+      fanSchedule.largeOffMs  = safeAssign(doc["fanLargeOffMs"].as<uint32_t>(), 100UL, 3600000UL, 10000UL);
+
+    if (doc.containsKey("deepSleepIntervalUs")) {
+      uint64_t val = strtoull(doc["deepSleepIntervalUs"], nullptr, 10);
+      deepSleepIntervalUs = (val >= 1000000ULL && val <= 24ULL * 3600ULL * 1000000ULL)
+                          ? val : 10ULL * 1000000ULL;
     }
 
-    Serial.println("✅ [Config] Đã parse và lưu cấu hình:");
-    Serial.printf("  wifiSsid: %s\n", wifi_ssid.c_str());
-    Serial.printf("  wifiPassword: %s\n", wifi_password.c_str());
-    Serial.printf("  host: %s\n", configured_host.c_str());
-    Serial.printf("  port: %u\n", configured_port);
-    Serial.printf("  sensorEndpoint: %s\n", sensorPath.c_str());
-    Serial.printf("  cameraEndpoint: %s\n", imgPath.c_str());
-    Serial.printf("  sensorInterval: %u ms\n", intervals.SENSOR_INTERVAL);
-    Serial.printf("  dataInterval: %u ms\n", intervals.DATA_INTERVAL);
-    Serial.printf("  imageInterval: %u ms\n", intervals.IMAGE_INTERVAL);
-    Serial.printf("  pumpCycleMs: %u ms\n", intervals.PUMP_CYCLE_MS);
-    Serial.printf("  pumpOnMs: %u ms\n", intervals.PUMP_ON_MS);
-    Serial.printf("  deepSleepIntervalUs: %llu\n", deep_sleep_interval_us);
-    Serial.printf("  pumpOnTimeMs: %u ms\n", pump_on_time_ms);
+    if (doc.containsKey("createdAt")) createdAt = doc["createdAt"].as<const char*>();
+    if (doc.containsKey("updatedAt")) updatedAt = doc["updatedAt"].as<const char*>();
 
+
+   Serial.println("✅ [Config] Đã parse và lưu cấu hình:");
+    Serial.printf("  wifiSsid: %s\n", wifiSsid.c_str());
+    Serial.printf("  wifiPassword: %s\n", wifiPassword.c_str());
+    Serial.printf("  host: %s\n", configuredHost.c_str());
+    Serial.printf("  port: %u\n", configuredPort);
+    Serial.printf("  sensorEndpoint: %s\n", sensorEndpoint.c_str());
+    Serial.printf("  cameraEndpoint: %s\n", cameraEndpoint.c_str());
+    Serial.printf("  sensorInterval: %u ms\n", intervals.sensorInterval);
+    Serial.printf("  dataInterval: %u ms\n", intervals.dataInterval);
+    Serial.printf("  imageInterval: %u ms\n", intervals.imageInterval);
+    Serial.printf("  pumpCycleMs: %u ms\n", intervals.pumpCycleMs);
+    Serial.printf("  pumpOnMs: %u ms\n", intervals.pumpOnMs);
+    Serial.printf("  ledCycleMs: %u ms\n", intervals.ledCycleMs);
+    Serial.printf("  ledOnMs: %u ms\n", intervals.ledOnMs);
+    Serial.printf("  pumpStartHour: %u\n", schedule.pumpStartHour);
+    Serial.printf("  pumpEndHour: %u\n", schedule.pumpEndHour);
+    Serial.printf("  ledStartHour: %u\n", schedule.ledStartHour);
+    Serial.printf("  ledEndHour: %u\n", schedule.ledEndHour);
+    Serial.printf("  deepSleepIntervalUs: %llu us\n", deepSleepIntervalUs);
+    Serial.printf("  createdAt: %s\n", createdAt.c_str());
+    Serial.printf("  updatedAt: %s\n", updatedAt.c_str());
     return true;
   }
 
-  const String &getRawResponse() const
-  {
+  const String& getRawResponse() const {
     return rawResponse;
   }
 };
