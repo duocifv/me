@@ -1,3 +1,4 @@
+// src/device-config/device-config.entity.ts
 import {
   Entity,
   Column,
@@ -11,6 +12,9 @@ export class DeviceConfigEntity {
   @PrimaryColumn({ name: 'device_id', type: 'varchar', length: 32 })
   deviceId: string;
 
+  @PrimaryColumn({ name: 'version', type: 'int' })
+  version: number;
+
   @Column({ name: 'wifi_ssid', type: 'varchar', length: 64 })
   wifiSsid: string;
 
@@ -23,7 +27,7 @@ export class DeviceConfigEntity {
   @Column({ name: 'port', type: 'int', default: 0 })
   port: number;
 
-  @Column({ name: 'deep_sleep_interval_us', type: 'int' })
+  @Column({ name: 'deep_sleep_interval_us', type: 'bigint', default: 0 })
   deepSleepIntervalUs: number;
 
   @Column({ name: 'sensor_endpoint', type: 'varchar', length: 128 })
@@ -47,6 +51,9 @@ export class DeviceConfigEntity {
   @Column({ name: 'pump_on_ms', type: 'int', default: 0 })
   pumpOnMs: number;
 
+  @Column({ name: 'pump_off_ms', type: 'int', default: 0 })
+  pumpOffMs: number;
+
   @Column({ name: 'pump_start_hour', type: 'int', default: 6 })
   pumpStartHour: number;
 
@@ -59,11 +66,29 @@ export class DeviceConfigEntity {
   @Column({ name: 'led_on_ms', type: 'int', default: 0 })
   ledOnMs: number;
 
+  @Column({ name: 'led_off_ms', type: 'int', default: 0 })
+  ledOffMs: number;
+
   @Column({ name: 'led_start_hour', type: 'int', default: 6 })
   ledStartHour: number;
 
   @Column({ name: 'led_end_hour', type: 'int', default: 18 })
   ledEndHour: number;
+
+  @Column({ name: 'fan_small_on_ms', type: 'int', default: 0 })
+  fanSmallOnMs: number;
+
+  @Column({ name: 'fan_small_off_ms', type: 'int', default: 0 })
+  fanSmallOffMs: number;
+
+  @Column({ name: 'fan_large_continuous', type: 'boolean', default: true })
+  fanLargeContinuous: boolean;
+
+  @Column({ name: 'fan_large_on_ms', type: 'int', default: 0 })
+  fanLargeOnMs: number;
+
+  @Column({ name: 'fan_large_off_ms', type: 'int', default: 0 })
+  fanLargeOffMs: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;

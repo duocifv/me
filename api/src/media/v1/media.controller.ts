@@ -32,7 +32,6 @@ import { MediaFilterDto, MediaFilterSchema } from '../dto/media-filter.dto';
 import { MediaFileDto } from '../dto/media-file.dto';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import { BulkDeleteDto, BulkDeleteSchema } from '../dto/bulk-delete.dto';
-import { MediaCategory } from '../type/media-category.type';
 import { UploadFileService } from './media.service';
 
 @ApiTags('Media')
@@ -94,32 +93,32 @@ export class MediaController {
     return this.uploadService.saveImage(mediaDto);
   }
 
-  @Post('upload/esp32')
-  @ApiOperation({
-    summary: 'Upload ảnh ESP32 (chỉ lưu file gốc, không resize)',
-  })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: UploadFileDto })
-  async uploadEsp32(@Req() req: FastifyRequest) {
-    if (!req.isMultipart()) {
-      throw new BadRequestException('Form must be multipart/form-data');
-    }
-    const part = await req.file();
+  // @Post('upload/esp32')
+  // @ApiOperation({
+  //   summary: 'Upload ảnh ESP32 (chỉ lưu file gốc, không resize)',
+  // })
+  // @ApiConsumes('multipart/form-data')
+  // @ApiBody({ type: UploadFileDto })
+  // async uploadEsp32(@Req() req: FastifyRequest) {
+  //   if (!req.isMultipart()) {
+  //     throw new BadRequestException('Form must be multipart/form-data');
+  //   }
+  //   const part = await req.file();
 
-    if (!part) throw new NotFoundException('File không có');
+  //   if (!part) throw new NotFoundException('File không có');
 
-    if (!['image/jpeg', 'image/png'].includes(part.mimetype)) {
-      throw new BadRequestException('Chỉ JPG hoặc PNG được phép cho ESP32');
-    }
-    const { url } = await req.server.fileManager.saveEsp32Image(part);
-    const mediaDto: CreateMediaDto = {
-      mimetype: part.mimetype,
-      size: part.file?.bytesRead || 0,
-      variants: { original: url },
-      category: [MediaCategory.ESP32],
-    };
-    return this.uploadService.saveImage(mediaDto);
-  }
+  //   if (!['image/jpeg', 'image/png'].includes(part.mimetype)) {
+  //     throw new BadRequestException('Chỉ JPG hoặc PNG được phép cho ESP32');
+  //   }
+  //   const { url } = await req.server.fileManager.saveEsp32Image(part);
+  //   const mediaDto: CreateMediaDto = {
+  //     mimetype: part.mimetype,
+  //     size: part.file?.bytesRead || 0,
+  //     variants: { original: url },
+  //     category: [MediaCategory.ESP32],
+  //   };
+  //   return this.uploadService.saveImage(mediaDto);
+  // }
 
   // @Get('esp32')
   // @ApiOperation({ summary: 'Danh sách ảnh ESP32 có phân trang' })

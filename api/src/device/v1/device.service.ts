@@ -24,24 +24,22 @@ export class DeviceService {
     private readonly errRepo: Repository<DeviceErrorEntity>,
   ) {}
 
+  /** Ghi nhận lỗi */
   async reportDeviceError(
-    dto: ReportDeviceErrorDto,
     deviceId: string,
-  ): Promise<{ sussess: boolean }> {
-    const errEntity = this.errRepo.create({
-      deviceId: deviceId,
-      errorCode: dto.error_code,
-      errorMessage: dto.error_message,
-    });
-
-    // lưu vào DB
-    await this.errRepo.save(errEntity);
-
-    return {
-      sussess: true,
-    };
+    { error_code, error_message }: ReportDeviceErrorDto,
+  ): Promise<{ success: true }> {
+    await this.errRepo.save(
+      this.errRepo.create({
+        deviceId,
+        errorCode: error_code,
+        errorMessage: error_message,
+      }),
+    );
+    return { success: true };
   }
 
+  /** Lấy lỗi */
   async getDeviceErrors(deviceId: string): Promise<DeviceErrorEntity[]> {
     return this.errRepo.find({
       where: { deviceId },
@@ -49,69 +47,71 @@ export class DeviceService {
     });
   }
 
-  /**
-   * Lấy config theo device_id. Nếu không tồn tại thì ném NotFoundException.
-   */
-  async getConfig(deviceId: string): Promise<DeviceConfigEntity> {
+  /** Lấy config mới nhất */
+  async getLatestConfig(deviceId: string): Promise<DeviceConfigEntity> {
     const cfg = await this.cfgRepo.findOne({
       where: { deviceId },
-      order: {
-        createdAt: 'DESC',
-      },
+      order: { version: 'DESC' },
     });
-    if (!cfg) {
-      throw new NotFoundException(
-        `Config của device '${deviceId}' chưa tồn tại`,
-      );
-    }
+    if (!cfg)
+      throw new NotFoundException(`No config for deviceId='${deviceId}'`);
     return cfg;
   }
 
-  /**
-   * Tạo hoặc cập nhật config.
-   * Nếu đã có record với device_id đó, thì update; còn không thì create mới.
-   */
-  async createOrUpdateConfig(
+  /** Danh sách version */
+  async listConfigVersions(
+    deviceId: string,
+  ): Promise<{ version: number; createdAt: Date }[]> {
+    return this.cfgRepo.find({
+      select: ['version', 'createdAt'],
+      where: { deviceId },
+      order: { version: 'DESC' },
+    });
+  }
+
+  /** Tạo mới bản config với version tăng dần */
+  async upsertWithVersion(
     dto: CreateDeviceConfigDto,
   ): Promise<DeviceConfigEntity> {
-    const existing = await this.cfgRepo.findOne({
-      where: { deviceId: dto.deviceId },
-    });
-
-    const fieldsToUpdate = {
-      wifiSsid: dto.wifiSsid,
-      wifiPassword: dto.wifiPassword,
-      host: dto.host,
-      port: dto.port,
-      deepSleepIntervalUs: dto.deepSleepIntervalUs,
-      sensorEndpoint: dto.sensorEndpoint,
-      cameraEndpoint: dto.cameraEndpoint,
-      sensorInterval: dto.sensorInterval,
-      dataInterval: dto.dataInterval,
-      imageInterval: dto.imageInterval,
-      pumpCycleMs: dto.pumpCycleMs,
-      pumpOnMs: dto.pumpOnMs,
-      pumpStartHour: dto.pumpStartHour,
-      pumpEndHour: dto.pumpEndHour,
-      ledCycleMs: dto.ledCycleMs,
-      ledOnMs: dto.ledOnMs,
-      ledStartHour: dto.ledStartHour,
-      ledEndHour: dto.ledEndHour,
-    };
-
     try {
-      if (existing) {
-        Object.assign(existing, fieldsToUpdate);
-        return await this.cfgRepo.save(existing);
-      } else {
-        const newEntity = this.cfgRepo.create({
-          deviceId: dto.deviceId,
-          ...fieldsToUpdate,
-        });
-        return await this.cfgRepo.save(newEntity);
-      }
-    } catch {
-      throw new InternalServerErrorException('Lỗi khi lưu config vào DB');
+      // tính version mới
+      const last = await this.cfgRepo.findOne({
+        where: { deviceId: dto.deviceId },
+        order: { version: 'DESC' },
+      });
+      const nextVersion = last ? last.version + 1 : 1;
+
+      const entity = this.cfgRepo.create({ ...dto, version: nextVersion });
+      return await this.cfgRepo.save(entity);
+    } catch (err) {
+      this.logger.error(
+        'Error saving config version',
+        err.stack || err.message,
+      );
+      throw new InternalServerErrorException('Cannot save device config');
     }
+  }
+
+  /** Rollback: tạo bản config mới dựa trên version cũ */
+  async rollbackConfig(
+    deviceId: string,
+    version: number,
+  ): Promise<DeviceConfigEntity> {
+    const hist = await this.cfgRepo.findOne({ where: { deviceId, version } });
+    if (!hist) throw new NotFoundException('Version not found');
+
+    // tạo bản mới với version tăng
+    const latest = await this.cfgRepo.findOne({
+      where: { deviceId },
+      order: { version: 'DESC' },
+    });
+    const newVersion = (latest?.version || 0) + 1;
+    const clone = this.cfgRepo.create({
+      ...hist,
+      version: newVersion,
+      createdAt: undefined,
+      updatedAt: undefined,
+    });
+    return this.cfgRepo.save(clone);
   }
 }

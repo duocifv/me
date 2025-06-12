@@ -15,13 +15,19 @@ export const CreateDeviceConfigSchema = z.object({
   imageInterval: z.number().int(),
   pumpCycleMs: z.number().int(),
   pumpOnMs: z.number().int(),
+  pumpOffMs: z.number().int(),
   pumpStartHour: z.number().int(),
   pumpEndHour: z.number().int(),
   ledCycleMs: z.number().int(),
   ledOnMs: z.number().int(),
+  ledOffMs: z.number().int(),
   ledStartHour: z.number().int(),
   ledEndHour: z.number().int(),
+  fanSmallOnMs: z.number().int(),
+  fanSmallOffMs: z.number().int(),
+  fanLargeContinuous: z.boolean(),
+  fanLargeOnMs: z.number().int(),
+  fanLargeOffMs: z.number().int(),
 });
 
-// Tạo type từ schema
 export type CreateDeviceConfigDto = z.infer<typeof CreateDeviceConfigSchema>;

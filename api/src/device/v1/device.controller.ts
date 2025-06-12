@@ -1,5 +1,13 @@
 // src/device-config/device-config.controller.ts
-import { Controller, Get, HttpCode, Param, Post, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Req,
+  ParseIntPipe,
+} from '@nestjs/common';
 import {
   CreateDeviceConfigDto,
   CreateDeviceConfigSchema,
@@ -9,54 +17,72 @@ import {
   ReportDeviceErrorSchema,
 } from '../dto/report-device-error.dto';
 import { DeviceConfigEntity } from '../entities/device-config.entity';
+import { DeviceErrorEntity } from '../entities/device-error.entity';
 import { DeviceAuth } from 'src/shared/decorators/device-token.decorator';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
-import { DeviceErrorEntity } from '../entities/device-error.entity';
 import { DeviceService } from './device.service';
 
 @Controller('device')
 export class DeviceController {
-  constructor(private readonly configService: DeviceService) {}
+  constructor(private readonly deviceService: DeviceService) {}
 
+  /** Upsert config với version tự động tăng */
+  @Post('config')
+  @HttpCode(200)
+  async upsertConfig(
+    @BodySchema(CreateDeviceConfigSchema) dto: CreateDeviceConfigDto,
+  ): Promise<DeviceConfigEntity> {
+    return this.deviceService.upsertWithVersion(dto);
+  }
+
+  /** Lấy config mới nhất cho device */
+  @Get('config')
+  @DeviceAuth()
+  async getConfig(@Req() req): Promise<DeviceConfigEntity> {
+    return this.deviceService.getLatestConfig(req.deviceId);
+  }
+
+  /** Lấy config mới nhất theo deviceId (admin) */
+  @Get('config/:deviceId')
+  async getConfigForAdmin(
+    @Param('deviceId') deviceId: string,
+  ): Promise<DeviceConfigEntity> {
+    return this.deviceService.getLatestConfig(deviceId);
+  }
+
+  /** Danh sách version */
+  @Get('config/:deviceId/versions')
+  async listVersions(
+    @Param('deviceId') deviceId: string,
+  ): Promise<{ version: number; createdAt: Date }[]> {
+    return this.deviceService.listConfigVersions(deviceId);
+  }
+
+  /** Rollback về version cụ thể */
+  @Post('config/:deviceId/rollback/:version')
+  @HttpCode(200)
+  async rollback(
+    @Param('deviceId') deviceId: string,
+    @Param('version', ParseIntPipe) version: number,
+  ): Promise<DeviceConfigEntity> {
+    return this.deviceService.rollbackConfig(deviceId, version);
+  }
+
+  /** Lấy lỗi của thiết bị */
+  @Get('error')
+  @DeviceAuth()
+  async getErrors(@Req() req): Promise<DeviceErrorEntity[]> {
+    return this.deviceService.getDeviceErrors(req.deviceId);
+  }
+
+  /** Thiết bị báo lỗi */
   @Post('error')
   @DeviceAuth()
   @HttpCode(201)
   async reportError(
     @BodySchema(ReportDeviceErrorSchema) dto: ReportDeviceErrorDto,
     @Req() req,
-  ) {
-    return this.configService.reportDeviceError(dto, req.deviceId);
-  }
-
-  /**
-   * POST /device-config
-   */
-  @Post('config')
-  async createOrUpdate(
-    @BodySchema(CreateDeviceConfigSchema) createDto: CreateDeviceConfigDto,
-  ): Promise<Partial<DeviceConfigEntity>> {
-    return this.configService.createOrUpdateConfig(createDto);
-  }
-
-  /**
-   * GET /device-config?device_id=xxx&device_token=yyy
-   */
-  @Get('config')
-  @DeviceAuth()
-  async getConfig(@Req() req): Promise<Partial<DeviceConfigEntity>> {
-    return this.configService.getConfig(req.deviceId);
-  }
-
-  @Get('config/:deviceId')
-  async getConfigForAdmin(
-    @Param('deviceId') deviceId: string,
-  ): Promise<DeviceConfigEntity> {
-    return this.configService.getConfig(deviceId);
-  }
-
-  @Get('error')
-  @DeviceAuth()
-  async getErrors(@Req() req): Promise<DeviceErrorEntity[]> {
-    return this.configService.getDeviceErrors(req.deviceId);
+  ): Promise<{ success: true }> {
+    return this.deviceService.reportDeviceError(req.deviceId, dto);
   }
 }
