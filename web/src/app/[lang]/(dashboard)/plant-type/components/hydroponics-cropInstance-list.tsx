@@ -12,14 +12,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { mockCropInstances } from "../hydroponics/components/mockCropInstances";
 import { Picture } from "@/components/share/picture/ui-picture";
 import { usePlantTypeStore } from "@adapter/plant-type/plant-type.store";
+import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
 
 export default function CropInstanceList() {
-  const [crops, setCrops] = useState(mockCropInstances);
-  const [newName, setNewName] = useState("");
+  const cropInstances = useHydroponicsStore((s) => s.cropInstances);
   const [dialogOpen, setDialogOpen] = useState(false);
   const data = usePlantTypeStore((s) => s.data);
 
@@ -70,7 +68,7 @@ export default function CropInstanceList() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {crops.map((crop) => (
+        {cropInstances.map((crop) => (
           <Card
             key={crop.id}
             className="hover:shadow-md transition-all rounded-2xl border-gray-200"

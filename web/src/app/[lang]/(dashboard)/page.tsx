@@ -3,12 +3,14 @@ import HydroponicsSyncData from "./snapshots/dispatch/dispatch-snapshots-sync-da
 import { SectionCards } from "./snapshots/components/section-cards";
 import { ChartAreaInteractive } from "./snapshots/components/chart-area-interactive";
 import { SnapsortCarousel } from "./snapshots/components/snapshots-carousel";
-import CropInstanceList from "./components/hydroponics-cropInstance-list";
+import CropInstanceList from "./plant-type/components/hydroponics-cropInstance-list";
 import PlantTypeSyncData from "./plant-type/dispatch/dispatch-plant-type-sync-data";
+import CropInstancesSyncData from "./hydroponics/dispatch/dispatch-crop-instances-sync-data";
 
 export default function Page() {
   return (
     <div>
+      <CropInstancesSyncData />
       <HydroponicsSyncData />
       <PlantTypeSyncData />
       <SiteHeader value="Dashboard" />

@@ -4,7 +4,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { hydroponicsService } from "./hydroponics.service";
 import { useHydroponicsStore } from "./hydroponics.store";
 
-export function useHydroponicsQuery() {
+export function useCropInstancesQuery() {
   const setCropInstances = useHydroponicsStore((s) => s.setCropInstances);
 
   return useQuery({
