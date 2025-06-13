@@ -1,14 +1,16 @@
 import { SiteHeader } from "@/components/site-header";
-import HydroponicsSyncData from "./(snapshots)/dispatch/dispatch-snapshots-sync-data";
-import { SectionCards } from "./(snapshots)/components/section-cards";
-import { ChartAreaInteractive } from "./(snapshots)/components/chart-area-interactive";
-import SnapshotsList from "./(snapshots)/components/snapshot-list";
-import DispatchSnapshotsDetail from "./(snapshots)/dispatch/dispatch-snapshots-detail";
+import HydroponicsSyncData from "./snapshots/dispatch/dispatch-snapshots-sync-data";
+import { SectionCards } from "./snapshots/components/section-cards";
+import { ChartAreaInteractive } from "./snapshots/components/chart-area-interactive";
+import { SnapsortCarousel } from "./snapshots/components/snapshots-carousel";
+import CropInstanceList from "./components/hydroponics-cropInstance-list";
+import PlantTypeSyncData from "./plant-type/dispatch/dispatch-plant-type-sync-data";
 
 export default function Page() {
   return (
     <div>
       <HydroponicsSyncData />
+      <PlantTypeSyncData />
       <SiteHeader value="Dashboard" />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
@@ -17,8 +19,12 @@ export default function Page() {
             <div className="px-4 lg:px-6">
               <ChartAreaInteractive />
             </div>
-            <SnapshotsList />
-            <DispatchSnapshotsDetail />
+            <div>
+              <CropInstanceList />
+            </div>
+            <div>
+              <SnapsortCarousel />
+            </div>
           </div>
         </div>
       </div>

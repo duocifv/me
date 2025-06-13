@@ -93,8 +93,8 @@ const data = {
       icon: ClipboardListIcon,
     },
     {
-      name: $t`Trợ lý văn bản`,
-      url: "#",
+      name: $t`Ảnh chụp`,
+      url: "/vi/snapshots/",
       icon: FileIcon,
     },
   ],
