@@ -25,3 +25,5 @@ A.
 ※こちらの飛び先は前回同様で問題ないです。
 
 https://universe.roboflow.com/models/object-detection
+
+py -m uvicorn main:app
