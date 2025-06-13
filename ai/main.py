@@ -1,29 +1,33 @@
-from flask import Flask, request, jsonify
 import os
-import urllib.request
+import requests
+
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import JSONResponse
+
 import tensorflow as tf
 import numpy as np
 import cv2
+import shutil
 
-# Tắt dùng GPU (vì thường server Render không hỗ trợ)
+MODEL_URL = "https://crop.duocnv.top/kale_growth_model.h5"
+MODEL_PATH = "kale_growth_model.h5"
+
+# Tải mô hình nếu chưa tồn tại
+if not os.path.exists(MODEL_PATH):
+    print("⏬ Downloading model...")
+    r = requests.get(MODEL_URL)
+    with open(MODEL_PATH, 'wb') as f:
+        f.write(r.content)
+    print("✅ Model downloaded.")
+
+# Tắt dùng GPU
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-app = Flask(__name__)
-
-MODEL_PATH = "kale_growth_model.h5"
-MODEL_URL = "https://crop.duocnv.top/kale_growth_model.h5"
-
-# Tự động tải model nếu chưa có
-if not os.path.exists(MODEL_PATH):
-    print("⬇️ Đang tải mô hình...")
-    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
-    print("✅ Đã tải xong mô hình.")
-
-# Load mô hình
+# Tải model
 model = tf.keras.models.load_model(MODEL_PATH)
-
-# Tên các giai đoạn sinh trưởng
 class_names = ["Nảy mầm", "Ra lá mầm", "Phát triển thân lá", "Gần thu hoạch", "Thu hoạch"]
+
+app = FastAPI()
 
 def predict_image(image_path):
     img = cv2.imread(image_path)
@@ -49,7 +53,7 @@ def predict_image(image_path):
 
     next_stage = timeline[top + 1]["label"] if top + 1 < len(timeline) else None
     days_until_next = [8, 14, 19, 15, 0][top] if top < len(timeline) else 0
-    estimated_days_to_harvest = max(0, sum([8, 14, 19, 15, 10]) - sum([8, 14, 19, 15, 10][:top]))
+    estimated_days_to_harvest = sum([8, 14, 19, 15, 10]) - sum([8, 14, 19, 15, 10][:top])
 
     return {
         "stage": stage,
@@ -60,23 +64,14 @@ def predict_image(image_path):
         "timeline": timeline,
     }
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-
-    file = request.files['file']
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
     os.makedirs("temp", exist_ok=True)
     file_path = os.path.join("temp", file.filename)
-    file.save(file_path)
 
-    try:
-        result = predict_image(file_path)
-    finally:
-        os.remove(file_path)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-    return jsonify(result)
-
-# WSGI entry point
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    result = predict_image(file_path)
+    os.remove(file_path)
+    return JSONResponse(content=result)
