@@ -11,15 +11,13 @@ inline size_t buildJsonSnapshots(char *buffer, size_t bufferSize,
     StaticJsonDocument<256> doc;
     JsonObject root = doc.to<JsonObject>();
 
-    JsonObject sensorData = root.createNestedObject("sensorData");
-    sensorData["water_temperature"]   = waterTemp;
-    sensorData["ambient_temperature"] = ambientTemp;
-    sensorData["humidity"]            = humidity;
-
-    JsonObject solutionData = root.createNestedObject("solutionData");
-    solutionData["ph"]  = ph;
-    solutionData["ec"]  = ec;
-    solutionData["orp"] = orp;
+    // Thêm trực tiếp các field vào đối tượng gốc
+    root["waterTemp"]    = waterTemp;
+    root["ambientTemp"]  = ambientTemp;
+    root["humidity"]     = humidity;
+    root["ph"]           = ph;
+    root["ec"]           = ec;
+    root["orp"]          = orp;
 
     if (!buffer || bufferSize == 0) {
         // Trả về kích thước cần thiết
