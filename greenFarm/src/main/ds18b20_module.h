@@ -5,37 +5,32 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-// Chân DATA OneWire của DS18B20 (đã chọn GPIO13 trên ESP32-CAM)
+// Chân DATA OneWire của DS18B20 (VD: GPIO13 trên ESP32-CAM)
 #define ONE_WIRE_BUS 13
 
 class DS18B20Module {
 private:
-    OneWire oneWire;           // Thư viện OneWire (Paul Stoffregen)
-    DallasTemperature sensors; // Thư viện DallasTemperature
+    OneWire oneWire;
+    DallasTemperature sensors;
 
 public:
-    // Constructor: khởi tạo OneWire trên chân ONE_WIRE_BUS
+    // Constructor
     DS18B20Module() : oneWire(ONE_WIRE_BUS), sensors(&oneWire) {}
 
-    // Hàm begin(): phải gọi trong setup() của file main
     void begin() {
-        // Bật pull-up nội để tạm test (nếu chưa có điện trở 4.7kΩ ngoài)
-        pinMode(ONE_WIRE_BUS, INPUT_PULLUP);
+        // Không cần pinMode(ONE_WIRE_BUS, INPUT_PULLUP); nếu đã có điện trở 4.7kΩ ngoài
 
-        // Khởi động DallasTemperature
         sensors.begin();
 
-        // In ra số thiết bị DS18B20 tìm thấy (phục vụ debug)
         int count = sensors.getDeviceCount();
-        Serial.print("DS18B20: Found ");
+        Serial.print("DS18B20: Tìm thấy ");
         Serial.print(count);
-        Serial.println(" device(s) on bus.");
+        Serial.println(" cảm biến.");
 
-        // (Tùy chọn) In thêm địa chỉ ROM của con đầu tiên
         if (count > 0) {
             DeviceAddress addr;
             if (sensors.getAddress(addr, 0)) {
-                Serial.print("-> ROM Address: ");
+                Serial.print("-> Địa chỉ ROM: ");
                 for (uint8_t i = 0; i < 8; i++) {
                     if (addr[i] < 16) Serial.print("0");
                     Serial.print(addr[i], HEX);
@@ -43,26 +38,20 @@ public:
                 Serial.println();
             }
         } else {
-            Serial.println("No DS18B20 device detected on bus!");
+            Serial.println("⚠️ Không tìm thấy cảm biến DS18B20 nào.");
         }
 
-        // Thiết lập độ phân giải: 10‐bit (khoảng 0.0625 °C, conversion ~200 ms)
-        sensors.setResolution(10);
-
-        // Đợi mỗi lần requestTemperatures() xong mới tiếp tục
-        sensors.setWaitForConversion(true);
+        sensors.setResolution(10);               // 10-bit: chính xác 0.25°C, tốc độ ~200ms
+        sensors.setWaitForConversion(true);      // Chờ đo xong rồi mới đọc
     }
 
-    // Hàm lấy nhiệt độ (trong độ C). Trả NAN nếu cảm biến ngắt/kết nối sai.
+    // Trả về nhiệt độ C, hoặc NAN nếu không đọc được
     float getTemperature() {
-        // Gửi lệnh yêu cầu đo nhiệt độ
-        sensors.requestTemperatures();
+        sensors.requestTemperatures();           // Yêu cầu đo
+        float temp = sensors.getTempCByIndex(0); // Đọc từ cảm biến đầu tiên
 
-        // Đọc giá trị của con đầu tiên (index 0)
-        float temp = sensors.getTempCByIndex(0);
-
-        // Nếu DallasTemperature trả DEVICE_DISCONNECTED_C (−127), coi là ngắt
         if (temp == DEVICE_DISCONNECTED_C) {
+            Serial.println("⚠️ DS18B20 không kết nối hoặc lỗi.");
             return NAN;
         }
 

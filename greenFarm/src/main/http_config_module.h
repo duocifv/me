@@ -5,6 +5,8 @@
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 
+// ==== STRUCTS ====
+
 struct DynamicIntervals {
   uint32_t sensorInterval;
   uint32_t dataInterval;
@@ -27,10 +29,12 @@ struct ScheduleHours {
 struct FanSchedule {
   uint32_t smallOnMs;
   uint32_t smallOffMs;
-  bool     largeContinuous;
+  bool largeContinuous;
   uint32_t largeOnMs;
   uint32_t largeOffMs;
 };
+
+// ==== CLASS ====
 
 class HttpConfigModule {
 private:
@@ -39,6 +43,7 @@ private:
   const char* path;
   const char* deviceToken;
   const char* deviceId;
+
   WiFiClientSecure client;
   String rawResponse;
 
@@ -65,41 +70,29 @@ public:
 
   HttpConfigModule(const char* h, int p, const char* pa, const char* token, const char* id)
     : host(h), port(p), path(pa), deviceToken(token), deviceId(id) {
-    client.setInsecure();
+
+    client.setInsecure();  // Bỏ xác thực SSL
+
     wifiSsid = "";
     wifiPassword = "";
     configuredHost = "";
     configuredPort = 0;
     sensorEndpoint = "";
     cameraEndpoint = "";
-    deepSleepIntervalUs = 10ULL * 1000000ULL;
     version = 0;
+    deepSleepIntervalUs = 10ULL * 1000000ULL;
 
     intervals = {
-      .sensorInterval = 5000UL,
-      .dataInterval   = 5000UL,
-      .imageInterval  = 60000UL,
-      .pumpCycleMs    = 10000UL,
-      .pumpOnMs       = 1000UL,
-      .pumpOffMs      = 9000UL,
-      .ledCycleMs     = 60000UL,
-      .ledOnMs        = 10000UL,
-      .ledOffMs       = 50000UL,
+      5000UL, 5000UL, 60000UL,
+      10000UL, 1000UL, 9000UL,
+      60000UL, 10000UL, 50000UL
     };
 
-    schedule = {
-      .pumpStartHour = static_cast<uint8_t>(6),
-      .pumpEndHour   = static_cast<uint8_t>(18),
-      .ledStartHour  = static_cast<uint8_t>(7),
-      .ledEndHour    = static_cast<uint8_t>(19),
-    };
+    schedule = { 6, 18, 7, 19 };
 
     fanSchedule = {
-      .smallOnMs        = 5000UL,
-      .smallOffMs       = 5000UL,
-      .largeContinuous  = false,
-      .largeOnMs        = 10000UL,
-      .largeOffMs       = 10000UL,
+      5000UL, 5000UL, false,
+      10000UL, 10000UL
     };
   }
 
@@ -111,26 +104,30 @@ public:
       return false;
     }
 
-    Serial.printf("🛠 [Config] Kết nối SSL tới %s:%d (GET %s)\n", host, port, path);
+    Serial.printf("📡 [Config] Kết nối HTTPs tới %s:%d (GET %s)\n", host, port, path);
+
     if (!client.connect(host, port)) {
-      Serial.println("❌ [Config] Kết nối SSL thất bại");
+      Serial.println("❌ [Config] Kết nối HTTPs thất bại");
       return false;
     }
 
+    // Gửi HTTP GET request
     String request = String("GET ") + path + " HTTP/1.1\r\n" +
                      "Host: " + host + "\r\n" +
                      "Content-Type: application/json\r\n" +
-                     "x-device-id: " + String(deviceId) + "\r\n" +
-                     "x-device-token: " + String(deviceToken) + "\r\n" +
+                     "x-device-id: " + deviceId + "\r\n" +
+                     "x-device-token: " + deviceToken + "\r\n" +
                      "Connection: close\r\n\r\n";
 
     client.print(request);
 
+    // Đọc response với timeout
     unsigned long timeout = millis();
     while (client.connected() && millis() - timeout < 5000UL) {
       while (client.available()) {
-        rawResponse += client.readStringUntil('\n') + "\n";
-        timeout = millis();
+        String line = client.readStringUntil('\n');
+        rawResponse += line + "\n";
+        timeout = millis();  // reset timeout nếu có data
       }
       delay(10);
     }
@@ -141,14 +138,18 @@ public:
       return false;
     }
 
+    Serial.println("=== RAW RESPONSE ===");
+    Serial.println(rawResponse);
+    Serial.println("====================");
+
     int idx = rawResponse.indexOf("\r\n\r\n");
-    if (idx < 0) {
+    if (idx < 0 || idx + 4 >= rawResponse.length()) {
       Serial.println("❌ [Config] Không tách được phần body JSON");
       return false;
     }
     String jsonPart = rawResponse.substring(idx + 4);
 
-    StaticJsonDocument<3072> doc;
+    DynamicJsonDocument doc(2048);
     DeserializationError err = deserializeJson(doc, jsonPart);
     if (err) {
       Serial.print("❌ [Config] Lỗi parse JSON: ");
@@ -156,97 +157,58 @@ public:
       return false;
     }
 
-    if (doc.containsKey("version"))
-      version = doc["version"].as<uint8_t>();
-    if (doc.containsKey("wifiSsid"))
-      wifiSsid = doc["wifiSsid"].as<const char*>();
-    if (doc.containsKey("wifiPassword"))
-      wifiPassword = doc["wifiPassword"].as<const char*>();
-    if (doc.containsKey("host"))
-      configuredHost = doc["host"].as<const char*>();
-    if (doc.containsKey("port"))
-      configuredPort = doc["port"].as<uint16_t>();
-    if (doc.containsKey("sensorEndpoint"))
-      sensorEndpoint = doc["sensorEndpoint"].as<const char*>();
-    if (doc.containsKey("cameraEndpoint"))
-      cameraEndpoint = doc["cameraEndpoint"].as<const char*>();
+    version = doc["version"] | version;
+    wifiSsid = doc["wifiSsid"] | wifiSsid;
+    wifiPassword = doc["wifiPassword"] | wifiPassword;
+    configuredHost = doc["host"] | configuredHost;
+    configuredPort = doc["port"] | configuredPort;
+    sensorEndpoint = doc["sensorEndpoint"] | sensorEndpoint;
+    cameraEndpoint = doc["cameraEndpoint"] | cameraEndpoint;
 
-    if (doc.containsKey("sensorInterval"))
-      intervals.sensorInterval = safeAssign(doc["sensorInterval"].as<uint32_t>(), 1000UL, 600000UL, 5000UL);
-    if (doc.containsKey("dataInterval"))
-      intervals.dataInterval = safeAssign(doc["dataInterval"].as<uint32_t>(), 1000UL, 600000UL, 5000UL);
-    if (doc.containsKey("imageInterval"))
-      intervals.imageInterval = safeAssign(doc["imageInterval"].as<uint32_t>(), 10000UL, 3600000UL, 60000UL);
-    if (doc.containsKey("pumpCycleMs"))
-      intervals.pumpCycleMs = safeAssign(doc["pumpCycleMs"].as<uint32_t>(), 1000UL, 3600000UL, 10000UL);
-    if (doc.containsKey("pumpOnMs"))
-      intervals.pumpOnMs = safeAssign(doc["pumpOnMs"].as<uint32_t>(), 100UL, intervals.pumpCycleMs, 1000UL);
-    if (doc.containsKey("pumpOffMs"))
-      intervals.pumpOffMs = safeAssign(doc["pumpOffMs"].as<uint32_t>(), 100UL, intervals.pumpCycleMs, 9000UL);
-    if (doc.containsKey("ledCycleMs"))
-      intervals.ledCycleMs = safeAssign(doc["ledCycleMs"].as<uint32_t>(), 1000UL, 86400000UL, 60000UL);
-    if (doc.containsKey("ledOnMs"))
-      intervals.ledOnMs = safeAssign(doc["ledOnMs"].as<uint32_t>(), 100UL, intervals.ledCycleMs, 10000UL);
-    if (doc.containsKey("ledOffMs"))
-      intervals.ledOffMs = safeAssign(doc["ledOffMs"].as<uint32_t>(), 100UL, intervals.ledCycleMs, 50000UL);
+    intervals.sensorInterval = safeAssign(doc["sensorInterval"] | intervals.sensorInterval, 1000UL, 600000UL, 5000UL);
+    intervals.dataInterval = safeAssign(doc["dataInterval"] | intervals.dataInterval, 1000UL, 600000UL, 5000UL);
+    intervals.imageInterval = safeAssign(doc["imageInterval"] | intervals.imageInterval, 10000UL, 3600000UL, 60000UL);
+    intervals.pumpCycleMs = safeAssign(doc["pumpCycleMs"] | intervals.pumpCycleMs, 1000UL, 3600000UL, 10000UL);
+    intervals.pumpOnMs = safeAssign(doc["pumpOnMs"] | intervals.pumpOnMs, 100UL, intervals.pumpCycleMs, 1000UL);
+    intervals.pumpOffMs = safeAssign(doc["pumpOffMs"] | intervals.pumpOffMs, 100UL, intervals.pumpCycleMs, 9000UL);
+    intervals.ledCycleMs = safeAssign(doc["ledCycleMs"] | intervals.ledCycleMs, 1000UL, 86400000UL, 60000UL);
+    intervals.ledOnMs = safeAssign(doc["ledOnMs"] | intervals.ledOnMs, 100UL, intervals.ledCycleMs, 10000UL);
+    intervals.ledOffMs = safeAssign(doc["ledOffMs"] | intervals.ledOffMs, 100UL, intervals.ledCycleMs, 50000UL);
 
-    if (doc.containsKey("pumpStartHour"))
-      schedule.pumpStartHour = safeAssign(doc["pumpStartHour"].as<uint8_t>(), static_cast<uint8_t>(0), static_cast<uint8_t>(23), static_cast<uint8_t>(6));
-    if (doc.containsKey("pumpEndHour"))
-      schedule.pumpEndHour   = safeAssign(doc["pumpEndHour"].as<uint8_t>(), static_cast<uint8_t>(0), static_cast<uint8_t>(23), static_cast<uint8_t>(18));
-    if (doc.containsKey("ledStartHour"))
-      schedule.ledStartHour  = safeAssign(doc["ledStartHour"].as<uint8_t>(), static_cast<uint8_t>(0), static_cast<uint8_t>(23), static_cast<uint8_t>(7));
-    if (doc.containsKey("ledEndHour"))
-      schedule.ledEndHour    = safeAssign(doc["ledEndHour"].as<uint8_t>(), static_cast<uint8_t>(0), static_cast<uint8_t>(23), static_cast<uint8_t>(19));
+    schedule.pumpStartHour = safeAssign<int>((int)(doc["pumpStartHour"] | schedule.pumpStartHour), 0, 23, 6);
+    schedule.pumpEndHour = safeAssign<int>((int)(doc["pumpEndHour"] | schedule.pumpEndHour), 0, 23, 18);
+    schedule.ledStartHour = safeAssign<int>((int)(doc["ledStartHour"] | schedule.ledStartHour), 0, 23, 7);
+    schedule.ledEndHour = safeAssign<int>((int)(doc["ledEndHour"] | schedule.ledEndHour), 0, 23, 19);
 
-    if (doc.containsKey("fanSmallOnMs"))
-      fanSchedule.smallOnMs   = safeAssign(doc["fanSmallOnMs"].as<uint32_t>(), 100UL, 3600000UL, 5000UL);
-    if (doc.containsKey("fanSmallOffMs"))
-      fanSchedule.smallOffMs  = safeAssign(doc["fanSmallOffMs"].as<uint32_t>(), 100UL, 3600000UL, 5000UL);
-    if (doc.containsKey("fanLargeMode"))
+    fanSchedule.smallOnMs = safeAssign(doc["fanSmallOnMs"] | fanSchedule.smallOnMs, 100UL, 3600000UL, 5000UL);
+    fanSchedule.smallOffMs = safeAssign(doc["fanSmallOffMs"] | fanSchedule.smallOffMs, 100UL, 3600000UL, 5000UL);
+    if (doc.containsKey("fanLargeMode")) {
       fanSchedule.largeContinuous = String(doc["fanLargeMode"].as<const char*>()) == "continuous";
-    if (doc.containsKey("fanLargeOnMs"))
-      fanSchedule.largeOnMs   = safeAssign(doc["fanLargeOnMs"].as<uint32_t>(), 100UL, 3600000UL, 10000UL);
-    if (doc.containsKey("fanLargeOffMs"))
-      fanSchedule.largeOffMs  = safeAssign(doc["fanLargeOffMs"].as<uint32_t>(), 100UL, 3600000UL, 10000UL);
+    }
+    fanSchedule.largeOnMs = safeAssign(doc["fanLargeOnMs"] | fanSchedule.largeOnMs, 100UL, 3600000UL, 10000UL);
+    fanSchedule.largeOffMs = safeAssign(doc["fanLargeOffMs"] | fanSchedule.largeOffMs, 100UL, 3600000UL, 10000UL);
 
-    if (doc.containsKey("deepSleepIntervalUs")) {
-      uint64_t val = strtoull(doc["deepSleepIntervalUs"], nullptr, 10);
-      deepSleepIntervalUs = (val >= 1000000ULL && val <= 24ULL * 3600ULL * 1000000ULL)
-                          ? val : 10ULL * 1000000ULL;
+    if (doc["deepSleepIntervalUs"].is<uint64_t>()) {
+      uint64_t val = doc["deepSleepIntervalUs"];
+      deepSleepIntervalUs = (val >= 1000000ULL && val <= 86400000000ULL) ? val : 10ULL * 1000000ULL;
+    } else if (doc["deepSleepIntervalUs"].is<const char*>()) {
+      const char* str = doc["deepSleepIntervalUs"];
+      if (str) {
+        uint64_t val = strtoull(str, nullptr, 10);
+        deepSleepIntervalUs = (val >= 1000000ULL && val <= 86400000000ULL) ? val : 10ULL * 1000000ULL;
+      }
     }
 
-    if (doc.containsKey("createdAt")) createdAt = doc["createdAt"].as<const char*>();
-    if (doc.containsKey("updatedAt")) updatedAt = doc["updatedAt"].as<const char*>();
+    createdAt = doc["createdAt"] | createdAt;
+    updatedAt = doc["updatedAt"] | updatedAt;
 
+    Serial.println("✅ [Config] Đã tải và lưu cấu hình:");
+    Serial.printf("  SSID: %s\n", wifiSsid.c_str());
+    Serial.printf("  Host: %s:%u\n", configuredHost.c_str(), configuredPort);
+    Serial.printf("  Sensor endpoint: %s\n", sensorEndpoint.c_str());
 
-   Serial.println("✅ [Config] Đã parse và lưu cấu hình:");
-    Serial.printf("  wifiSsid: %s\n", wifiSsid.c_str());
-    Serial.printf("  wifiPassword: %s\n", wifiPassword.c_str());
-    Serial.printf("  host: %s\n", configuredHost.c_str());
-    Serial.printf("  port: %u\n", configuredPort);
-    Serial.printf("  sensorEndpoint: %s\n", sensorEndpoint.c_str());
-    Serial.printf("  cameraEndpoint: %s\n", cameraEndpoint.c_str());
-    Serial.printf("  sensorInterval: %u ms\n", intervals.sensorInterval);
-    Serial.printf("  dataInterval: %u ms\n", intervals.dataInterval);
-    Serial.printf("  imageInterval: %u ms\n", intervals.imageInterval);
-    Serial.printf("  pumpCycleMs: %u ms\n", intervals.pumpCycleMs);
-    Serial.printf("  pumpOnMs: %u ms\n", intervals.pumpOnMs);
-    Serial.printf("  ledCycleMs: %u ms\n", intervals.ledCycleMs);
-    Serial.printf("  ledOnMs: %u ms\n", intervals.ledOnMs);
-    Serial.printf("  pumpStartHour: %u\n", schedule.pumpStartHour);
-    Serial.printf("  pumpEndHour: %u\n", schedule.pumpEndHour);
-    Serial.printf("  ledStartHour: %u\n", schedule.ledStartHour);
-    Serial.printf("  ledEndHour: %u\n", schedule.ledEndHour);
-    Serial.printf("  deepSleepIntervalUs: %llu us\n", deepSleepIntervalUs);
-    Serial.printf("  createdAt: %s\n", createdAt.c_str());
-    Serial.printf("  updatedAt: %s\n", updatedAt.c_str());
     return true;
-  }
-
-  const String& getRawResponse() const {
-    return rawResponse;
   }
 };
 
-#endif // HTTP_CONFIG_MODULE_H
+#endif  // HTTP_CONFIG_MODULE_H
