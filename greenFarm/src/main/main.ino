@@ -1,98 +1,209 @@
-#include <Arduino.h>
-#include "expander_relay.h"
-#include "ds18b20_module.h"
-#include "dht_module.h"
 
-// Khởi tạo relay tại chân P0 của PCF8574
-ExpanderRelay relay1(0);
-DS18B20Module tempSensor;
+// File: main.ino
+#include <Arduino.h>
+#include "driver/rtc_io.h"
+#include "esp_sleep.h"
+
+#include "http_config_module.h"
+#include "http_error_module.h"
+#include "http_sensors_module.h"
+#include "http_camera_module.h"
+#include "expander_relay.h"
+#include "config.h"
+#include "wifi_module.h"
+#include "dht_module.h"
+#include "ds18b20_module.h"
+#include "json_builder.h"
+#include "camera_module.h"
+
+
+
+#define DEFAULT_DEEP_SLEEP_INTERVAL_US (5ULL * 60ULL * 1000000ULL)  // 5 phút
+#define DEFAULT_PUMP_ON_TIME_MS (PUMP_ON_MS)
+#define LED_ON_TIME_MS (30UL * 60UL * 1000UL)  // 30 phút
+
+WifiModule wifi(ssid, password);
+HttpConfigModule httpConfig(host, port, configPath, deviceToken, deviceId);
+HttpErrorModule httpError(host, port, errorPath, deviceToken, deviceId);
+HttpSensorsModule *httpSensor = nullptr;
+HttpCameraModule *httpCamera = nullptr;
+
+ExpanderRelay fanRelay(0);
+DS18B20Module ds18b20;
 DHTModule dht;
 
-// LED trạng thái (có thể dùng đèn board hoặc gắn ngoài)
-#define LED_PIN 4
 
-void blinkLED(int times, int delayMs) {
-  for (int i = 0; i < times; i++) {
-    digitalWrite(LED_PIN, HIGH);
-    delay(delayMs);
-    digitalWrite(LED_PIN, LOW);
-    delay(delayMs);
-  }
-}
+CameraModule cameraModule;
+char jsonBuffer[512];
+
+// Trạng thái giữ qua Deep Sleep
+RTC_DATA_ATTR bool pumpHasRun = false;
+RTC_DATA_ATTR bool ledHasRun = false;
+RTC_DATA_ATTR bool fanHasRun = false;
+RTC_DATA_ATTR uint64_t ledStartTime = 0;
+
+// Biến trạng thái lỗi
+bool wifiErr = false, dsErr = false, dhtErr = false;
+float waterTemp = NAN, ambientTemp = NAN, humidity = NAN;
 
 void setup() {
   Serial.begin(115200);
-  delay(2000);
+  delay(500);
+  Serial.println("\n===== Wake từ Deep Sleep: setup() =====");
 
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
 
-  Serial.println("🚀 Bắt đầu khởi động PCF8574...");
 
-  // Khởi tạo relay1 và kiểm tra kết nối
-  bool ok = relay1.begin();
 
-  if (ok) {
+  // Kết nối WiFi tạm để lấy cấu hình
+  Serial.print("[Setup] Kết nối WiFi tạm thời: ");
+  WiFi.begin(ssid, password);
+  uint8_t retry = 0;
+  while (WiFi.status() != WL_CONNECTED && retry < 20) {
+    delay(500);
+    Serial.print(".");
+    retry++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println(" OK");
+    if (!httpConfig.fetchConfig()) {
+      Serial.println("⚠️ [Setup] Lỗi fetch config, dùng mặc định");
+      httpError.sendError("Config", "Fetch cấu hình thất bại");
+    }
+  } else {
+    Serial.println(" FAIL");
+    httpError.sendError("WiFi-Temp", "Kết nối WiFi tạm thời thất bại");
+  }
+  WiFi.disconnect(true);
+
+  // Kết nối WiFi chính thức
+  String useSsid = httpConfig.wifiSsid.length() > 0 ? httpConfig.wifiSsid : ssid;
+  String usePass = httpConfig.wifiPassword.length() > 0 ? httpConfig.wifiPassword : password;
+
+  Serial.printf("[Setup] Kết nối WiFi chính thức: SSID='%s'... ", useSsid.c_str());
+  wifi.updateCredentials(useSsid.c_str(), usePass.c_str());
+  wifi.connect();
+
+  if (!wifi.isConnected()) {
+    Serial.println(" FAIL");
+    wifiErr = true;
+    httpError.sendError("WiFi", "Kết nối WiFi chính thức thất bại");
+  } else {
+    Serial.println(" OK");
+    Serial.printf("WiFi IP: %s\n", WiFi.localIP().toString().c_str());
+    wifiErr = false;
+  }
+
+  // Khởi ExpanderRelay, nhưng không dừng chương trình nếu lỗi
+  bool pumpOk = pumpRelay.begin();
+  // bool ledOk = ledRelay.begin();
+  // bool fanOk = fanRelay.begin();
+
+
+  if (pumpOk) {
     Serial.println("✅ PCF8574 kết nối thành công.");
-
-    // Tắt relay để tránh bật ngẫu nhiên lúc khởi động
     relay1.off();
+    } else {
+    Serial.println("⚠️ Có lỗi kết nối ExpanderRelay:");
+    if (!pumpOk) Serial.println("   • pumpRelay");
+    if (!ledOk) Serial.println("   • ledRelay");
+    if (!fanOk) Serial.println("   • fanRelay");
 
-    blinkLED(1, 200); // báo hiệu OK
-  } else {
-    Serial.println("❌ Lỗi kết nối PCF8574.");
-    blinkLED(3, 200); // báo hiệu lỗi
-    while (true); // Dừng chương trình
+    // Gửi một lần API lỗi duy nhất, gom các relay lỗi lại
+    String errList;
+    if (!pumpOk) errList += "pumpRelay,";
+    if (!ledOk) errList += "ledRelay,";
+    if (!fanOk) errList += "fanRelay,";
+    // Bỏ dấu phẩy cuối
+    errList.remove(errList.length() - 1);
+    httpError.sendError("Relay-Init", errList.c_str());
+    while (true); 
   }
 
-  Serial.println("🚀 Khởi động cảm biến DS18B20...");
-  tempSensor.begin();
-
-  Serial.println("🚀 Khởi động cảm biến DHT...");
+  // Khởi sensor & modules HTTP
   dht.begin();
-}
+  ds18b20.begin();
 
-void loop() {
-  Serial.println("🔁 Bật relay...");
-  relay1.on();
-  delay(1000);
+  const char *sensorPathUrl = httpConfig.sensorEndpoint.length() > 0 ? httpConfig.sensorEndpoint.c_str() : sensorPath;
+  const char *cameraPathUrl = httpConfig.cameraEndpoint.length() > 0 ? httpConfig.cameraEndpoint.c_str() : imgPath;
+  const char *hostUsed = httpConfig.configuredHost.length() > 0 ? httpConfig.configuredHost.c_str() : host;
+  uint16_t portUsed = httpConfig.configuredPort > 0 ? httpConfig.configuredPort : port;
 
-  Serial.println("🛑 Tắt relay...");
-  relay1.off();
-  delay(10000);
+  static HttpSensorsModule sensorModule(hostUsed, portUsed, sensorPathUrl, deviceToken, deviceId);
+  httpSensor = &sensorModule;
+  httpSensor->begin();
 
+  static HttpCameraModule cameraMod(hostUsed, portUsed, cameraPathUrl, deviceToken, deviceId);
+  httpCamera = &cameraMod;
+  httpCamera->setTimeout(40000);
+
+  // Đọc cảm biến
   dht.update();
-
-  if (dht.hasData()) {
-    float t = dht.getTemperature();
-    float h = dht.getHumidity();
-
-    Serial.print("✅ Temp: ");
-    Serial.print(t);
-    Serial.print(" °C | 💧 Humidity: ");
-    Serial.print(h);
-    Serial.println(" %");
-
-    blinkLED(1, 200);
+  if (!dht.hasData()) {
+    dhtErr = true;
+    httpError.sendError("Sensor-DHT22", "Không lấy được dữ liệu DHT22");
   } else {
-    blinkLED(3, 200);
+    dhtErr = false;
+    ambientTemp = dht.getTemperature();
+    humidity = dht.getHumidity();
   }
 
-  delay(10000);
+  waterTemp = ds18b20.getTemperature();
+  if (isnan(waterTemp)) {
+    dsErr = true;
+    httpError.sendError("Sensor-DS18B20", "Không lấy được dữ liệu DS18B20");
+  } else dsErr = false;
 
+  // Gửi dữ liệu sensor
+  if (!wifiErr) {
+    size_t len = buildJsonSnapshots(jsonBuffer, sizeof(jsonBuffer),
+                                    isnan(waterTemp) ? 0 : waterTemp,
+                                    isnan(ambientTemp) ? 0 : ambientTemp,
+                                    isnan(humidity) ? 0 : humidity,
+                                    7.0, 1.5, 400);
+    if (len > 0) {
+      if (!httpSensor->sendData(jsonBuffer, len))
+        httpError.sendError("HTTP-Sensor", "Gửi dữ liệu sensor thất bại");
+    } else httpError.sendError("JSON", "Tạo JSON sensor thất bại");
+  } else httpError.sendError("WiFi", "Bỏ qua gửi dữ liệu do WiFi thất bại");
 
-  float temp = tempSensor.getTemperature();
-
-  if (!isnan(temp)) {
-    Serial.print("🌡️ Nhiệt độ: ");
-    Serial.print(temp);
-    Serial.println(" °C");
-
-    blinkLED(1, 200);  // ✅ Nháy 1 lần khi đọc thành công
-  } else {
-    Serial.println("❌ Không đọc được dữ liệu từ DS18B20");
-    blinkLED(3, 200);  // ❌ Nháy 3 lần khi lỗi
+  // Gửi ảnh camera
+  if (!wifiErr && httpCamera) {
+    if (cameraModule.init()) {
+      camera_fb_t *fb = cameraModule.capture();
+      if (fb) {
+        unsigned long duration;
+        if (!httpCamera->send(fb, duration))
+          httpError.sendError("HTTP-Camera", "Gửi ảnh thất bại");
+        cameraModule.release(fb);
+      } else httpError.sendError("Camera", "Không chụp được ảnh");
+    } else httpError.sendError("Camera", "Khởi tạo camera thất bại");
   }
 
-  delay(10000);
+  // Quản lý relay lần đầu
+  if (!pumpHasRun && pumpOk) {
+    pumpRelay.on();
+    delay(DEFAULT_PUMP_ON_TIME_MS);
+    pumpRelay.off();
+    pumpHasRun = true;
+  }
+  delay(2000);
+  if (!ledHasRun && ledOk) {
+    ledRelay.on();
+    ledStartTime = millis();
+    ledHasRun = true;
+  }
+  delay(2000);
+  if (!fanHasRun && fanOk) {
+    fanRelay.on();
+    fanHasRun = true;
+  }
+
+  // Deep Sleep
+  Serial.println("[Sleep] Đi vào Deep Sleep sau 5 giây...");
+  delay(5000);
+  esp_sleep_enable_timer_wakeup(DEFAULT_DEEP_SLEEP_INTERVAL_US);
+  esp_deep_sleep_start();
 }
+
+void loop() {}
