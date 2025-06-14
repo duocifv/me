@@ -9,16 +9,21 @@ inline size_t buildJsonSnapshots(char *buffer, size_t bufferSize,
                                  float ec, int orp)
 {
     StaticJsonDocument<256> doc;
+    JsonObject root = doc.to<JsonObject>();
 
-    doc["waterTemp"] = waterTemp;
-    doc["ambientTemp"] = ambientTemp;
-    doc["humidity"] = humidity;
-    doc["ph"] = ph;
-    doc["ec"] = ec;
-    doc["orp"] = orp;
+    JsonObject sensorData = root.createNestedObject("sensorData");
+    sensorData["water_temperature"]   = waterTemp;
+    sensorData["ambient_temperature"] = ambientTemp;
+    sensorData["humidity"]            = humidity;
+
+    JsonObject solutionData = root.createNestedObject("solutionData");
+    solutionData["ph"]  = ph;
+    solutionData["ec"]  = ec;
+    solutionData["orp"] = orp;
 
     if (!buffer || bufferSize == 0) {
-        return measureJson(doc);  // Trả về kích thước cần thiết
+        // Trả về kích thước cần thiết
+        return measureJson(doc);
     }
 
     size_t len = serializeJson(doc, buffer, bufferSize);
@@ -26,7 +31,6 @@ inline size_t buildJsonSnapshots(char *buffer, size_t bufferSize,
         Serial.println("❌ Lỗi serialize JSON hoặc buffer quá nhỏ");
         return 0;
     }
-
     return len;
 }
 
