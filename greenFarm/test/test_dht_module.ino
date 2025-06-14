@@ -1,6 +1,6 @@
 #include "dht_module.h"
 
-#define LED_PIN 4  // GPIO 4 (chỉnh lại nếu cần, tránh nhầm với GPIO 2 thường dùng cho LED tích hợp)
+#define LED_PIN 2  // GPIO 2 (trên nhiều board là LED tích hợp)
 
 DHTModule dht;
 
@@ -15,33 +15,34 @@ void setup() {
   dht.begin();
 }
 
-void blinkLED(int times, int delayTime) {
-  for (int i = 0; i < times; i++) {
-    digitalWrite(LED_PIN, HIGH);
-    delay(delayTime);
-    digitalWrite(LED_PIN, LOW);
-    delay(delayTime);
-  }
-}
-
 void loop() {
   dht.update();
 
   if (dht.hasData()) {
     Serial.print("✅ Nhiệt độ: ");
     Serial.print(dht.getTemperature());
-    Serial.print(" °C | 💧 Độ ẩm: ");
+    Serial.print(" °C |  💧 Độ ẩm: ");
     Serial.print(dht.getHumidity());
     Serial.println(" %");
 
-    // 👉 Nháy 1 lần nhanh (thành công)
-    blinkLED(1, 100);
+    // Nháy nhanh: thành công
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(LED_PIN, HIGH);
+      delay(100);
+      digitalWrite(LED_PIN, LOW);
+      delay(100);
+    }
 
   } else {
     Serial.println("❌ Không lấy được dữ liệu từ DHT22");
 
-    // 👉 Nháy 3 lần nhanh (lỗi)
-    blinkLED(3, 100);
+    // Nháy chậm: lỗi
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(LED_PIN, HIGH);
+      delay(600);
+      digitalWrite(LED_PIN, LOW);
+      delay(600);
+    }
   }
 
   delay(3000);  // chờ trước vòng lặp kế tiếp
