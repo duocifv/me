@@ -1,17 +1,26 @@
 #include "dht_module.h"
 
-#define LED_PIN 2  // GPIO 2 (trên nhiều board là LED tích hợp)
+#define LED_PIN 4
 
 DHTModule dht;
 
+void blinkLED(int times, int delayMs) {
+  for (int i = 0; i < times; i++) {
+    digitalWrite(LED_PIN, HIGH);
+    delay(delayMs);
+    digitalWrite(LED_PIN, LOW);
+    delay(delayMs);
+  }
+}
+
 void setup() {
   Serial.begin(115200);
-  delay(500);
-  Serial.println("=== Test DHTModule với LED báo trạng thái ===");
+  delay(2000);
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
+  Serial.println("🚀 Khởi động cảm biến DHT...");
   dht.begin();
 }
 
@@ -19,31 +28,19 @@ void loop() {
   dht.update();
 
   if (dht.hasData()) {
-    Serial.print("✅ Nhiệt độ: ");
-    Serial.print(dht.getTemperature());
-    Serial.print(" °C |  💧 Độ ẩm: ");
-    Serial.print(dht.getHumidity());
+    float t = dht.getTemperature();
+    float h = dht.getHumidity();
+
+    Serial.print("✅ Temp: ");
+    Serial.print(t);
+    Serial.print(" °C | 💧 Humidity: ");
+    Serial.print(h);
     Serial.println(" %");
 
-    // Nháy nhanh: thành công
-    for (int i = 0; i < 3; i++) {
-      digitalWrite(LED_PIN, HIGH);
-      delay(100);
-      digitalWrite(LED_PIN, LOW);
-      delay(100);
-    }
-
+    blinkLED(1, 200);
   } else {
-    Serial.println("❌ Không lấy được dữ liệu từ DHT22");
-
-    // Nháy chậm: lỗi
-    for (int i = 0; i < 3; i++) {
-      digitalWrite(LED_PIN, HIGH);
-      delay(600);
-      digitalWrite(LED_PIN, LOW);
-      delay(600);
-    }
+    blinkLED(3, 200);
   }
 
-  delay(3000);  // chờ trước vòng lặp kế tiếp
+  delay(1000);
 }
