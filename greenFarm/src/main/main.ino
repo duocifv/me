@@ -95,24 +95,24 @@ void setup() {
   }
 
   // Khởi ExpanderRelay, nhưng không dừng chương trình nếu lỗi
-  bool pumpOk = pumpRelay.begin();
+  // bool pumpOk = pumpRelay.begin();
   // bool ledOk = ledRelay.begin();
-  // bool fanOk = fanRelay.begin();
+  bool fanOk = fanRelay.begin();
 
 
-  if (pumpOk) {
+  if (fanOk) {
     Serial.println("✅ PCF8574 kết nối thành công.");
-    relay1.off();
+    fanRelay.off();
     } else {
     Serial.println("⚠️ Có lỗi kết nối ExpanderRelay:");
-    if (!pumpOk) Serial.println("   • pumpRelay");
-    if (!ledOk) Serial.println("   • ledRelay");
+    // if (!pumpOk) Serial.println("   • pumpRelay");
+    // if (!ledOk) Serial.println("   • ledRelay");
     if (!fanOk) Serial.println("   • fanRelay");
 
     // Gửi một lần API lỗi duy nhất, gom các relay lỗi lại
     String errList;
-    if (!pumpOk) errList += "pumpRelay,";
-    if (!ledOk) errList += "ledRelay,";
+    // if (!pumpOk) errList += "pumpRelay,";
+    // if (!ledOk) errList += "ledRelay,";
     if (!fanOk) errList += "fanRelay,";
     // Bỏ dấu phẩy cuối
     errList.remove(errList.length() - 1);
@@ -181,19 +181,19 @@ void setup() {
   }
 
   // Quản lý relay lần đầu
-  if (!pumpHasRun && pumpOk) {
-    pumpRelay.on();
-    delay(DEFAULT_PUMP_ON_TIME_MS);
-    pumpRelay.off();
-    pumpHasRun = true;
-  }
-  delay(2000);
-  if (!ledHasRun && ledOk) {
-    ledRelay.on();
-    ledStartTime = millis();
-    ledHasRun = true;
-  }
-  delay(2000);
+  // if (!pumpHasRun && pumpOk) {
+  //   pumpRelay.on();
+  //   delay(DEFAULT_PUMP_ON_TIME_MS);
+  //   pumpRelay.off();
+  //   pumpHasRun = true;
+  // }
+  // delay(2000);
+  // if (!ledHasRun && ledOk) {
+  //   ledRelay.on();
+  //   ledStartTime = millis();
+  //   ledHasRun = true;
+  // }
+  // delay(2000);
   if (!fanHasRun && fanOk) {
     fanRelay.on();
     fanHasRun = true;
