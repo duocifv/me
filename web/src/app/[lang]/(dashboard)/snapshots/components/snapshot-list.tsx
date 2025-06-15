@@ -29,7 +29,7 @@ export default function SnapshotsListSimple() {
             <div className="min-w-24">
               {snapshot.images.length > 0 ? (
                 <Picture
-                  src={snapshot.images[0].url}
+                  src={snapshot.images[0].filePath}
                   className="h-20 w-full object-cover rounded-t-xl"
                 />
               ) : (

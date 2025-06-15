@@ -15,9 +15,8 @@ export interface Snapshot {
 export interface SnapshotImage {
   id: number;
   snapshotId: number;
-  filename: string;
-  url: string;
-  mimetype: string;
+  filePath: string;
+  size: string;
 }
 
 export interface PaginationMeta {
