@@ -27,7 +27,7 @@ export function SnapsortCarousel() {
                   <CardContent className="flex aspect-square items-center justify-center p-6">
                     <span className="text-4xl font-semibold">
                       <Picture
-                        src={snapshots.items[idx]?.images[0]?.filePath ?? ""}
+                        src={snapshots.items[idx]?.images[0]?.filePath ? "/uploads/esp32/" + snapshots.items[idx]?.images[0]?.filePath : ""}
                         className="h-96"
                       />
                     </span>

@@ -35,7 +35,7 @@ export default function DispatchSnapshotsDetail() {
           <div>
             {selectedSnapshot.images.length > 0 ? (
               <Picture
-                src={selectedSnapshot.images[0].filePath}
+                src={"/uploads/esp32/" + selectedSnapshot.images[0].filePath}
                 className="h-20 w-full object-cover rounded-t-xl"
               />
             ) : (
