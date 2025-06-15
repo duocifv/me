@@ -27,7 +27,7 @@ export default function HydroponicsList() {
               snapshot.images.map((item) => (
                 <Picture
                   key={item.id}
-                  src={item.url}
+                  src={item.filePath}
                   className="h-48 w-full object-cover"
                 />
               ))}
