@@ -181,19 +181,19 @@ void setup() {
   }
 
   // Quản lý relay lần đầu
-  // if (!pumpHasRun && pumpOk) {
-  //   pumpRelay.on();
-  //   delay(DEFAULT_PUMP_ON_TIME_MS);
-  //   pumpRelay.off();
-  //   pumpHasRun = true;
-  // }
-  // delay(2000);
-  // if (!ledHasRun && ledOk) {
-  //   ledRelay.on();
-  //   ledStartTime = millis();
-  //   ledHasRun = true;
-  // }
-  // delay(2000);
+  if (!pumpHasRun && pumpOk) {
+    pumpRelay.on();
+    delay(DEFAULT_PUMP_ON_TIME_MS);
+    pumpRelay.off();
+    pumpHasRun = true;
+  }
+  delay(2000);
+  if (!ledHasRun && ledOk) {
+    ledRelay.on();
+    ledStartTime = millis();
+    ledHasRun = true;
+  }
+  delay(2000);
   if (!fanHasRun && fanOk) {
     fanRelay.on();
     fanHasRun = true;
