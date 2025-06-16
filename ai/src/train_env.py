@@ -41,12 +41,12 @@ m_pump = RandomForestRegressor().fit(X_train, y_pump_train)
 m_led = RandomForestRegressor().fit(X_train, y_led_train)
 
 # Lưu mô hình
-joblib.dump(m_health, "models/health_model.pkl")
-joblib.dump(m_stage, "models/stage_model.pkl")
-joblib.dump(m_fan, "models/fan_model.pkl")
-joblib.dump(m_light, "models/light_model.pkl")
-joblib.dump(m_pump, "models/pump_model.pkl")
-joblib.dump(m_led, "models/led_model.pkl")
+joblib.dump(m_health, "../dist/models/health_model.pkl")
+joblib.dump(m_stage, "../dist/models/stage_model.pkl")
+joblib.dump(m_fan, "../dist/models/fan_model.pkl")
+joblib.dump(m_light, "../dist/models/light_model.pkl")
+joblib.dump(m_pump, "../dist/models/pump_model.pkl")
+joblib.dump(m_led, "../dist/models/led_model.pkl")
 
 print("✅ Các mô hình đã được huấn luyện và lưu thành công:")
 print("📈 - Health Score")
