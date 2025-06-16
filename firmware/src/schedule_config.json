@@ -1,0 +1,42 @@
+{
+  "schedule": {
+    "led": {
+      "times_per_day": 4,
+      "duration_minutes": 30,
+      "slots": [
+        { "start": "06:00", "end": "06:30" },
+        { "start": "10:00", "end": "10:30" },
+        { "start": "14:00", "end": "14:30" },
+        { "start": "18:00", "end": "18:30" }
+      ]
+    },
+    "fan": {
+      "times_per_day": 6,
+      "duration_minutes": 15,
+      "slots": [
+        { "start": "06:45", "end": "07:00" },
+        { "start": "09:00", "end": "09:15" },
+        { "start": "12:00", "end": "12:15" },
+        { "start": "15:00", "end": "15:15" },
+        { "start": "17:00", "end": "17:15" },
+        { "start": "20:00", "end": "20:15" }
+      ]
+    },
+    "pump": {
+      "times_per_day": 4,
+      "duration_seconds": 10,
+      "times": ["06:05", "11:05", "15:05", "19:05"]
+    },
+    "sensor_upload": {
+      "interval_minutes": 5
+    },
+    "camera_upload": {
+      "times_per_day": 6,
+      "times": ["06:10", "09:10", "12:10", "15:10", "18:10", "21:10"]
+    },
+    "quiet_hours": {
+      "from": "22:00",
+      "to": "06:00"
+    }
+  }
+}

@@ -1,14 +1,15 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { FormSubmit } from "@adapter/share/type/form";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthLoginMutation } from "@adapter/auth/auth.hook";
 import { SignInDto } from "@adapter/auth/dto/sign-in.dto";
 import { usePathname, useRouter } from "next/navigation";
 import { CaptchaStatus, useAuthStore } from "@adapter/auth/auth.store";
+import { useSubmit } from "@adapter/share/components/FormWrapper";
 
-export function LoginSubmit(form: FormSubmit<SignInDto>) {
+export function LoginSubmit() {
+  const { submit } = useSubmit<SignInDto>();
   const router = useRouter();
   const pathname = usePathname();
   const segments = pathname.split("/");
@@ -18,7 +19,7 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
   const captcha = useAuthStore((s) => s.captcha);
   const setCaptcha = useAuthStore((s) => s.setCaptcha);
 
-  const handleSubmit = form.handleSubmit((value) => {
+  const onSubmit = submit((value) => {
     const data = value;
     if (captcha.status === CaptchaStatus.Failed) return null;
     if (captcha.status === CaptchaStatus.Success && captcha.token) {
@@ -51,18 +52,16 @@ export function LoginSubmit(form: FormSubmit<SignInDto>) {
     });
   });
 
-  const onClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    handleSubmit(e);
-  };
-
   return (
     <Button
-      type="button"
-      onClick={onClick}
+      type="submit"
+      onClick={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+      formNoValidate
       className="w-24 mt-6"
       disabled={isPending}
-      formNoValidate
     >
       {isPending ? <Loader2 className="animate-spin" /> : "Login"}
     </Button>

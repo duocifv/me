@@ -5,6 +5,7 @@ import {
   UseFormReturn,
   DefaultValues,
   FieldValues,
+  useFormContext,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ZodSchema } from "zod";
@@ -27,7 +28,17 @@ export function FormWrapper<T extends FieldValues>({
 
   return (
     <FormProvider {...methods}>
-      <form>{children(methods)}</form>
+      <form onSubmit={methods.handleSubmit(() => {})}>{children(methods)}</form>
     </FormProvider>
   );
+}
+
+export function useSubmit<T extends FieldValues>() {
+  const { handleSubmit } = useFormContext<T>();
+
+  const submit = (onValid: (data: T) => void) => {
+    return handleSubmit(onValid);
+  };
+
+  return { submit };
 }

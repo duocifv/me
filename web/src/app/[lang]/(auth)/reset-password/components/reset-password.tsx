@@ -57,7 +57,7 @@ export default function ResetPassword() {
                     </span>
                   )}
                 </div>
-                <ResetPasswordSubmit {...from} />
+                <ResetPasswordSubmit />
               </>
             )}
           </FormWrapper>

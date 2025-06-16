@@ -1,0 +1,141 @@
+2025-06-16 13:44:03,204 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-16 13:44:03,204 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-16 13:44:03,208 [INFO]  * Restarting with stat
+2025-06-16 13:44:06,148 [WARNING]  * Debugger is active!
+2025-06-16 13:44:06,156 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 13:45:38,369 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\app.py', reloading
+2025-06-16 13:45:38,651 [INFO]  * Restarting with stat
+2025-06-16 13:45:41,757 [WARNING]  * Debugger is active!
+2025-06-16 13:45:41,764 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 13:45:53,930 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\app.py', reloading
+2025-06-16 13:45:54,228 [INFO]  * Restarting with stat
+2025-06-16 13:45:57,311 [WARNING]  * Debugger is active!
+2025-06-16 13:45:57,318 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 13:45:57,333 [INFO] 127.0.0.1 - - [16/Jun/2025 13:45:57] "[31m[1mPOST /analyze-env HTTP/1.1[0m" 400 -
+2025-06-16 13:46:57,788 [INFO] 127.0.0.1 - - [16/Jun/2025 13:46:57] "POST /analyze-env HTTP/1.1" 200 -
+2025-06-16 13:47:05,265 [INFO] 127.0.0.1 - - [16/Jun/2025 13:47:05] "POST /analyze-env HTTP/1.1" 200 -
+2025-06-16 13:59:38,444 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\train_env_model.py', reloading
+2025-06-16 13:59:38,720 [INFO]  * Restarting with stat
+2025-06-16 13:59:46,621 [WARNING]  * Debugger is active!
+2025-06-16 13:59:46,629 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:03:52,775 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\train_env.py', reloading
+2025-06-16 14:03:53,098 [INFO]  * Restarting with stat
+2025-06-16 14:03:56,084 [WARNING]  * Debugger is active!
+2025-06-16 14:03:56,091 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:04:27,512 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\train_env.py', reloading
+2025-06-16 14:04:27,760 [INFO]  * Restarting with stat
+2025-06-16 14:04:30,947 [WARNING]  * Debugger is active!
+2025-06-16 14:04:30,954 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:09:28,112 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-16 14:09:28,112 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-16 14:09:28,114 [INFO]  * Restarting with stat
+2025-06-16 14:09:31,644 [WARNING]  * Debugger is active!
+2025-06-16 14:09:31,650 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:09:38,759 [INFO] 127.0.0.1 - - [16/Jun/2025 14:09:38] "POST /analyze-env HTTP/1.1" 200 -
+2025-06-16 14:09:44,479 [INFO] 127.0.0.1 - - [16/Jun/2025 14:09:44] "POST /analyze-env HTTP/1.1" 200 -
+2025-06-16 14:11:10,434 [INFO] 127.0.0.1 - - [16/Jun/2025 14:11:10] "[31m[1mPOST /decision HTTP/1.1[0m" 400 -
+2025-06-16 14:11:58,999 [INFO] 127.0.0.1 - - [16/Jun/2025 14:11:58] "POST /analyze-env HTTP/1.1" 200 -
+2025-06-16 14:14:20,661 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\app.py', reloading
+2025-06-16 14:14:21,014 [INFO]  * Restarting with stat
+2025-06-16 14:14:26,898 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-16 14:14:26,898 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-16 14:14:26,900 [INFO]  * Restarting with stat
+2025-06-16 14:14:30,546 [WARNING]  * Debugger is active!
+2025-06-16 14:14:30,552 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:14:30,587 [INFO] 127.0.0.1 - - [16/Jun/2025 14:14:30] "POST /analyze-env HTTP/1.1" 200 -
+2025-06-16 14:14:49,502 [INFO] 127.0.0.1 - - [16/Jun/2025 14:14:49] "POST /analyze-env HTTP/1.1" 200 -
+2025-06-16 14:15:19,252 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\train_env.py', reloading
+2025-06-16 14:15:19,554 [INFO]  * Restarting with stat
+2025-06-16 14:15:23,102 [WARNING]  * Debugger is active!
+2025-06-16 14:15:23,109 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:15:43,615 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-16 14:15:43,616 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-16 14:15:43,618 [INFO]  * Restarting with stat
+2025-06-16 14:15:47,283 [WARNING]  * Debugger is active!
+2025-06-16 14:15:47,289 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:16:23,321 [INFO] 127.0.0.1 - - [16/Jun/2025 14:16:23] "[31m[1mPOST /analyze-env HTTP/1.1[0m" 400 -
+2025-06-16 14:16:28,333 [INFO] 127.0.0.1 - - [16/Jun/2025 14:16:28] "POST /analyze-env HTTP/1.1" 200 -
+2025-06-16 14:18:32,529 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\app.py', reloading
+2025-06-16 14:18:32,879 [INFO]  * Restarting with stat
+2025-06-16 14:18:36,424 [WARNING]  * Debugger is active!
+2025-06-16 14:18:36,430 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:34:51,189 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\train_env.py', reloading
+2025-06-16 14:34:51,501 [INFO]  * Restarting with stat
+2025-06-16 14:34:55,188 [WARNING]  * Debugger is active!
+2025-06-16 14:34:55,194 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:34:57,250 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\train_env.py', reloading
+2025-06-16 14:34:57,581 [INFO]  * Restarting with stat
+2025-06-16 14:35:01,280 [WARNING]  * Debugger is active!
+2025-06-16 14:35:01,286 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:48:57,237 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-16 14:48:57,238 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-16 14:48:57,241 [INFO]  * Restarting with stat
+2025-06-16 14:49:00,719 [WARNING]  * Debugger is active!
+2025-06-16 14:49:00,725 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:49:00,765 [INFO] 127.0.0.1 - - [16/Jun/2025 14:49:00] "POST /decision HTTP/1.1" 200 -
+2025-06-16 14:52:30,509 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\app.py', reloading
+2025-06-16 14:52:30,902 [INFO]  * Restarting with stat
+2025-06-16 14:52:35,109 [WARNING]  * Debugger is active!
+2025-06-16 14:52:35,116 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:52:45,161 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-16 14:52:45,162 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-16 14:52:45,163 [INFO]  * Restarting with stat
+2025-06-16 14:52:48,696 [WARNING]  * Debugger is active!
+2025-06-16 14:52:48,702 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 14:53:12,825 [INFO] 127.0.0.1 - - [16/Jun/2025 14:53:12] "POST /decision HTTP/1.1" 200 -
+2025-06-16 14:53:16,417 [INFO] 127.0.0.1 - - [16/Jun/2025 14:53:16] "POST /decision HTTP/1.1" 200 -
+2025-06-16 14:53:22,399 [INFO] 127.0.0.1 - - [16/Jun/2025 14:53:22] "POST /decision HTTP/1.1" 200 -
+2025-06-16 14:53:37,670 [INFO] 127.0.0.1 - - [16/Jun/2025 14:53:37] "[31m[1mPOST /predict HTTP/1.1[0m" 400 -
+2025-06-16 14:53:43,748 [INFO] 127.0.0.1 - - [16/Jun/2025 14:53:43] "POST /decision HTTP/1.1" 200 -
+2025-06-16 14:54:20,390 [INFO] 127.0.0.1 - - [16/Jun/2025 14:54:20] "POST /predict HTTP/1.1" 200 -
+2025-06-16 14:54:34,565 [INFO] 127.0.0.1 - - [16/Jun/2025 14:54:34] "POST /decision HTTP/1.1" 200 -
+2025-06-16 15:00:58,401 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\train_env.py', reloading
+2025-06-16 15:00:58,722 [INFO]  * Restarting with stat
+2025-06-16 15:01:02,675 [WARNING]  * Debugger is active!
+2025-06-16 15:01:02,681 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 15:06:02,469 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\app.py', reloading
+2025-06-16 15:06:02,873 [INFO]  * Restarting with stat
+2025-06-16 15:12:39,635 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-16 15:12:39,636 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-16 15:12:39,636 [INFO]  * Restarting with stat
+2025-06-16 15:12:43,133 [WARNING]  * Debugger is active!
+2025-06-16 15:12:43,139 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 15:12:49,524 [INFO] 127.0.0.1 - - [16/Jun/2025 15:12:49] "POST /decision HTTP/1.1" 200 -
+2025-06-16 15:15:25,329 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\train_env.py', reloading
+2025-06-16 15:15:25,720 [INFO]  * Restarting with stat
+2025-06-16 15:15:29,665 [WARNING]  * Debugger is active!
+2025-06-16 15:15:29,671 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 15:51:23,563 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\train_env.py', reloading
+2025-06-16 15:51:23,886 [INFO]  * Restarting with stat
+2025-06-16 15:51:35,598 [WARNING]  * Debugger is active!
+2025-06-16 15:51:35,604 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 15:53:18,172 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-16 15:53:18,172 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-16 15:53:18,175 [INFO]  * Restarting with stat
+2025-06-16 15:53:21,995 [WARNING]  * Debugger is active!
+2025-06-16 15:53:22,001 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 15:53:22,056 [INFO] 127.0.0.1 - - [16/Jun/2025 15:53:22] "POST /decision HTTP/1.1" 200 -
+2025-06-16 15:54:27,275 [INFO] 127.0.0.1 - - [16/Jun/2025 15:54:27] "POST /predict HTTP/1.1" 200 -
+2025-06-16 16:24:32,382 [INFO] 127.0.0.1 - - [16/Jun/2025 16:24:32] "POST /predict HTTP/1.1" 200 -
+2025-06-16 16:24:34,400 [INFO] 127.0.0.1 - - [16/Jun/2025 16:24:34] "POST /decision HTTP/1.1" 200 -
+2025-06-16 16:30:28,147 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\app.py', reloading
+2025-06-16 16:30:28,447 [INFO]  * Restarting with stat
+2025-06-16 16:43:15,641 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-16 16:43:15,641 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-16 16:43:15,642 [INFO]  * Restarting with stat
+2025-06-16 16:43:19,315 [WARNING]  * Debugger is active!
+2025-06-16 16:43:19,321 [INFO]  * Debugger PIN: 102-759-532
+2025-06-16 16:43:23,061 [INFO] 127.0.0.1 - - [16/Jun/2025 16:43:23] "POST /decision HTTP/1.1" 200 -
+2025-06-16 16:45:54,526 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\backup\\app.py', reloading
+2025-06-16 16:45:54,852 [INFO]  * Restarting with stat
+2025-06-16 16:45:58,850 [WARNING]  * Debugger is active!
+2025-06-16 16:45:58,856 [INFO]  * Debugger PIN: 102-759-532
