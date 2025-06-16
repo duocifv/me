@@ -15,7 +15,7 @@
 // —————————————————————————————————
 // GLOBAL MODULES & CONFIG
 // —————————————————————————————————
-WifiModule        wifi(ssid, password);
+WifiModule        wifi(ssid1, password);
 HttpConfigModule  httpConfig(host, port, configPath, deviceToken, deviceId);
 HttpErrorModule   httpError(host, port, errorPath, deviceToken, deviceId);
 HttpSensorsModule* httpSensor = nullptr;
@@ -26,12 +26,10 @@ DHTModule      dht;
 DS18B20Module  ds18b20;
 CameraModule   cameraModule;
 
-String errorBuffer;             // gom lỗi
+String errorBuffer;
 float ambientTemp = NAN, humidity = NAN, waterTemp = NAN;
+char jsonBuffer[512]; // ✅ Thêm dòng này để tránh lỗi biên dịch
 
-// —————————————————————————————————
-// RELAY SCHEDULING VARIABLES
-// —————————————————————————————————
 bool ledOn = false, fanOn = false, pumpOn = false;
 unsigned long ledTs = 0, fanTs = 0, pumpTs = 0;
 
@@ -42,34 +40,36 @@ const unsigned long FAN_OFF_MS  = 2UL  * 60UL * 1000;
 const unsigned long PUMP_ON_MS  = 30UL * 1000;
 const unsigned long PUMP_OFF_MS = 2UL  * 60UL * 1000;
 
-// —————————————————————————————————
-// HÀM GOM LỖI — chỉ append, không gửi ngay
-// —————————————————————————————————
 void reportError(const char* module, const char* msg) {
   errorBuffer += String(module) + ":" + msg + ",";
 }
 
-// —————————————————————————————————
-// FETCH CONFIG QUA TEMP WiFi
-// —————————————————————————————————
 void fetchConfigOverTempWiFi() {
-  WiFi.begin(ssid, password);
-  for (int i = 0; i < 10 && WiFi.status() != WL_CONNECTED; ++i) {
+  const char* trySsids[] = { ssid1, ssid2 };
+  bool success = false;
+
+  for (int i = 0; i < 2; ++i) {
+    WiFi.begin(trySsids[i], password);
+    for (int j = 0; j < 10 && WiFi.status() != WL_CONNECTED; ++j) {
+      delay(500);
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+      if (httpConfig.fetchConfig()) {
+        success = true;
+        break;
+      } else {
+        reportError("Config", ("fetch fail " + String(trySsids[i])).c_str());
+      }
+    } else {
+      reportError("WiFi-Temp", ("fail " + String(trySsids[i])).c_str());
+    }
+
+    WiFi.disconnect(true);
     delay(500);
   }
-  if (WiFi.status() == WL_CONNECTED) {
-    if (!httpConfig.fetchConfig()) {
-      reportError("Config", "fetch fail");
-    }
-  } else {
-    reportError("WiFi-Temp", "fail");
-  }
-  WiFi.disconnect(true);
 }
 
-// —————————————————————————————————
-// INIT MODULES
-// —————————————————————————————————
 bool initRelays() {
   bool okF = fanRelay.begin(), okL = ledRelay.begin(), okP = pumpRelay.begin();
   if (!okF) reportError("fanRelay", "init fail");
@@ -104,63 +104,57 @@ void initCamera() {
   cameraModule.init();
 }
 
-// —————————————————————————————————
-// SETUP
-// —————————————————————————————————
+// ✅ Tên mới ngắn gọn hơn cho updateRelayState()
+void tickRelay() {
+  unsigned long now = millis();
+
+  if (ledOn ? (now - ledTs >= LED_ON_MS) : (now - ledTs >= LED_OFF_MS)) {
+    ledOn = !ledOn;
+    ledOn ? ledRelay.on() : ledRelay.off();
+    ledTs = now;
+  }
+  if (fanOn ? (now - fanTs >= FAN_ON_MS) : (now - fanTs >= FAN_OFF_MS)) {
+    fanOn = !fanOn;
+    fanOn ? fanRelay.on() : fanRelay.off();
+    fanTs = now;
+  }
+  if (pumpOn ? (now - pumpTs >= PUMP_ON_MS) : (now - pumpTs >= PUMP_OFF_MS)) {
+    pumpOn = !pumpOn;
+    pumpOn ? pumpRelay.on() : pumpRelay.off();
+    pumpTs = now;
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  // 1) Fetch cấu hình qua WiFi tạm
   fetchConfigOverTempWiFi();
 
-  // 2) Init relay, sensor, camera
-  if (!initRelays()) while (true) { delay(1000); }
+  if (!initRelays()) while (true) delay(1000);
   initSensors();
   initCamera();
 
-  // 3) Thiết lập WiFi chính thức
-  String uS = httpConfig.wifiSsid.length() ? httpConfig.wifiSsid : ssid;
+  String uS = httpConfig.wifiSsid.length() ? httpConfig.wifiSsid : ssid1;
   String uP = httpConfig.wifiPassword.length() ? httpConfig.wifiPassword : password;
   wifi.updateCredentials(uS.c_str(), uP.c_str());
 
-  // 4) Tắt relay + reset timestamp
   ledRelay.off(); fanRelay.off(); pumpRelay.off();
   unsigned long now = millis();
   ledTs = fanTs = pumpTs = now;
 }
 
-// —————————————————————————————————
-// LOOP
-// —————————————————————————————————
 void loop() {
-  unsigned long now = millis();
+  tickRelay();  // ✅ gọi hàm mới
 
-  // A) Scheduler relay (luôn chạy, bất kể WiFi)
-  if (ledOn ? (now - ledTs >= LED_ON_MS) : (now - ledTs >= LED_OFF_MS)) {
-    ledOn = !ledOn;
-    (ledOn ? ledRelay.on() : ledRelay.off());
-    ledTs = now;
-  }
-  if (fanOn ? (now - fanTs >= FAN_ON_MS) : (now - fanTs >= FAN_OFF_MS)) {
-    fanOn = !fanOn;
-    (fanOn ? fanRelay.on() : fanRelay.off());
-    fanTs = now;
-  }
-  if (pumpOn ? (now - pumpTs >= PUMP_ON_MS) : (now - pumpTs >= PUMP_OFF_MS)) {
-    pumpOn = !pumpOn;
-    (pumpOn ? pumpRelay.on() : pumpRelay.off());
-    pumpTs = now;
-  }
-
-  // B) Kiểm tra WiFi chính
   if (!wifi.isConnected()) {
-    wifi.connect();                   // cố reconnect
-    delay(50);                        // giữ loop nhẹ
-    return;                           // bỏ qua sensor/camera/lỗi
+    if (!wifi.connect()) {
+      reportError("WiFi", "reconnect fail");
+    }
+    delay(50);
+    return;
   }
 
-  // C) ĐỌC SENSOR
   dht.update();
   ambientTemp = dht.getTemperature();
   humidity    = dht.getHumidity();
@@ -169,17 +163,17 @@ void loop() {
   waterTemp = ds18b20.getTemperature();
   if (isnan(waterTemp)) reportError("DS18B20","no data");
 
-  // D) GỬI SENSOR
   if (httpSensor) {
     size_t len = buildJsonSnapshots(jsonBuffer, sizeof(jsonBuffer),
                                     waterTemp, ambientTemp, humidity,
                                     7.0, 1.5, 400);
-    if (len && !httpSensor->sendData(jsonBuffer, len)) {
+    if (len == 0) {
+      reportError("JSON","build fail");
+    } else if (!httpSensor->sendData(jsonBuffer, len)) {
       reportError("HTTP-Sensor","send fail");
     }
   }
 
-  // E) GỬI ẢNH
   if (httpCamera) {
     camera_fb_t* fb = cameraModule.capture();
     if (fb) {
@@ -191,12 +185,11 @@ void loop() {
     }
   }
 
-  // F) GOM & GỬI LỖI CUỐI LOOP
   if (errorBuffer.length()) {
-    errorBuffer.remove(errorBuffer.length() - 1);  // bỏ dấu phẩy cuối
+    errorBuffer.remove(errorBuffer.length() - 1);
     httpError.sendError("Batch-Errors", errorBuffer.c_str());
     errorBuffer = "";
   }
 
-  delay(50);  // giữ loop nhẹ
+  delay(50);
 }
