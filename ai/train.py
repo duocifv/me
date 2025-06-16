@@ -9,7 +9,8 @@ IMAGE_SIZE = (224, 224)
 BATCH_SIZE = 16
 EPOCHS = 10
 DATA_DIR = "dataset"
-MODEL_PATH = "kale_growth_model.h5"
+MODEL_H5_PATH = "kale_growth_model.h5"
+MODEL_TFLITE_PATH = "model.tflite"
 
 # === Tăng cường dữ liệu ===
 datagen = ImageDataGenerator(
@@ -59,6 +60,14 @@ model.fit(
     epochs=EPOCHS
 )
 
-# === Lưu mô hình ===
-model.save(MODEL_PATH)
-print(f"✅ Mô hình đã được lưu tại {MODEL_PATH}")
+# === Lưu mô hình H5 ===
+model.save(MODEL_H5_PATH)
+print(f"✅ Đã lưu mô hình .h5 tại {MODEL_H5_PATH}")
+
+# === Chuyển đổi sang TensorFlow Lite ===
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()
+with open(MODEL_TFLITE_PATH, "wb") as f:
+    f.write(tflite_model)
+
+print(f"✅ Đã lưu mô hình .tflite tại {MODEL_TFLITE_PATH}")
