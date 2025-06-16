@@ -9,7 +9,7 @@ import logging
 import time
 import signal
 
-# ⚙️ Giới hạn tài nguyên
+# ⚙️ Giới hạn tài nguyên cho môi trường nhẹ
 os.environ.update({
     "CUDA_VISIBLE_DEVICES": "-1",
     "OMP_NUM_THREADS": "1",
@@ -21,17 +21,18 @@ os.environ.update({
 tf.config.threading.set_inter_op_parallelism_threads(1)
 tf.config.threading.set_intra_op_parallelism_threads(1)
 
+# 🧠 Giai đoạn phát triển cây trồng
 CLASS_NAMES = ["Nảy mầm", "Ra lá mầm", "Phát triển thân lá", "Gần thu hoạch", "Thu hoạch"]
 _input_details = None
 _output_details = None
 
-# Load mô hình ảnh
+# Load mô hình ảnh (TFLite)
 interpreter = tf.lite.Interpreter(model_path="model.tflite")
 interpreter.allocate_tensors()
 _input_details = interpreter.get_input_details()
 _output_details = interpreter.get_output_details()
 
-# Load các mô hình cảm biến
+# Load mô hình cảm biến
 m_score = joblib.load("models/score_model.pkl")
 m_fan = joblib.load("models/fan_model.pkl")
 m_light = joblib.load("models/light_model.pkl")
@@ -52,6 +53,7 @@ class TimeoutException(Exception): pass
 if not IS_WINDOWS:
     signal.signal(signal.SIGALRM, lambda s, f: (_ for _ in ()).throw(TimeoutException("⏰ Quá thời gian xử lý.")))
 
+# ————— IMAGE PREDICT —————
 def predict_image(img_path):
     if not IS_WINDOWS:
         signal.alarm(15)
@@ -93,6 +95,7 @@ def predict_image(img_path):
         if not IS_WINDOWS:
             signal.alarm(0)
 
+# ————— SENSOR PREDICT —————
 def predict_decision(data):
     try:
         features = ["waterTemp", "ambientTemp", "humidity", "ph", "ec", "orp"]
@@ -127,19 +130,55 @@ def route_predict():
 def route_decision():
     if not request.is_json:
         return jsonify({"error": "JSON required"}), 400
+
     d = request.get_json()
+
+    # 1. Dự đoán giai đoạn sinh trưởng từ ảnh
     img = d.get("image_path")
-    res_img = predict_image(img) if img and os.path.exists(img) else {"error": "Invalid image_path"}
-    res_env = predict_decision(d)
-    return jsonify({**res_img, **res_env})
+    stage_info = {}
+    if img and os.path.exists(img):
+        stage_info = predict_image(img)
+    else:
+        stage_info = {"warning": "No valid image_path provided. Skipping growth stage prediction."}
+
+    # 2. Dự đoán từ cảm biến môi trường
+    env_info = predict_decision(d)
+
+    # 3. Tổng hợp phản hồi
+    response = {
+        "📈 Health Evaluation": {
+            "health_score": env_info.get("health_score")
+        },
+        "🌱 Growth Stage Estimation": {
+            "stage": stage_info.get("stage"),
+            "confidence": stage_info.get("confidence"),
+            "days_until_next": stage_info.get("days_until_next"),
+            "next_stage": stage_info.get("next_stage"),
+            "estimated_days_to_harvest": stage_info.get("estimated_days_to_harvest"),
+            "timeline": stage_info.get("timeline")
+        },
+        "⚡ Immediate Actions": {
+            "turn_on_fan": env_info.get("turn_on_fan"),
+            "adjust_light": env_info.get("adjust_light"),
+            "adjust_led": env_info.get("adjust_led"),
+            "pump_duration": env_info.get("pump_duration")
+        },
+        "📅 Auto Schedule": {
+            "light_level": env_info.get("adjust_light"),
+            "led_intensity": env_info.get("adjust_led"),
+            "watering_time": env_info.get("pump_duration")
+        }
+    }
+
+    return jsonify(response)
 
 @app.route("/docs")
 def route_docs():
     return """
     <h1>📘 API Sinh trưởng Cải Kale</h1>
     <ul>
-      <li>POST /predict – file=image</li>
-      <li>POST /decision – combine both</li>
+      <li>POST /predict – Dự đoán giai đoạn từ ảnh (form-data: file=image)</li>
+      <li>POST /decision – Kết hợp ảnh và cảm biến (JSON)</li>
     </ul>
     """
 
