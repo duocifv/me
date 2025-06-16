@@ -3,17 +3,18 @@
 import { Button } from "@/components/ui/button";
 import { useAuthResetPasswordMutation } from "@adapter/auth/auth.hook";
 import { ResetPasswordDto } from "@adapter/auth/dto/reset-password";
-import { FormSubmit } from "@adapter/share/type/form";
+import { useSubmit } from "@adapter/share/components/FormWrapper";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-export function ResetPasswordSubmit(form: FormSubmit<ResetPasswordDto>) {
+export function ResetPasswordSubmit() {
+  const { submit } = useSubmit<ResetPasswordDto>();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
   const { mutate, isPending } = useAuthResetPasswordMutation();
 
-  const handleSubmit = form.handleSubmit((values) => {
+  const onSubmit = submit((values) => {
     if (!token) {
       toast.error("Token đặt lại mật khẩu không hợp lệ hoặc bị thiếu", {
         duration: 5000,
@@ -42,16 +43,13 @@ export function ResetPasswordSubmit(form: FormSubmit<ResetPasswordDto>) {
       }
     );
   });
-
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    handleSubmit();
-  };
-
   return (
     <Button
-      type="button"
-      onClick={handleClick}
+      type="submit"
+      onClick={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
       disabled={isPending}
       className="w-32 mt-6 flex items-center justify-center"
       formNoValidate

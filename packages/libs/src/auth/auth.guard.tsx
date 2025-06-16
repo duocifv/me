@@ -30,7 +30,12 @@ export function AuthGuard({
     });
     return () => unsub();
   }, []);
-
+  console.log("================start auth===================");
+  console.log("isStogareLoggedIn:", isStogareLoggedIn);
+  console.log("isLoggedIn:", isLoggedIn);
+  console.log("setLogin:", setLogin);
+  console.log("setLogout:", setLogout);
+  console.log("================end auth===================");
   if (isLoggedIn === false) {
     return <>{fallback}</>;
   }
