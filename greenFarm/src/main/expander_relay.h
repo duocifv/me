@@ -21,13 +21,18 @@ public:
   ExpanderRelay(uint8_t pinIndex)
     : pcf(DEFAULT_PCF_ADDR), pinNum(pinIndex), activeLow(DEFAULT_ACTIVE_LOW) {}
 
-  bool begin() {
+  bool begin(uint8_t retries = 3, uint16_t delayMs = 200) {
     Wire.begin(DEFAULT_SDA_PIN, DEFAULT_SCL_PIN);
-    if (!pcf.begin()) return false;
 
-    // Không tác động trạng thái relay ở đây để tránh bật nhầm
-    initialized = true;
-    return true;
+    for (uint8_t i = 0; i < retries; i++) {
+      if (pcf.begin()) {
+        initialized = true;
+        return true;
+      }
+      delay(delayMs);
+    }
+
+    return false;
   }
 
   void on() {

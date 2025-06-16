@@ -1,9 +1,5 @@
-
-// File: main.ino
 #include <Arduino.h>
-#include "driver/rtc_io.h"
-#include "esp_sleep.h"
-
+#include <ArduinoJson.h>
 #include "http_config_module.h"
 #include "http_error_module.h"
 #include "http_sensors_module.h"
@@ -16,194 +12,191 @@
 #include "json_builder.h"
 #include "camera_module.h"
 
+// —————————————————————————————————
+// GLOBAL MODULES & CONFIG
+// —————————————————————————————————
+WifiModule        wifi(ssid, password);
+HttpConfigModule  httpConfig(host, port, configPath, deviceToken, deviceId);
+HttpErrorModule   httpError(host, port, errorPath, deviceToken, deviceId);
+HttpSensorsModule* httpSensor = nullptr;
+HttpCameraModule*  httpCamera = nullptr;
 
+ExpanderRelay fanRelay(0), ledRelay(1), pumpRelay(2);
+DHTModule      dht;
+DS18B20Module  ds18b20;
+CameraModule   cameraModule;
 
-#define DEFAULT_DEEP_SLEEP_INTERVAL_US (5ULL * 60ULL * 1000000ULL)  // 5 phút
-#define DEFAULT_PUMP_ON_TIME_MS (PUMP_ON_MS)
-#define LED_ON_TIME_MS (30UL * 60UL * 1000UL)  // 30 phút
+String errorBuffer;             // gom lỗi
+float ambientTemp = NAN, humidity = NAN, waterTemp = NAN;
 
-WifiModule wifi(ssid, password);
-HttpConfigModule httpConfig(host, port, configPath, deviceToken, deviceId);
-HttpErrorModule httpError(host, port, errorPath, deviceToken, deviceId);
-HttpSensorsModule *httpSensor = nullptr;
-HttpCameraModule *httpCamera = nullptr;
+// —————————————————————————————————
+// RELAY SCHEDULING VARIABLES
+// —————————————————————————————————
+bool ledOn = false, fanOn = false, pumpOn = false;
+unsigned long ledTs = 0, fanTs = 0, pumpTs = 0;
 
-ExpanderRelay fanRelay(0);
-DS18B20Module ds18b20;
-DHTModule dht;
+const unsigned long LED_ON_MS   = 15UL * 1000;
+const unsigned long LED_OFF_MS  = 2UL  * 60UL * 1000;
+const unsigned long FAN_ON_MS   = 3UL  * 60UL * 1000;
+const unsigned long FAN_OFF_MS  = 2UL  * 60UL * 1000;
+const unsigned long PUMP_ON_MS  = 30UL * 1000;
+const unsigned long PUMP_OFF_MS = 2UL  * 60UL * 1000;
 
-
-CameraModule cameraModule;
-char jsonBuffer[512];
-
-// Trạng thái giữ qua Deep Sleep
-RTC_DATA_ATTR bool pumpHasRun = false;
-RTC_DATA_ATTR bool ledHasRun = false;
-RTC_DATA_ATTR bool fanHasRun = false;
-RTC_DATA_ATTR uint64_t ledStartTime = 0;
-
-// Biến trạng thái lỗi
-bool wifiErr = false, dsErr = false, dhtErr = false;
-float waterTemp = NAN, ambientTemp = NAN, humidity = NAN;
-
-void setup() {
-  Serial.begin(115200);
-  delay(500);
-  Serial.println("\n===== Wake từ Deep Sleep: setup() =====");
-
-
-
-
-  // Kết nối WiFi tạm để lấy cấu hình
-  Serial.print("[Setup] Kết nối WiFi tạm thời: ");
-  WiFi.begin(ssid, password);
-  uint8_t retry = 0;
-  while (WiFi.status() != WL_CONNECTED && retry < 20) {
-    delay(500);
-    Serial.print(".");
-    retry++;
-  }
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println(" OK");
-    if (!httpConfig.fetchConfig()) {
-      Serial.println("⚠️ [Setup] Lỗi fetch config, dùng mặc định");
-      httpError.sendError("Config", "Fetch cấu hình thất bại");
-    }
-  } else {
-    Serial.println(" FAIL");
-    httpError.sendError("WiFi-Temp", "Kết nối WiFi tạm thời thất bại");
-  }
-  WiFi.disconnect(true);
-
-  // Kết nối WiFi chính thức
-  String useSsid = httpConfig.wifiSsid.length() > 0 ? httpConfig.wifiSsid : ssid;
-  String usePass = httpConfig.wifiPassword.length() > 0 ? httpConfig.wifiPassword : password;
-
-  Serial.printf("[Setup] Kết nối WiFi chính thức: SSID='%s'... ", useSsid.c_str());
-  wifi.updateCredentials(useSsid.c_str(), usePass.c_str());
-  wifi.connect();
-
-  if (!wifi.isConnected()) {
-    Serial.println(" FAIL");
-    wifiErr = true;
-    httpError.sendError("WiFi", "Kết nối WiFi chính thức thất bại");
-  } else {
-    Serial.println(" OK");
-    Serial.printf("WiFi IP: %s\n", WiFi.localIP().toString().c_str());
-    wifiErr = false;
-  }
-
-  // Khởi ExpanderRelay, nhưng không dừng chương trình nếu lỗi
-  // bool pumpOk = pumpRelay.begin();
-  // bool ledOk = ledRelay.begin();
-  bool fanOk = fanRelay.begin();
-
-
-  if (fanOk) {
-    Serial.println("✅ PCF8574 kết nối thành công.");
-    fanRelay.off();
-    } else {
-    Serial.println("⚠️ Có lỗi kết nối ExpanderRelay:");
-    // if (!pumpOk) Serial.println("   • pumpRelay");
-    // if (!ledOk) Serial.println("   • ledRelay");
-    if (!fanOk) Serial.println("   • fanRelay");
-
-    // Gửi một lần API lỗi duy nhất, gom các relay lỗi lại
-    String errList;
-    // if (!pumpOk) errList += "pumpRelay,";
-    // if (!ledOk) errList += "ledRelay,";
-    if (!fanOk) errList += "fanRelay,";
-    // Bỏ dấu phẩy cuối
-    errList.remove(errList.length() - 1);
-    httpError.sendError("Relay-Init", errList.c_str());
-    while (true); 
-  }
-
-  // Khởi sensor & modules HTTP
-  dht.begin();
-  ds18b20.begin();
-
-  const char *sensorPathUrl = httpConfig.sensorEndpoint.length() > 0 ? httpConfig.sensorEndpoint.c_str() : sensorPath;
-  const char *cameraPathUrl = httpConfig.cameraEndpoint.length() > 0 ? httpConfig.cameraEndpoint.c_str() : imgPath;
-  const char *hostUsed = httpConfig.configuredHost.length() > 0 ? httpConfig.configuredHost.c_str() : host;
-  uint16_t portUsed = httpConfig.configuredPort > 0 ? httpConfig.configuredPort : port;
-
-  static HttpSensorsModule sensorModule(hostUsed, portUsed, sensorPathUrl, deviceToken, deviceId);
-  httpSensor = &sensorModule;
-  httpSensor->begin();
-
-  static HttpCameraModule cameraMod(hostUsed, portUsed, cameraPathUrl, deviceToken, deviceId);
-  httpCamera = &cameraMod;
-  httpCamera->setTimeout(40000);
-
-  // Đọc cảm biến
-  dht.update();
-  if (!dht.hasData()) {
-    dhtErr = true;
-    httpError.sendError("Sensor-DHT22", "Không lấy được dữ liệu DHT22");
-  } else {
-    dhtErr = false;
-    ambientTemp = dht.getTemperature();
-    humidity = dht.getHumidity();
-  }
-
-  waterTemp = ds18b20.getTemperature();
-  if (isnan(waterTemp)) {
-    dsErr = true;
-    httpError.sendError("Sensor-DS18B20", "Không lấy được dữ liệu DS18B20");
-  } else dsErr = false;
-
-  // Gửi dữ liệu sensor
-  if (!wifiErr) {
-    size_t len = buildJsonSnapshots(jsonBuffer, sizeof(jsonBuffer),
-                                    isnan(waterTemp) ? 0 : waterTemp,
-                                    isnan(ambientTemp) ? 0 : ambientTemp,
-                                    isnan(humidity) ? 0 : humidity,
-                                    7.0, 1.5, 400);
-    if (len > 0) {
-      if (!httpSensor->sendData(jsonBuffer, len))
-        httpError.sendError("HTTP-Sensor", "Gửi dữ liệu sensor thất bại");
-    } else httpError.sendError("JSON", "Tạo JSON sensor thất bại");
-  } else httpError.sendError("WiFi", "Bỏ qua gửi dữ liệu do WiFi thất bại");
-
-  // Gửi ảnh camera
-  if (!wifiErr && httpCamera) {
-    if (cameraModule.init()) {
-      camera_fb_t *fb = cameraModule.capture();
-      if (fb) {
-        unsigned long duration;
-        if (!httpCamera->send(fb, duration))
-          httpError.sendError("HTTP-Camera", "Gửi ảnh thất bại");
-        cameraModule.release(fb);
-      } else httpError.sendError("Camera", "Không chụp được ảnh");
-    } else httpError.sendError("Camera", "Khởi tạo camera thất bại");
-  }
-
-  // Quản lý relay lần đầu
-  // if (!pumpHasRun && pumpOk) {
-  //   pumpRelay.on();
-  //   delay(DEFAULT_PUMP_ON_TIME_MS);
-  //   pumpRelay.off();
-  //   pumpHasRun = true;
-  // }
-  // delay(2000);
-  // if (!ledHasRun && ledOk) {
-  //   ledRelay.on();
-  //   ledStartTime = millis();
-  //   ledHasRun = true;
-  // }
-  // delay(2000);
-  if (!fanHasRun && fanOk) {
-    fanRelay.on();
-    fanHasRun = true;
-  }
-
-  // Deep Sleep
-  Serial.println("[Sleep] Đi vào Deep Sleep sau 5 giây...");
-  delay(5000);
-  esp_sleep_enable_timer_wakeup(DEFAULT_DEEP_SLEEP_INTERVAL_US);
-  esp_deep_sleep_start();
+// —————————————————————————————————
+// HÀM GOM LỖI — chỉ append, không gửi ngay
+// —————————————————————————————————
+void reportError(const char* module, const char* msg) {
+  errorBuffer += String(module) + ":" + msg + ",";
 }
 
-void loop() {}
+// —————————————————————————————————
+// FETCH CONFIG QUA TEMP WiFi
+// —————————————————————————————————
+void fetchConfigOverTempWiFi() {
+  WiFi.begin(ssid, password);
+  for (int i = 0; i < 10 && WiFi.status() != WL_CONNECTED; ++i) {
+    delay(500);
+  }
+  if (WiFi.status() == WL_CONNECTED) {
+    if (!httpConfig.fetchConfig()) {
+      reportError("Config", "fetch fail");
+    }
+  } else {
+    reportError("WiFi-Temp", "fail");
+  }
+  WiFi.disconnect(true);
+}
+
+// —————————————————————————————————
+// INIT MODULES
+// —————————————————————————————————
+bool initRelays() {
+  bool okF = fanRelay.begin(), okL = ledRelay.begin(), okP = pumpRelay.begin();
+  if (!okF) reportError("fanRelay", "init fail");
+  if (!okL) reportError("ledRelay", "init fail");
+  if (!okP) reportError("pumpRelay", "init fail");
+  if (okF) fanRelay.off();
+  if (okL) ledRelay.off();
+  if (okP) pumpRelay.off();
+  return okF || okL || okP;
+}
+
+void initSensors() {
+  dht.begin();
+  ds18b20.begin();
+  const char* p = httpConfig.sensorEndpoint.length()
+    ? httpConfig.sensorEndpoint.c_str() : sensorPath;
+  const char* h = httpConfig.configuredHost.length()
+    ? httpConfig.configuredHost.c_str() : host;
+  uint16_t    r = httpConfig.configuredPort ? httpConfig.configuredPort : port;
+  static HttpSensorsModule m(h, r, p, deviceToken, deviceId);
+  httpSensor = &m; httpSensor->begin();
+}
+
+void initCamera() {
+  const char* p = httpConfig.cameraEndpoint.length()
+    ? httpConfig.cameraEndpoint.c_str() : imgPath;
+  const char* h = httpConfig.configuredHost.length()
+    ? httpConfig.configuredHost.c_str() : host;
+  uint16_t    r = httpConfig.configuredPort ? httpConfig.configuredPort : port;
+  static HttpCameraModule m(h, r, p, deviceToken, deviceId);
+  httpCamera = &m; httpCamera->setTimeout(20000);
+  cameraModule.init();
+}
+
+// —————————————————————————————————
+// SETUP
+// —————————————————————————————————
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  // 1) Fetch cấu hình qua WiFi tạm
+  fetchConfigOverTempWiFi();
+
+  // 2) Init relay, sensor, camera
+  if (!initRelays()) while (true) { delay(1000); }
+  initSensors();
+  initCamera();
+
+  // 3) Thiết lập WiFi chính thức
+  String uS = httpConfig.wifiSsid.length() ? httpConfig.wifiSsid : ssid;
+  String uP = httpConfig.wifiPassword.length() ? httpConfig.wifiPassword : password;
+  wifi.updateCredentials(uS.c_str(), uP.c_str());
+
+  // 4) Tắt relay + reset timestamp
+  ledRelay.off(); fanRelay.off(); pumpRelay.off();
+  unsigned long now = millis();
+  ledTs = fanTs = pumpTs = now;
+}
+
+// —————————————————————————————————
+// LOOP
+// —————————————————————————————————
+void loop() {
+  unsigned long now = millis();
+
+  // A) Scheduler relay (luôn chạy, bất kể WiFi)
+  if (ledOn ? (now - ledTs >= LED_ON_MS) : (now - ledTs >= LED_OFF_MS)) {
+    ledOn = !ledOn;
+    (ledOn ? ledRelay.on() : ledRelay.off());
+    ledTs = now;
+  }
+  if (fanOn ? (now - fanTs >= FAN_ON_MS) : (now - fanTs >= FAN_OFF_MS)) {
+    fanOn = !fanOn;
+    (fanOn ? fanRelay.on() : fanRelay.off());
+    fanTs = now;
+  }
+  if (pumpOn ? (now - pumpTs >= PUMP_ON_MS) : (now - pumpTs >= PUMP_OFF_MS)) {
+    pumpOn = !pumpOn;
+    (pumpOn ? pumpRelay.on() : pumpRelay.off());
+    pumpTs = now;
+  }
+
+  // B) Kiểm tra WiFi chính
+  if (!wifi.isConnected()) {
+    wifi.connect();                   // cố reconnect
+    delay(50);                        // giữ loop nhẹ
+    return;                           // bỏ qua sensor/camera/lỗi
+  }
+
+  // C) ĐỌC SENSOR
+  dht.update();
+  ambientTemp = dht.getTemperature();
+  humidity    = dht.getHumidity();
+  if (!dht.hasData()) reportError("DHT22","no data");
+
+  waterTemp = ds18b20.getTemperature();
+  if (isnan(waterTemp)) reportError("DS18B20","no data");
+
+  // D) GỬI SENSOR
+  if (httpSensor) {
+    size_t len = buildJsonSnapshots(jsonBuffer, sizeof(jsonBuffer),
+                                    waterTemp, ambientTemp, humidity,
+                                    7.0, 1.5, 400);
+    if (len && !httpSensor->sendData(jsonBuffer, len)) {
+      reportError("HTTP-Sensor","send fail");
+    }
+  }
+
+  // E) GỬI ẢNH
+  if (httpCamera) {
+    camera_fb_t* fb = cameraModule.capture();
+    if (fb) {
+      unsigned long dur;
+      if (!httpCamera->send(fb, dur)) reportError("HTTP-Camera","send fail");
+      cameraModule.release(fb);
+    } else {
+      reportError("Camera","capture fail");
+    }
+  }
+
+  // F) GOM & GỬI LỖI CUỐI LOOP
+  if (errorBuffer.length()) {
+    errorBuffer.remove(errorBuffer.length() - 1);  // bỏ dấu phẩy cuối
+    httpError.sendError("Batch-Errors", errorBuffer.c_str());
+    errorBuffer = "";
+  }
+
+  delay(50);  // giữ loop nhẹ
+}
