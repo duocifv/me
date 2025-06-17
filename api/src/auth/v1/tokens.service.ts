@@ -92,6 +92,9 @@ export class TokensService {
       privateKey,
       algorithm: 'RS256',
       expiresIn: refreshToken.expires,
+      issuer: iss,
+      audience: aud,
+      jwtid: jti,
     });
 
     return { token, jti };
