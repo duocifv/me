@@ -2,22 +2,22 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { paginate, Pagination } from 'nestjs-typeorm-paginate';
+
 import { CreateCropInstanceDto } from '../dto/create-crop-instance.dto';
 import { CreateSnapshotDto } from '../dto/create-snapshot.dto';
 import { GetSnapshotsDto } from '../dto/get-snapshots.dto';
+import { CreateCameraImageDto } from '../dto/create-camera-image.dto';
 
 import { CropInstance } from '../entities/crop-instance.entity';
 import { Snapshot } from '../entities/snapshot.entity';
 import { CameraImage } from '../entities/camera-image.entity';
 import { SensorReading } from '../entities/sensor-reading.entity';
 import { SolutionReading } from '../entities/solution-reading.entity';
+import { Decision } from '../entities/decision.entity';
 
-import {
-  IPaginationOptions,
-  paginate,
-  Pagination,
-} from 'nestjs-typeorm-paginate';
-import { CreateCameraImageDto } from '../dto/create-camera-image.dto';
+import { HttpService } from '@nestjs/axios';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class HydroponicsService {
@@ -26,36 +26,33 @@ export class HydroponicsService {
   constructor(
     @InjectRepository(CropInstance)
     private readonly cropRepo: Repository<CropInstance>,
-
     @InjectRepository(Snapshot)
     private readonly snapRepo: Repository<Snapshot>,
-
     @InjectRepository(CameraImage)
     private readonly imgRepo: Repository<CameraImage>,
-
     @InjectRepository(SensorReading)
     private readonly sensorRepo: Repository<SensorReading>,
-
     @InjectRepository(SolutionReading)
     private readonly solutionRepo: Repository<SolutionReading>,
+    @InjectRepository(Decision)
+    private readonly decisionRepo: Repository<Decision>,
+    private readonly http: HttpService,
   ) {}
 
   /**
-   * Tạo crop instance mới (với deviceId), đặt isActive = true
-   * và deactivate (isActive = false) tất cả crop cũ của cùng deviceId.
+   * Tạo crop instance mới, đặt là active
+   * và tự động deactivate các instance cũ cùng deviceId.
    */
   async createCropInstance(
     deviceId: string,
     dto: CreateCropInstanceDto,
   ): Promise<CropInstance> {
-    // Deactivate tất cả crop instance đang active cho deviceId này
     await this.cropRepo.update(
       { deviceId, isActive: true },
       { isActive: false },
     );
-
     const crop = this.cropRepo.create({
-      deviceId: deviceId,
+      deviceId,
       plantTypeId: dto.plantTypeId,
       name: dto.name,
       isActive: true,
@@ -64,31 +61,39 @@ export class HydroponicsService {
   }
 
   /**
-   * Lấy tất cả crop instances của một device theo deviceId
+   * Trả về danh sách crop instance theo deviceId.
    */
   async getCropInstances(deviceId: string): Promise<CropInstance[]> {
     return this.cropRepo.find({
       where: { deviceId },
-      relations: ['plantType'],
+      relations: {
+        plantType: {
+          mediaFile: true,
+        },
+      },
       order: { createdAt: 'DESC' },
     });
   }
 
+  /**
+   * Tạo snapshot mới cho crop đang active của deviceId,
+   * đồng thời gọi AI để nhận quyết định và lưu vào bảng decision.
+   */
   async createSnapshot(
     deviceId: string,
     dto: CreateSnapshotDto,
   ): Promise<void> {
-    const cropInstance = await this.cropRepo.findOne({
+    const crop = await this.cropRepo.findOne({
       where: { deviceId, isActive: true },
     });
-    if (!cropInstance) {
-      this.logger.warn(
-        `Không tìm thấy crop active cho deviceId: ${deviceId}. Bỏ qua tạo snapshot.`,
-      );
+
+    if (!crop) {
+      this.logger.warn(`Không tìm thấy crop active cho deviceId: ${deviceId}`);
       return;
     }
+
     const snapshot = this.snapRepo.create({
-      cropInstanceId: cropInstance.id,
+      cropInstanceId: crop.id,
       waterTemp: dto.waterTemp,
       ambientTemp: dto.ambientTemp,
       humidity: dto.humidity,
@@ -97,54 +102,66 @@ export class HydroponicsService {
       orp: dto.orp,
     });
 
-    // Lưu
-    await this.snapRepo.save(snapshot);
+    const saved = await this.snapRepo.save(snapshot);
+
+    try {
+      const fullSnapshot = await this.snapRepo.findOne({
+        where: { id: saved.id },
+        relations: ['images'],
+      });
+
+      const response = await lastValueFrom(
+        this.http.post('http://crop.duocnv.top/decision', fullSnapshot),
+      );
+
+      const decision = this.decisionRepo.create({
+        snapshot: saved,
+        result: response.data,
+      });
+
+      await this.decisionRepo.save(decision);
+    } catch (err) {
+      this.logger.error('Lỗi khi gọi AI hoặc lưu kết quả:', err.message);
+    }
+  }
+
+  async getDecisionBySnapshotId(snapshotId: number): Promise<Decision | null> {
+    return this.decisionRepo.findOne({
+      where: { snapshot: { id: snapshotId } },
+      relations: ['snapshot'],
+    });
   }
 
   /**
-   * Tạo một Snapshot mới (metadata) cho crop đang active của deviceId.
-   * Sau đó chèn từng dòng SensorReading và SolutionReading.
-   * Được chạy bất đồng bộ qua process.nextTick để không block request chính.
-   */
-
-  /**
-   * Lấy danh sách các Snapshot (metadata) của crop đang active theo deviceId
-   * (phân trang, không load readings để tránh payload quá lớn).
+   * Trả về danh sách snapshots (metadata + ảnh) theo deviceId (có phân trang).
    */
   async getSnapshotsByDevice(
     dto: GetSnapshotsDto,
   ): Promise<Pagination<Snapshot>> {
     const { deviceId, page, limit } = dto;
 
-    // 1. Tìm crop instance đang active
     const crop = await this.cropRepo.findOne({
       where: { deviceId, isActive: true },
     });
     if (!crop) {
-      throw new NotFoundException(
-        'Không tìm thấy crop đang active với deviceId đó',
-      );
+      throw new NotFoundException('Không tìm thấy crop active');
     }
 
-    // 2. Lấy snapshots (chỉ metadata + images) theo cropId, phân trang
-    const queryBuilder = this.snapRepo
+    const qb = this.snapRepo
       .createQueryBuilder('snapshot')
       .leftJoinAndSelect('snapshot.images', 'image')
       .where('snapshot.cropInstanceId = :cropId', { cropId: crop.id })
       .orderBy('snapshot.timestamp', 'DESC');
 
-    const paginationOptions: IPaginationOptions = {
+    return paginate<Snapshot>(qb, {
       page,
       limit,
       route: `/snapshots?deviceId=${encodeURIComponent(deviceId)}`,
-    };
-
-    return paginate<Snapshot>(queryBuilder, paginationOptions);
+    });
   }
 
   /**
-   * Lấy chi tiết một Snapshot theo ID (chỉ metadata + images).
-   * Nếu muốn đọc sensor/solution readings, gọi API riêng.
+   * Trả về chi tiết một snapshot (metadata + ảnh) theo ID.
    */
   async getSnapshotById(snapshotId: number): Promise<Snapshot> {
     const snapshot = await this.snapRepo.findOne({
@@ -158,13 +175,11 @@ export class HydroponicsService {
   }
 
   /**
-   * Lấy tất cả SensorReading của một snapshot.
-   * Trả về đúng kiểu Promise<SensorReading[]> (không dùng any[]).
+   * Trả về toàn bộ sensor readings cho một snapshot.
    */
   async getSensorReadingsBySnapshot(
     snapshotId: number,
   ): Promise<SensorReading[]> {
-    // Dùng .find() để TypeORM map thành entity, tránh any[]
     return this.sensorRepo.find({
       where: { snapshotId },
       order: { recordedAt: 'ASC' },
@@ -172,7 +187,7 @@ export class HydroponicsService {
   }
 
   /**
-   * Lấy tất cả SolutionReading của một snapshot.
+   * Trả về toàn bộ solution readings cho một snapshot.
    */
   async getSolutionReadingsBySnapshot(
     snapshotId: number,
@@ -184,13 +199,12 @@ export class HydroponicsService {
   }
 
   /**
-   * Upload ảnh (metadata) vào Snapshot gần nhất (latest) của crop active.
+   * Thêm ảnh mới vào snapshot gần nhất của crop đang active.
    */
   async addImageToLatestSnapshot(
     deviceId: string,
     dto: CreateCameraImageDto,
   ): Promise<CameraImage> {
-    // 1. Tìm crop instance đang active
     const crop = await this.cropRepo.findOne({
       where: { deviceId, isActive: true },
     });
@@ -198,18 +212,16 @@ export class HydroponicsService {
       throw new NotFoundException('Không tìm thấy crop active');
     }
 
-    // 2. Tìm snapshot gần nhất theo timestamp
-    const latestSnapshot = await this.snapRepo.findOne({
+    const latest = await this.snapRepo.findOne({
       where: { cropInstanceId: crop.id },
       order: { timestamp: 'DESC' },
     });
-    if (!latestSnapshot) {
-      throw new NotFoundException('Không tìm thấy snapshot nào cho crop này');
+    if (!latest) {
+      throw new NotFoundException('Không tìm thấy snapshot gần nhất');
     }
 
-    // 3. Tạo và lưu CameraImage
     const image = this.imgRepo.create({
-      snapshotId: latestSnapshot.id,
+      snapshotId: latest.id,
       filePath: dto.filePath,
       size: dto.size,
     });

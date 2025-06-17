@@ -1,4 +1,3 @@
-// src/controllers/hydroponics.controller.ts
 import {
   Controller,
   Get,
@@ -26,9 +25,11 @@ import { UploadFileDto } from '../dto/upload-file.dto';
 import { DeviceAuth } from 'src/shared/decorators/device-token.decorator';
 import { QuerySchema } from 'src/shared/decorators/query-schema.decorator';
 import { GetSnapshotsDto, GetSnapshotsSchema } from '../dto/get-snapshots.dto';
+import { Logger } from '@nestjs/common';
 
 @Controller('hydroponics')
 export class HydroponicsController {
+  private readonly logger = new Logger(HydroponicsController.name);
   constructor(private readonly service: HydroponicsService) {}
 
   /**
@@ -36,7 +37,7 @@ export class HydroponicsController {
    */
   @Post('crop-instances')
   createCrop(@BodySchema(CreateCropInstanceSchema) dto: CreateCropInstanceDto) {
-    return this.service.createCropInstance('device-001', dto);
+    return this.service.createCropInstance('device-001', dto); // TODO: thay bằng @DeviceAuth nếu cần thiết
   }
 
   /**
@@ -44,7 +45,7 @@ export class HydroponicsController {
    */
   @Get('crop-instances')
   getCrops() {
-    return this.service.getCropInstances('device-001'); //Tạm thời chưa bổ sung csdl và thiết bị
+    return this.service.getCropInstances('device-001'); // TODO: thay bằng @DeviceAuth nếu cần thiết
   }
 
   /**
@@ -52,11 +53,17 @@ export class HydroponicsController {
    */
   @Post('snapshots')
   @DeviceAuth()
-  async createSnapshot(
+  createSnapshot(
     @BodySchema(CreateSnapshotSchema) dto: CreateSnapshotDto,
     @Req() req,
   ) {
-    await this.service.createSnapshot(req.deviceId, dto);
+    setImmediate(() => {
+      this.service
+        .createSnapshot(req.deviceId, dto)
+        .catch((err) =>
+          this.logger.error('Lỗi xử lý snapshot async:', err?.message ?? err),
+        );
+    });
     return { success: true };
   }
 
@@ -74,6 +81,24 @@ export class HydroponicsController {
   @Get('snapshots/:snapshotId')
   getSnapshot(@Param('snapshotId') snapshotId: number) {
     return this.service.getSnapshotById(snapshotId);
+  }
+
+  /**
+   * Lấy quyết định AI của một snapshot
+   */
+  @Get('snapshots/:snapshotId/decision')
+  async getDecision(@Param('snapshotId') snapshotId: number) {
+    const snapshot = await this.service.getSnapshotById(snapshotId);
+    if (!snapshot) {
+      throw new NotFoundException('Snapshot không tồn tại');
+    }
+
+    const decision = await this.service.getDecisionBySnapshotId(snapshotId);
+    if (!decision) {
+      throw new NotFoundException('Chưa có kết quả AI cho snapshot này');
+    }
+
+    return decision;
   }
 
   /**
@@ -117,34 +142,21 @@ export class HydroponicsController {
       throw new BadRequestException('Chỉ chấp nhận JPG hoặc PNG');
     }
 
-    // Lưu ảnh (ví dụ với fileManager của Fastify plugin)
     const { size, filename } =
       await fastifyReq.server.fileManager.saveEsp32Image(part);
-    // Tạo DTO cho CameraImage
+
     const imageDto: CreateCameraImageDto = {
       filePath: filename,
       size: size ?? 0,
     };
 
-    return this.service.addImageToLatestSnapshot(req.deviceId, imageDto);
+    // Trả về trước
+    setImmediate(() => {
+      this.service
+        .addImageToLatestSnapshot(req.deviceId, imageDto)
+        .catch((err) => this.logger.error('Lỗi xử lý ảnh async:', err));
+    });
+
+    return { success: true };
   }
-
-  // @Get('/image/:filename')
-  // getImage(@Param('filename') filename: string, @Res() res: FastifyReply) {
-  //   const esp32Folder = resolve('uploads/esp32');
-  //   const filePath = normalize(join(esp32Folder, filename));
-
-  //   // Ngăn path traversal
-  //   if (!filePath.startsWith(esp32Folder + path.sep)) {
-  //     throw new BadRequestException('Invalid filename');
-  //   }
-
-  //   // Kiểm tra file có tồn tại không
-  //   if (!existsSync(filePath)) {
-  //     throw new NotFoundException('File not found');
-  //   }
-
-  //   const relativePath = join('esp32', filename);
-  //   return res.sendFile(relativePath);
-  // }
 }

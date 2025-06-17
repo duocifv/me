@@ -6,6 +6,7 @@ import { SnapsortCarousel } from "./snapshots/components/snapshots-carousel";
 import CropInstanceList from "./plant-type/components/hydroponics-cropInstance-list";
 import PlantTypeSyncData from "./plant-type/dispatch/dispatch-plant-type-sync-data";
 import CropInstancesSyncData from "./hydroponics/dispatch/dispatch-crop-instances-sync-data";
+import DashboardDecision from "./components/dashboard-decision";
 
 export default function Page() {
   return (
@@ -21,6 +22,7 @@ export default function Page() {
             <div className="px-4 lg:px-6">
               <ChartAreaInteractive />
             </div>
+            <DashboardDecision />
             <div>
               <CropInstanceList />
             </div>

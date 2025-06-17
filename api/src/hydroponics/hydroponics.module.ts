@@ -11,6 +11,8 @@ import { HydroponicsService } from './v1/hydroponics.service';
 import { PlantTypeModule } from 'src/plant-type/plant-type.module';
 import { SolutionReading } from './entities/solution-reading.entity';
 import { SensorReading } from './entities/sensor-reading.entity';
+import { HttpModule } from '@nestjs/axios';
+import { Decision } from './entities/decision.entity';
 
 @Module({
   imports: [
@@ -23,7 +25,9 @@ import { SensorReading } from './entities/sensor-reading.entity';
       CameraImage,
       SolutionReading,
       SensorReading,
+      Decision,
     ]),
+    HttpModule,
   ],
   controllers: [HydroponicsController],
   providers: [HydroponicsService],

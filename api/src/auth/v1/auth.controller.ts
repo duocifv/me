@@ -35,9 +35,11 @@ import {
   ResetPasswordDto,
   ResetPasswordSchema,
 } from '../dto/reset-password.dto';
+import { Logger } from '@nestjs/common';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
   constructor(private readonly authService: AuthService) {}
 
   @Public()
@@ -87,15 +89,22 @@ export class AuthController {
   @DeviceHeader()
   @Delete('logout')
   @HttpCode(200)
-  async logout(
+  logout(
     @Headers('X-Device-Fingerprint') fingerprint: string,
     @Req() req,
     @Res({ passthrough: true }) res,
   ) {
-    const refreshToken = req.getCookieRefreshToken();
-    await this.authService.logout(refreshToken, fingerprint);
     res.clearCookieRefreshToken();
-    return 'logout-ok';
+
+    setImmediate(() => {
+      this.authService
+        .logout(req.getCookieRefreshToken(), fingerprint)
+        .catch((err) => {
+          this.logger?.error?.('Lỗi xử lý logout async:', err);
+        });
+    });
+
+    return { message: 'ok' };
   }
 
   @Post('forgot-password')

@@ -13,6 +13,7 @@ import { CropInstance } from './crop-instance.entity';
 import { CameraImage } from './camera-image.entity';
 import { SolutionReading } from './solution-reading.entity';
 import { SensorReading } from './sensor-reading.entity';
+import { Decision } from './decision.entity';
 
 @Entity({ name: 'snapshots' })
 @Index('IDX_SNAPSHOT_CROP_TIME', ['cropInstanceId', 'timestamp'])
@@ -69,4 +70,7 @@ export class Snapshot {
     cascade: ['insert', 'remove'],
   })
   sensorReadings: SensorReading[];
+
+  @OneToMany(() => Decision, (decision) => decision.snapshot)
+  decisions: Decision[];
 }

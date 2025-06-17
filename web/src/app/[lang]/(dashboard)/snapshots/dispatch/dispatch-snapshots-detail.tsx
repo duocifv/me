@@ -39,7 +39,7 @@ export default function DispatchSnapshotsDetail() {
                 className="h-20 w-full object-cover rounded-t-xl"
               />
             ) : (
-              <div className="h-20 w-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-md">
+              <div className="min-h-40 w-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-md">
                 {$t`Không có hình ảnh`}
               </div>
             )}

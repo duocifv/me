@@ -76,7 +76,7 @@ export default function CropInstanceList() {
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
                 <Picture
-                  src={crop.plantType.mediaFileId}
+                  src={crop.plantType.mediaFile.variants.thumbnail}
                   alt={crop.name}
                   className="w-16 h-16 rounded-xl object-cover border"
                 />
