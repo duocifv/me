@@ -13,10 +13,9 @@ export interface JwtPayload {
 }
 
 export interface RefreshTokenPayload {
+  jti: string; // ✅ THÊM dòng này
+  iss?: string;
   sub: string; // userId
-  jti: string; // unique token id
-  iss: string; // issuer
-  aud: string; // audience
   iat: number; // issued at timestamp
   nbf: number; // not before timestamp
 }

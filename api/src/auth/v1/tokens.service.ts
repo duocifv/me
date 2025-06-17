@@ -40,21 +40,8 @@ export class TokensService {
     } = this.cfg.token;
     const now = Math.floor(Date.now() / 1000);
 
-    // Lấy roles và permissions (nếu có)
-    // const roles = Array.isArray(user.roles) ? user.roles : [];
-    // const permissions = roles
-    //   .flatMap((r) => r.permissions || [])
-    //   .map((p) => p.name);
-    // const roleNames = roles.map((r) => r.name);
-
-    // email: user.email,
-    // roles: roleNames,
-    // permissions,
-
     const payload = {
       sub: user.id,
-      iss,
-      aud,
       iat: now,
       nbf: now,
     };
@@ -63,6 +50,8 @@ export class TokensService {
       privateKey,
       algorithm: 'RS256',
       expiresIn: accessToken.expires,
+      issuer: iss,
+      audience: aud,
     });
   }
 
@@ -79,11 +68,8 @@ export class TokensService {
     const now = Math.floor(Date.now() / 1000);
     const jti = randomUUID();
 
-    const payload: RefreshTokenPayload = {
+    const payload = {
       sub: user.id,
-      jti,
-      iss,
-      aud,
       iat: now,
       nbf: now,
     };
@@ -92,9 +78,9 @@ export class TokensService {
       privateKey,
       algorithm: 'RS256',
       expiresIn: refreshToken.expires,
+      jwtid: jti,
       issuer: iss,
       audience: aud,
-      jwtid: jti,
     });
 
     return { token, jti };
