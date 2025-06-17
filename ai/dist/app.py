@@ -8,6 +8,8 @@ import joblib
 import logging
 import time
 import signal
+import requests
+from io import BytesIO
 
 # ⚙️ Giới hạn tài nguyên cho môi trường nhẹ
 os.environ.update({
@@ -27,7 +29,7 @@ _input_details = None
 _output_details = None
 
 # Load mô hình ảnh (TFLite)
-interpreter = tf.lite.Interpreter(model_path="model.tflite")
+interpreter = tf.lite.Interpreter(model_path="models/model.tflite")
 interpreter.allocate_tensors()
 _input_details = interpreter.get_input_details()
 _output_details = interpreter.get_output_details()
@@ -133,13 +135,47 @@ def route_decision():
 
     d = request.get_json()
 
-    # 1. Dự đoán giai đoạn sinh trưởng từ ảnh
-    img = d.get("image_path")
+    # 1. Dự đoán giai đoạn sinh trưởng từ ảnh (nếu có)
     stage_info = {}
-    if img and os.path.exists(img):
-        stage_info = predict_image(img)
-    else:
-        stage_info = {"warning": "No valid image_path provided. Skipping growth stage prediction."}
+    try:
+        img_url = None
+        if "images" in d and isinstance(d["images"], list) and len(d["images"]) > 0:
+            img_url = "https://my.duocnv.top/uploads/esp32/" + d["images"][0]["filePath"]
+        elif "image_path" in d:
+            img_url = d["image_path"]
+
+        if img_url:
+            res = requests.get(img_url, timeout=10)
+            if res.status_code == 200:
+                img = Image.open(BytesIO(res.content)).convert("RGB").resize((224, 224))
+                arr = np.expand_dims(np.array(img, dtype=np.float32) / 255.0, axis=0)
+
+                interpreter.set_tensor(_input_details[0]['index'], arr)
+                interpreter.invoke()
+                pred = interpreter.get_tensor(_output_details[0]['index'])[0]
+
+                idx = int(np.argmax(pred))
+                conf = round(float(pred[idx]) * 100, 2)
+                ranges = ["0–7 ngày", "8–21 ngày", "22–40 ngày", "41–55 ngày", "56–65 ngày"]
+                days = [8, 14, 19, 15, 0]
+                timeline = []
+                for i, label in enumerate(CLASS_NAMES):
+                    timeline.append({"label": label, "range": ranges[i], "current": (i == idx)})
+
+                stage_info = {
+                    "stage": CLASS_NAMES[idx],
+                    "confidence": conf,
+                    "days_until_next": days[idx],
+                    "next_stage": CLASS_NAMES[idx + 1] if idx + 1 < len(CLASS_NAMES) else None,
+                    "estimated_days_to_harvest": sum(days[idx:]),
+                    "timeline": timeline
+                }
+            else:
+                stage_info = {"warning": f"Image fetch failed with status {res.status_code}"}
+        else:
+            stage_info = {"warning": "No valid image_path or images provided."}
+    except Exception as e:
+        stage_info = {"error": f"Stage prediction failed: {str(e)}"}
 
     # 2. Dự đoán từ cảm biến môi trường
     env_info = predict_decision(d)
@@ -149,14 +185,7 @@ def route_decision():
         "📈 Health Evaluation": {
             "health_score": env_info.get("health_score")
         },
-        "🌱 Growth Stage Estimation": {
-            "stage": stage_info.get("stage"),
-            "confidence": stage_info.get("confidence"),
-            "days_until_next": stage_info.get("days_until_next"),
-            "next_stage": stage_info.get("next_stage"),
-            "estimated_days_to_harvest": stage_info.get("estimated_days_to_harvest"),
-            "timeline": stage_info.get("timeline")
-        },
+        "🌱 Growth Stage Estimation": stage_info,
         "⚡ Immediate Actions": {
             "turn_on_fan": env_info.get("turn_on_fan"),
             "adjust_light": env_info.get("adjust_light"),

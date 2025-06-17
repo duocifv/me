@@ -1,0 +1,27 @@
+2025-06-17 09:18:18,868 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-17 09:18:18,869 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-17 09:18:18,873 [INFO]  * Restarting with stat
+2025-06-17 09:18:22,462 [WARNING]  * Debugger is active!
+2025-06-17 09:18:22,469 [INFO]  * Debugger PIN: 102-759-532
+2025-06-17 09:20:19,081 [INFO] 127.0.0.1 - - [17/Jun/2025 09:20:19] "POST /decision HTTP/1.1" 200 -
+2025-06-17 09:20:56,851 [INFO] 127.0.0.1 - - [17/Jun/2025 09:20:56] "POST /decision HTTP/1.1" 200 -
+2025-06-17 09:21:03,068 [INFO] 127.0.0.1 - - [17/Jun/2025 09:21:03] "POST /decision HTTP/1.1" 200 -
+2025-06-17 09:23:48,561 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-17 09:23:48,561 [INFO] [33mPress CTRL+C to quit[0m
+2025-06-17 09:23:48,562 [INFO]  * Restarting with stat
+2025-06-17 09:23:52,244 [WARNING]  * Debugger is active!
+2025-06-17 09:23:52,250 [INFO]  * Debugger PIN: 102-759-532
+2025-06-17 09:23:52,299 [INFO] 127.0.0.1 - - [17/Jun/2025 09:23:52] "POST /decision HTTP/1.1" 200 -
+2025-06-17 09:23:54,094 [INFO] 127.0.0.1 - - [17/Jun/2025 09:23:54] "POST /decision HTTP/1.1" 200 -
+2025-06-17 09:24:20,629 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\dist\\app.py', reloading
+2025-06-17 09:24:20,976 [INFO]  * Restarting with stat
+2025-06-17 09:24:24,648 [WARNING]  * Debugger is active!
+2025-06-17 09:24:24,656 [INFO]  * Debugger PIN: 102-759-532
+2025-06-17 09:24:24,886 [INFO] 127.0.0.1 - - [17/Jun/2025 09:24:24] "POST /decision HTTP/1.1" 200 -
+2025-06-17 09:24:46,961 [INFO]  * Detected change in 'D:\\Mitsubishi UFJ NICOS\\me\\ai\\dist\\app.py', reloading
+2025-06-17 09:24:47,283 [INFO]  * Restarting with stat
+2025-06-17 09:24:50,992 [WARNING]  * Debugger is active!
+2025-06-17 09:24:50,998 [INFO]  * Debugger PIN: 102-759-532
+2025-06-17 09:24:51,165 [INFO] 127.0.0.1 - - [17/Jun/2025 09:24:51] "POST /decision HTTP/1.1" 200 -
