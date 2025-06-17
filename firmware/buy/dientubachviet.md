@@ -7,13 +7,12 @@ Hạ áp MP1584EN DC 4.5V~28V 3A có điều chỉnh ( 4C4.1 )
 =-===========================
 Bạn chỉ cần mua thêm: 4 led
 
-1× MP1584EN (mã 4C4.1) 
+1× MP1584EN (mã 4C4.1)
 https://dientubachviet.com/ha-ap-4-5v-28v-mp1584en-3a-chinh-ap-4c4-4
 
 https://dientubachviet.com/dien-tro-5w
 1× 2.2Ω sứ 5W (điện trở sứ 5W 5% các loại)
 1× 5.1Ω sứ 5W (điện trở sứ 5W 5% các loại)
-
 
 https://dientubachviet.com/nhom-tan-nhiet-47-16-5-40-cho-tda7297-15d9-2a
 Nhôm tản nhiệt 47x16.5x40 cho TDA7297
@@ -24,11 +23,20 @@ Led 1W xanh dương (3B13.1)
 https://dientubachviet.com/led-1w-do-5b13-1
 Led 1W đỏ (5B13.1)
 
-https://dientubachviet.com/tu-gom-titan-104p-3a16-2 
+https://dientubachviet.com/tu-gom-titan-104p-3a16-2
 x2 Tụ gốm 104P titan (100nF 0.1uF 50V) (3A16.2)
 
 https://dientubachviet.com/tu-1000uf-16v-9d6
 x2 tụ 1500uf 16v
+
+https://dientubachviet.com/tu-1500uf-10v-9d8-2
+x2 Tụ 1500uf 10v
+
+https://dientubachviet.com/cau-chi-2a-250v-5-20mm-7b6-1
+x1 cầu chì 2A 250V 5\*20mm (7B4.2)
+
+https://dientubachviet.com/de-cau-chi-co-day-5x20mm
+x1 Đế Cầu Chì Có Dây 5x20mm
 =======
 đấu nối:
 OUT+ → [R1] → [R2] → (+)LED1(–) → (+)LED2(–) → (+)LED3(–) → (+)LED4(–) → OUT–
