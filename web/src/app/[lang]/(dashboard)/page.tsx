@@ -1,12 +1,44 @@
 import { SiteHeader } from "@/components/site-header";
 import HydroponicsSyncData from "./snapshots/dispatch/dispatch-snapshots-sync-data";
-import { SectionCards } from "./snapshots/components/section-cards";
-import { ChartAreaInteractive } from "./snapshots/components/chart-area-interactive";
-import { SnapsortCarousel } from "./snapshots/components/snapshots-carousel";
-import CropInstanceList from "./plant-type/components/hydroponics-cropInstance-list";
 import PlantTypeSyncData from "./plant-type/dispatch/dispatch-plant-type-sync-data";
 import CropInstancesSyncData from "./hydroponics/dispatch/dispatch-crop-instances-sync-data";
-import DashboardDecision from "./components/dashboard-decision";
+import dynamic from "next/dynamic";
+import AppLoading from "./components/app-loading";
+
+const SectionCards = dynamic(
+  () => import("./snapshots/components/section-cards"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
+
+const SnapsortCarousel = dynamic(
+  () => import("./snapshots/components/snapshots-carousel"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
+
+const ChartAreaInteractive = dynamic(
+  () => import("./snapshots/components/chart-area-interactive"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
+
+const CropInstanceList = dynamic(
+  () => import("./plant-type/components/hydroponics-cropInstance-list"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
+
+const DashboardDecision = dynamic(
+  () => import("./components/dashboard-decision"),
+  {
+    loading: () => <AppLoading />,
+  }
+);
 
 export default function Page() {
   return (

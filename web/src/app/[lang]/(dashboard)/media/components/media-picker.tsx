@@ -2,6 +2,7 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Picture } from "@/components/share/picture/ui-picture";
+import { $t } from "@/app/lang";
 
 interface MediaItem {
   id: string;
@@ -25,7 +26,7 @@ export function MediaPicker({
 }: MediaPickerProps) {
   return (
     <div className="grid grid-cols-4 items-start gap-4">
-      <Label>Choose image</Label>
+      <Label>{$t`Chọn hình ảnh`}</Label>
       <div className="col-span-3">
         <div className="grid grid-cols-3 gap-2">
           {data.map(({ id, variants }) =>

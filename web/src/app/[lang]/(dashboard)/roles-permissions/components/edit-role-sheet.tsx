@@ -17,6 +17,7 @@ import { usePermissions } from "@adapter/permissions/permissions.hook";
 import { RoleDto } from "@adapter/roles/dto/roles.dto";
 import { useEffect, useState } from "react";
 import { IPermissionGroup } from "@adapter/permissions/permission.utils";
+import { $t } from "@/app/lang";
 
 export default function EditRoleSheet(role: RoleDto) {
   const { permissionsList } = usePermissions(role.permissions);
@@ -86,29 +87,31 @@ export default function EditRoleSheet(role: RoleDto) {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
-          Edit
+          {$t`Chỉnh sửa`}
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full max-w-lg">
         <SheetHeader>
-          <SheetTitle>Edit Role {role.name}</SheetTitle>
-          <SheetDescription>Set role permissions</SheetDescription>
+          <SheetTitle>
+            {$t`Chỉnh sửa vai trò`} {role.name}
+          </SheetTitle>
+          <SheetDescription>{$t`Thiết lập quyền cho vai trò`}</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 mt-4 px-4">
           <label className="block">
-            <span className="text-sm font-medium">Role Name</span>
+            <span className="text-sm font-medium">{$t`Tên vai trò`}</span>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter a role name"
+              placeholder={$t`Nhập tên vai trò`}
               readOnly
             />
           </label>
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <p className="text-sm font-semibold">Role Permissions</p>
+              <p className="text-sm font-semibold">{$t`Quyền của vai trò`}</p>
               <div className="flex items-center space-x-1">
                 <Checkbox
                   checked={selectAll}
@@ -116,7 +119,7 @@ export default function EditRoleSheet(role: RoleDto) {
                   id="select-all"
                 />
                 <label htmlFor="select-all" className="text-sm">
-                  Select All
+                  {$t`Chọn tất cả`}
                 </label>
               </div>
             </div>
@@ -140,7 +143,9 @@ export default function EditRoleSheet(role: RoleDto) {
                             handlePermChange(id, field, !!value)
                           }
                         />
-                        <span className="text-sm capitalize">{field}</span>
+                        <span className="text-sm capitalize">
+                          {field === "view" ? "Xem" : "Quản lý"}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -151,9 +156,9 @@ export default function EditRoleSheet(role: RoleDto) {
         </div>
 
         <SheetFooter className="mt-6 space-x-2 flex justify-end">
-          <Button onClick={handleSubmit}>Submit</Button>
+          <Button onClick={handleSubmit}>{$t`Lưu`}</Button>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {$t`Hủy`}
           </Button>
         </SheetFooter>
       </SheetContent>

@@ -23,6 +23,7 @@ import { useUsersStore } from "@adapter/users/users.store";
 import { GetUsersDto, GetUsersSchema } from "@adapter/users/dto/get-users.dto";
 import { UserSearch } from "./user-search";
 import AppLoading from "../../components/app-loading";
+import { $t } from "@/app/lang";
 
 const UsersAddDialog = dynamic(() => import("./users-add"), {
   loading: () => <AppLoading />,
@@ -51,19 +52,19 @@ export default function UsersFilter({ table }: { table: Table<UserDto> }) {
   };
 
   return (
-    <div className="flex items-center justify-between ">
+    <div className="flex items-center justify-between">
       <UserSearch />
       <div className="flex items-center gap-2">
-        {/* Role Filter */}
+        {/* Bộ lọc Vai trò */}
         <Select
           value={filters.roles?.[0] ?? "all"}
           onValueChange={(value) => onRoleChange(value)}
         >
           <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Filter Role" />
+            <SelectValue placeholder={$t`Lọc theo vai trò`} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="all">{$t`Tất cả vai trò`}</SelectItem>
             {Object.values(Roles).map((role) => (
               <SelectItem key={role} value={role}>
                 {role}
@@ -72,16 +73,16 @@ export default function UsersFilter({ table }: { table: Table<UserDto> }) {
           </SelectContent>
         </Select>
 
-        {/* Status Filter */}
+        {/* Bộ lọc Trạng thái */}
         <Select
           value={filters.status?.[0] ?? "all"}
           onValueChange={(value) => onStatusChange(value)}
         >
           <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Filter Status" />
+            <SelectValue placeholder={$t`Lọc theo trạng thái`} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">{$t`Tất cả trạng thái`}</SelectItem>
             {Object.values(UserStatus).map((status) => (
               <SelectItem key={status} value={status}>
                 {status}
@@ -90,12 +91,13 @@ export default function UsersFilter({ table }: { table: Table<UserDto> }) {
           </SelectContent>
         </Select>
 
+        {/* Hiển thị cột */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
               <ColumnsIcon />
-              <span className="hidden lg:inline">ViewsColumns</span>
-              <span className="lg:hidden">Columns</span>
+              <span className="hidden lg:inline">{$t`Hiển thị cột`}</span>
+              <span className="lg:hidden">{$t`Cột`}</span>
               <ChevronDownIcon />
             </Button>
           </DropdownMenuTrigger>
@@ -123,6 +125,8 @@ export default function UsersFilter({ table }: { table: Table<UserDto> }) {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Nút thêm người dùng */}
         <UsersAddDialog />
       </div>
     </div>

@@ -44,7 +44,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function ChartAreaInteractive() {
+export default function ChartAreaInteractive() {
   // Lấy mảng snapshots từ store
   const snapshots = useHydroponicsStore((s) => s.snapshots);
 

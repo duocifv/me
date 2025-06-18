@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 import type { Metadata } from "next";
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -23,7 +23,7 @@ export default async function UserLayout({
                 <h1 className="text-2xl font-semibold">Cấu hình thiết bị</h1>
               </div>
             </div>
-            {children}
+            <Suspense>{children}</Suspense>
           </div>
         </div>
       </div>

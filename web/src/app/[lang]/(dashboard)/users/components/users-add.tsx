@@ -17,6 +17,7 @@ import {
 } from "@adapter/users/dto/create-user.dto";
 import dynamic from "next/dynamic";
 import AppLoading from "../../components/app-loading";
+import { $t } from "@/app/lang";
 
 const CreateUserSubmit = dynamic(
   () => import("../dispatch/dispatch-user-create"),
@@ -29,13 +30,13 @@ export default function UsersAddDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>Add User</Button>
+        <Button>{$t`Thêm người dùng`}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Add User</DialogTitle>
+          <DialogTitle>{$t`Thêm người dùng`}</DialogTitle>
           <DialogDescription>
-            Make changes to your profile here. Click save when you&apos;re done.
+            {$t`Hãy nhập thông tin người dùng. Nhấn lưu khi hoàn tất.`}
           </DialogDescription>
         </DialogHeader>
         <FormWrapper<CreateUserDto>
@@ -48,7 +49,7 @@ export default function UsersAddDialog() {
                 <div className="flex flex-col gap-6">
                   <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="email" className="mt-3">
-                      Email
+                      {$t`Email`}
                     </Label>
                     <div className="col-span-3">
                       <Input
@@ -57,14 +58,14 @@ export default function UsersAddDialog() {
                         {...form.register("email")}
                       />
                       {form.formState.errors.email && (
-                        <p className="text-red-500 mt-2 text-sm  leading-none">
+                        <p className="text-red-500 mt-2 text-sm leading-none">
                           {form.formState.errors.email.message}
                         </p>
                       )}
                     </div>
                   </div>
                   <div className="grid grid-cols-4 items-start gap-4">
-                    <Label className="mt-3">Password</Label>
+                    <Label className="mt-3">{$t`Mật khẩu`}</Label>
                     <div className="col-span-3">
                       <Input
                         {...form.register("password")}
@@ -72,7 +73,7 @@ export default function UsersAddDialog() {
                         placeholder="••••••••"
                       />
                       {form.formState.errors.password && (
-                        <p className="text-red-500 mt-2 text-sm  leading-none">
+                        <p className="text-red-500 mt-2 text-sm leading-none">
                           {form.formState.errors.password.message}
                         </p>
                       )}

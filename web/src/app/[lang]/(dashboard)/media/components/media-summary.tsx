@@ -1,9 +1,11 @@
 "use client";
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { HardDrive, Image as ImageIcon } from "lucide-react";
 import { useMediaStore } from "@adapter/media/media.store";
 import { bytes } from "@adapter/share/utils/bytes";
+import { $t } from "@/app/lang";
 
 interface StatItem {
   label: string;
@@ -14,19 +16,22 @@ interface StatItem {
 
 export function MediaSummary() {
   const { stats } = useMediaStore((s) => s.data);
+
   const storageStats: StatItem[] = [
     {
-      label: "Total Files",
-      content: `${stats.totalFile} hình`,
+      label: $t`Tổng số tệp`,
+      content: `${stats.totalFile} ${$t`hình`}`,
       icon: ImageIcon,
     },
   ];
+
   if (stats.usedStorageBytes >= 0) {
     const percent = Math.round(
       (stats.usedStorageBytes / stats.maxStorageBytes) * 100
     );
+
     storageStats.push({
-      label: "Storage Used",
+      label: $t`Dung lượng đã sử dụng`,
       content: `${bytes(stats.usedStorageBytes)} / ${bytes(
         stats.maxStorageBytes
       )}`,
@@ -34,6 +39,7 @@ export function MediaSummary() {
       progress: percent,
     });
   }
+
   return (
     <div className="relative px-4 gap-4 flex">
       {storageStats.map(({ label, content, icon: Icon, progress }) => (

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { UpdateByAdminDto } from "@adapter/users/dto/update-by-admin.dto";
 import { RefObject } from "react";
 import { Roles } from "@adapter/roles/dto/roles.enum";
+import { $t } from "@/app/lang";
 
 type Props = {
   item: UserDto;
@@ -21,15 +22,15 @@ export default function UsersUpdate({ item, valueRef }: Props) {
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="flex flex-col gap-3">
-        <Label htmlFor="ROLE">ROLE</Label>
+        <Label htmlFor="ROLE">{$t`Vai trò`}</Label>
         <Select
           defaultValue={item.roles[0]?.name}
           onValueChange={(roles: Roles) => {
             valueRef.current.roles = [roles];
           }}
         >
-          <SelectTrigger id="type" className="w-full">
-            <SelectValue placeholder="Select a role" />
+          <SelectTrigger id="role" className="w-full">
+            <SelectValue placeholder={$t`Chọn vai trò`} />
           </SelectTrigger>
           <SelectContent>
             {Object.values(Roles).map((role) => (
@@ -41,15 +42,15 @@ export default function UsersUpdate({ item, valueRef }: Props) {
         </Select>
       </div>
       <div className="flex flex-col gap-3">
-        <Label htmlFor="STATUS">STATUS</Label>
+        <Label htmlFor="STATUS">{$t`Trạng thái`}</Label>
         <Select
           defaultValue={item.status}
           onValueChange={(status: UserStatus) => {
             valueRef.current.status = [status];
           }}
         >
-          <SelectTrigger id="type" className="w-full">
-            <SelectValue placeholder="Select a status" />
+          <SelectTrigger id="status" className="w-full">
+            <SelectValue placeholder={$t`Chọn trạng thái`} />
           </SelectTrigger>
           <SelectContent>
             {Object.values(UserStatus).map((status) => (

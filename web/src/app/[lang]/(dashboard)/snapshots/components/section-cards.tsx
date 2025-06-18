@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
 
-export function SectionCards() {
+export default function SectionCards() {
   const snapshots = useHydroponicsStore((s) => s.snapshots);
 
   return (

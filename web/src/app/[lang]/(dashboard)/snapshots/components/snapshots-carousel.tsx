@@ -13,7 +13,7 @@ import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
 import { Picture } from "@/components/share/picture/ui-picture";
 import { $t } from "@/app/lang";
 
-export function SnapsortCarousel() {
+export default function SnapsortCarousel() {
   const snapshots = useHydroponicsStore((s) => s.snapshots);
   return (
     <div className="px-4">
@@ -27,7 +27,12 @@ export function SnapsortCarousel() {
                   <CardContent className="flex aspect-square items-center justify-center p-6">
                     <span className="text-4xl font-semibold">
                       <Picture
-                        src={snapshots.items[idx]?.images[0]?.filePath ? "/uploads/esp32/" + snapshots.items[idx]?.images[0]?.filePath : ""}
+                        src={
+                          snapshots.items[idx]?.images[0]?.filePath
+                            ? "/uploads/esp32/" +
+                              snapshots.items[idx]?.images[0]?.filePath
+                            : ""
+                        }
                         className="h-96"
                       />
                     </span>
