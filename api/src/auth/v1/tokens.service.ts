@@ -190,6 +190,10 @@ export class TokensService {
 
     // 4. Kiểm tra token hash trùng khớp
     const tokenHash = this.hashToken(token);
+    console.log('== VERIFY HASH ==');
+    console.log('client hash:', tokenHash);
+    console.log('stored hash:', stored.tokenHash);
+
     if (stored.tokenHash !== tokenHash) {
       throw new UnauthorizedException(
         'Refresh token không hợp lệ hoặc đã bị thay đổi',
@@ -238,12 +242,15 @@ export class TokensService {
         'Refresh token đã bị thu hồi hoặc không tồn tại',
       );
     }
+
     console.log('oldJti, rt', user, rt);
 
     console.log('expiresAt:', rt.expiresAt.toISOString());
     console.log('now:', new Date().toISOString());
     console.log('compare (ms):', rt.expiresAt.getTime(), Date.now());
-    if (rt.expiresAt.getTime() < Date.now()) {
+
+    const now = new Date();
+    if (rt.expiresAt <= now) {
       await this.rtRepo.delete({ id: oldJti });
       throw new UnauthorizedException('Refresh token đã hết hạn');
     }

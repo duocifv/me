@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAuthStore } from "./auth.store";
 import { errorHandler } from "../share/api/errorHandler";
-import { loggedIn, useAuthLogoutQuery } from "./auth.hook";
+import { loggedIn, useAuthProfileQuery } from "./auth.hook";
 
 export function AuthGuard({
   children,
@@ -33,8 +33,6 @@ export function AuthGuard({
   console.log("================start auth===================");
   console.log("isStogareLoggedIn:", isStogareLoggedIn);
   console.log("isLoggedIn:", isLoggedIn);
-  console.log("setLogin:", setLogin);
-  console.log("setLogout:", setLogout);
   console.log("================end auth===================");
   if (isLoggedIn === false) {
     return <>{fallback}</>;
@@ -45,13 +43,13 @@ export function AuthGuard({
 }
 
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
-  const { data, isSuccess, isError } = useAuthLogoutQuery();
+  const { data, isSuccess, isError } = useAuthProfileQuery();
+  const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-
   useEffect(() => {
     if (isSuccess && data) setUser(data);
     if (isError) setUser(null);
   }, [isSuccess, isError, data, setUser]);
 
-  return <>{children}</>;
+  return user && children;
 }

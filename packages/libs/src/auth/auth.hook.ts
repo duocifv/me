@@ -9,13 +9,16 @@ import { RegisterDto } from "./dto/register.dto";
 
 export const loggedIn = () => api.storage.is();
 
-export function useAuthLogoutQuery() {
-  const user = useAuthStore((s) => s.user);
+export function useAuthProfileQuery() {
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+
   return useQuery({
     queryKey: ["me"],
     queryFn: () => authService.getMe(),
-    enabled: user === null,
-    retry: false,
+    enabled: isLoggedIn === true,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 }
 
