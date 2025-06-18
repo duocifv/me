@@ -48,7 +48,10 @@ export const authCookiePlugin = fp((fastify: FastifyInstance) => {
   fastify.decorateReply(
     'setCookieRefreshToken',
     function (this: FastifyReply, token: string, expiresAt: Date) {
-      const maxAge = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
+      const maxAge =
+        expiresAt instanceof Date && !isNaN(expiresAt.getTime())
+          ? Math.floor((expiresAt.getTime() - Date.now()) / 1000)
+          : 0;
       this.clearCookie(cookieName, { ...cookieOptions, maxAge: 0 });
       return this.setCookie(cookieName, encodeURIComponent(token), {
         ...cookieOptions,

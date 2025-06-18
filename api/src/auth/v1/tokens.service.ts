@@ -58,7 +58,7 @@ export class TokensService {
   /** Tạo Refresh Token (RS256) */
   async generateRefreshToken(
     user: User,
-  ): Promise<{ token: string; jti: string }> {
+  ): Promise<{ token: string; jti: string; expiresAt: Date }> {
     const {
       issuer: iss,
       audience: aud,
@@ -83,7 +83,11 @@ export class TokensService {
       audience: aud,
     });
 
-    return { token, jti };
+    const expiresAt = new Date(
+      Date.now() + refreshToken.expiresInSeconds * 1000,
+    );
+
+    return { token, jti, expiresAt };
   }
 
   /**
@@ -98,8 +102,8 @@ export class TokensService {
     fingerprint: string,
     jti: string,
     refreshToken: string,
+    expiresAt: Date,
   ): Promise<void> {
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 ngày
     const tokenHash = this.hashToken(refreshToken);
     await this.rtRepo.save(
       this.rtRepo.create({
@@ -125,10 +129,18 @@ export class TokensService {
     userId: string;
   }> {
     const accessToken = await this.generateAccessToken(user);
-    const { token: refreshToken, jti } = await this.generateRefreshToken(user);
-    await this.saveRefreshToken(user.id, fingerprint, jti, refreshToken);
-
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const {
+      token: refreshToken,
+      jti,
+      expiresAt,
+    } = await this.generateRefreshToken(user);
+    await this.saveRefreshToken(
+      user.id,
+      fingerprint,
+      jti,
+      refreshToken,
+      expiresAt,
+    );
 
     return {
       accessToken,
@@ -221,14 +233,17 @@ export class TokensService {
     fingerprint: string,
   ): Promise<Token> {
     const rt = await this.rtRepo.findOneBy({ id: oldJti });
-
     if (!rt) {
       throw new UnauthorizedException(
         'Refresh token đã bị thu hồi hoặc không tồn tại',
       );
     }
+    console.log('oldJti, rt', user, rt);
 
-    if (rt.expiresAt < new Date()) {
+    console.log('expiresAt:', rt.expiresAt.toISOString());
+    console.log('now:', new Date().toISOString());
+    console.log('compare (ms):', rt.expiresAt.getTime(), Date.now());
+    if (rt.expiresAt.getTime() < Date.now()) {
       await this.rtRepo.delete({ id: oldJti });
       throw new UnauthorizedException('Refresh token đã hết hạn');
     }
@@ -236,6 +251,10 @@ export class TokensService {
     if (rt.usageCount >= this.MAX_USAGE_COUNT) {
       await this.rtRepo.delete({ id: oldJti });
       throw new UnauthorizedException('Refresh token vượt giới hạn sử dụng');
+    }
+
+    if (rt.revoked) {
+      throw new UnauthorizedException('Refresh token đã bị thu hồi');
     }
 
     if (rt.fingerprint !== fingerprint) {
@@ -247,7 +266,7 @@ export class TokensService {
     await this.rtRepo.save(rt);
 
     // Xóa refresh token cũ để không thể tái sử dụng (optional)
-    await this.rtRepo.delete({ id: oldJti });
+    // await this.rtRepo.delete({ id: oldJti });
 
     // Tạo cặp token mới
     return this.generateTokenPair(user, fingerprint);

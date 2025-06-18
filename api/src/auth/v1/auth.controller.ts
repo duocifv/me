@@ -79,6 +79,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
     const cookieRefreshToken = req.getCookieRefreshToken();
+    console.log('cookieRefreshToken:', cookieRefreshToken);
     const { accessToken, refreshToken, expiresAt, userId } =
       await this.authService.refreshTokens(cookieRefreshToken, fingerprint);
 

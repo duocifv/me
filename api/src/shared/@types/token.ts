@@ -6,6 +6,7 @@ export interface TokenOption {
   refreshToken: {
     privateKey: string;
     expires: string;
+    expiresInSeconds: number;
   };
   issuer: string;
   audience: string;

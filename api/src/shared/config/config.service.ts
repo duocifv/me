@@ -68,6 +68,7 @@ export class AppConfigService {
       refreshToken: {
         privateKey,
         expires: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+        expiresInSeconds: 30 * 24 * 60 * 60,
       },
       issuer: process.env.JWT_ISSUER!,
       audience: process.env.JWT_AUDIENCE!,
