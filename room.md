@@ -78,8 +78,8 @@ https://dientuvietduc.com/product/module-wifi-esp8266-nodemcu-lua-ch340/
 x2 ĐỘNG CƠ RC SERVO SG90 Tower Pro 180 ĐỘ = 20,000 VNĐ
 https://dientuvietduc.com/product/%C4%91%E1%BB%99ng-c%C6%A1-servo-sg90-tower-pro/
 
-Pin sạc 18650 2200mAh (Dung lượng thực 1200mAh) = 25,000 VNĐ
-https://dientunguyenhien.vn/show/364
+PIN LITHIUM 18650 PANASONIC NCR 3400MAH DÒNG XẢ 5A PIN18650= 39,000
+https://dientuvietduc.com/product/pin-18650-2150mah/
 
 HỘP ĐẾ PIN 18650 1 CELL = 4,000
 https://dientuvietduc.com/product/h%E1%BB%99p-%C4%91%E1%BA%BF-pin-18650-1-cell/
