@@ -91,3 +91,18 @@ MODULE TĂNG ÁP 2A = 10,000 VNĐ
 https://dientuvietduc.com/product/module-t%C4%83ng-%C3%A1p-2a/
 
 ===========
+
+Cảm biến Mục đích Giá tham khảo
+MQ‑135 (module) Phát hiện khí độc tổng hợp (NH₃, CO, VOC…)
+Chi phí thấp, thích hợp cảnh báo chung ~~50k–80k VND/module (Ubuy 413k/3c)
+envistiamall.com
++5
+ubuy.vn
++5
+robotshop.com
++5
+MH‑Z19B (CO₂‑NDIR) Đo nồng độ CO₂ chuẩn (ppm) bằng công nghệ NDIR ~1,050k–1,250k VND (2–3 USD dùng Shopee)
+PMS7003 (PM2.5) Đo bụi mịn PM1/2.5/10 – chính xác, thích hợp trẻ nhạy cảm ~465k VND – 1,000k VND
+BME680 (VOC + nhiệt/ẩm) Đo VOC (hóa chất bay hơi), nhiệt độ, độ ẩm – cảm biến nhỏ gọn ~160k–226k VND/module (~4–7 USD)
+
+https://dientubachviet.com/phat-hien-chuyen-dong-nguoi-rcwl-0516-2c5-3
