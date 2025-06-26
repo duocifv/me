@@ -19,7 +19,6 @@ const char* sensorPath   = "/v1/hydroponics/snapshots";        // Gửi dữ li�
 const char* imgPath      = "/v1/hydroponics/snapshots/images"; // Gửi ảnh
 
 // Task intervals (ms)
-const uint32_t SENSOR_INTERVAL = 5000;   // 5s đọc cảm biến
 const uint32_t DATA_INTERVAL   = 30000;  // 30s gửi data
 const uint32_t IMAGE_INTERVAL  = 20000;  // 20s gửi ảnh
 const uint32_t PUMP_CYCLE_MS   = 60000;  // 60s chu kỳ bơm OFF → ON
