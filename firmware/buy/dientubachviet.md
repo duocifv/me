@@ -44,3 +44,5 @@ OUT+ → [R1] → [R2] → (+)LED1(–) → (+)LED2(–) → (+)LED3(–) → (+
 ========[nâng cấp]========
 4–6 LED 1W hiện tại ✅ XL4005
 8+ LED, dòng cao ✅ XL4016
+
+https://vi.aliexpress.com/w/wholesale-esp32-cam.html?spm=a2g0o.detail.search.0
