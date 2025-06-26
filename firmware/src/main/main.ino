@@ -157,7 +157,7 @@ bool initCamera()
   if (!cameraModule.init())
   {
     reportError("Camera", "init fail");
-    return;
+    return false;
   }
 
   const char *p = httpConfig.cameraEndpoint.length() ? httpConfig.cameraEndpoint.c_str() : imgPath;
@@ -197,9 +197,6 @@ void tickRelay()
 
 void setup()
 {
-#ifdef CONFIG_IDF_TARGET_ESP32
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-#endif
   Serial.begin(115200);
   delay(1000);
   Serial.println("Setup start, brownout disabled");
