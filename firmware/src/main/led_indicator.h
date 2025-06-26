@@ -3,54 +3,52 @@
 
 #include <Arduino.h>
 
-class LedIndicator {
-private:
+class LedIndicator
+{
     uint8_t pin;
-    uint8_t blinkCount;
+    uint8_t remaining;
     uint16_t interval;
-    unsigned long lastToggle;
-    bool         isBlinking;
-    bool         ledState;
+    unsigned long lastMillis;
+    bool state;
 
 public:
-    LedIndicator(uint8_t ledPin) : pin(ledPin), blinkCount(0), interval(0),
-                                   lastToggle(0), isBlinking(false), ledState(false) {
+    // Constructor với tham số mặc định pin = 4
+    explicit LedIndicator(uint8_t p = 4) : pin(p), remaining(0), interval(0), lastMillis(0), state(false)
+    {
         pinMode(pin, OUTPUT);
         digitalWrite(pin, LOW);
     }
 
-    // Lên lịch nháy `count` lần, mỗi lần cách nhau `interval` ms
-    void blink(uint8_t count, uint16_t msInterval) {
-        blinkCount = count * 2; // *2 để tính cả ON+OFF
-        interval   = msInterval;
-        lastToggle = millis();
-        isBlinking = true;
-        ledState   = false;
+    void blink(uint8_t times, uint16_t msInterval)
+    {
+        remaining = times * 2;
+        interval = msInterval;
+        lastMillis = millis();
+        state = false;
         digitalWrite(pin, LOW);
     }
 
-    // Tắt LED (và stop blinking)
-    void off() {
-        isBlinking = false;
+    void off()
+    {
+        remaining = 0;
         digitalWrite(pin, LOW);
     }
 
-    // Gọi thường xuyên trong loop()
-    void update() {
-        if (!isBlinking) return;
-
+    void update()
+    {
+        if (remaining == 0)
+            return;
         unsigned long now = millis();
-        if (now - lastToggle >= interval) {
-            ledState = !ledState;
-            digitalWrite(pin, ledState ? HIGH : LOW);
-            lastToggle = now;
-            blinkCount--;
-            if (blinkCount == 0) {
-                isBlinking = false;
+        if (now - lastMillis >= interval)
+        {
+            state = !state;
+            digitalWrite(pin, state ? HIGH : LOW);
+            lastMillis = now;
+            remaining--;
+            if (remaining == 0)
                 digitalWrite(pin, LOW);
-            }
         }
     }
 };
 
-#endif // LED_INDICATOR_H
+#endif

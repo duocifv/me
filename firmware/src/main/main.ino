@@ -11,6 +11,7 @@
 #include "ds18b20_module.h"
 #include "json_builder.h"
 #include "camera_module.h"
+#include "led_indicator.h"
 
 // =====================================
 // CẤU HÌNH TOÀN CỤC
@@ -25,6 +26,7 @@ ExpanderRelay fanRelay(0), ledRelay(1), pumpRelay(2);
 DHTModule dht;
 DS18B20Module ds18b20;
 CameraModule cameraModule;
+LedIndicator led;
 
 char jsonBuffer[1024];
 String errorBuffer;
@@ -59,6 +61,20 @@ bool throttle(unsigned long &lastTime, unsigned long interval)
     return true;
   }
   return false;
+}
+
+void check(bool status, const char *moduleName, uint8_t blinkCount = 3, uint16_t blinkInterval = 100)
+{
+  if (status)
+  {
+    Serial.printf("%s OK\n", moduleName);
+    led.blink(1, 200); // Nháy 1 lần báo OK
+  }
+  else
+  {
+    Serial.printf("%s FAIL\n", moduleName);
+    led.blink(blinkCount, blinkInterval); // Nháy nhiều lần báo lỗi
+  }
 }
 
 void fetchConfigOverTempWiFi()
@@ -117,7 +133,7 @@ bool initRelays()
   return true;
 }
 
-void initSensors()
+bool initSensors()
 {
   Serial.println("Initializing sensors...");
   dht.begin();
@@ -132,9 +148,10 @@ void initSensors()
   httpSensor->begin();
 
   Serial.println("Sensors initialized");
+  return true;
 }
 
-void initCamera()
+bool initCamera()
 {
   Serial.println("Initializing camera...");
   if (!cameraModule.init())
@@ -150,7 +167,9 @@ void initCamera()
   static HttpCameraModule m(h, r, p, deviceToken, deviceId);
   httpCamera = &m;
   httpCamera->setTimeout(20000);
+
   Serial.println("Camera initialized");
+  return true;
 }
 
 void tickRelay()
@@ -186,16 +205,18 @@ void setup()
   Serial.println("Setup start, brownout disabled");
 
   fetchConfigOverTempWiFi();
-  if (!initRelays())
-  {
-    Serial.println("Relay init failed. Rebooting...");
-    delay(2000);
-    ESP.restart();
-  }
 
-  initSensors();
-  delay(500);
-  initCamera();
+  bool relayOk = initRelays();
+  check(relayOk, "Relays");
+
+  bool sensorsOk = initSensors();
+  check(sensorsOk, "Sensors");
+
+  bool cameraOk = initCamera();
+  if (!cameraOk)
+    reportError("Camera", "init fail");
+  check(cameraOk, "Camera");
+
   delay(500);
 
   String uS = httpConfig.wifiSsid.length() ? httpConfig.wifiSsid : ssid1;
@@ -205,6 +226,12 @@ void setup()
   unsigned long now = millis();
   ledTs = fanTs = pumpTs = now;
   wifiPrev = relayPrev = sensorPrev = cameraPrev = errorPrev = now;
+
+  if (!relayOk || !sensorsOk || !cameraOk)
+  {
+    delay(1000);
+    ESP.restart();
+  }
 
   Serial.println("Setup complete, entering loop");
 }
@@ -246,7 +273,7 @@ void loop()
     }
   }
 
-  if (throttle(cameraPrev, 15000))
+  if (throttle(cameraPrev, 20000))
   {
     if (wifi.isConnected() && httpCamera)
     {
@@ -265,7 +292,7 @@ void loop()
     }
   }
 
-  if (errorBuffer.length() && throttle(errorPrev, 20000))
+  if (errorBuffer.length() && throttle(errorPrev, 30000))
   {
     errorBuffer.remove(errorBuffer.length() - 1);
     if (httpError.sendError("Batch", errorBuffer.c_str()))
