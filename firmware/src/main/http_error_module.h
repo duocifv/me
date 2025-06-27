@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+extern String errorBuffer;
 
 /**
  * Module chung để gửi API (bao gồm lỗi, sensor, camera...)
