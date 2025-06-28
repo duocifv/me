@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <DHT.h>
 
-#define DHTPIN 12        // GPIO dùng để đọc DHT22
+#define DHTPIN 16        // GPIO dùng để đọc DHT22
 #define DHTTYPE DHT22    // Kiểu cảm biến
 
 class DHTModule {

@@ -1,15 +1,16 @@
 #include <Arduino.h>
-#include "expander_relay.h"
 #include "ds18b20_module.h"
-#include "dht_module.h"
+#include "expander_relay.h"
 
-// Khởi tạo relay tại chân P0 của PCF8574
-ExpanderRelay relay1(0);
+#define LED_PIN 4  // LED báo trạng thái (đèn flash của ESP32-CAM)
+
+// Khởi tạo module DS18B20
 DS18B20Module tempSensor;
-DHTModule dht;
 
-// LED trạng thái (có thể dùng đèn board hoặc gắn ngoài)
-#define LED_PIN 4
+// Khởi tạo 3 relay gắn vào chân P0, P1, P2 của PCF8574 dùng chung
+ExpanderRelay relay1(0);
+ExpanderRelay relay2(1);
+ExpanderRelay relay3(2);
 
 void blinkLED(int times, int delayMs) {
   for (int i = 0; i < times; i++) {
@@ -22,77 +23,68 @@ void blinkLED(int times, int delayMs) {
 
 void setup() {
   Serial.begin(115200);
-  delay(2000);
+  delay(2000);  // Chờ hệ thống ổn định
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
-  Serial.println("🚀 Bắt đầu khởi động PCF8574...");
-
-  // Khởi tạo relay1 và kiểm tra kết nối
-  bool ok = relay1.begin();
-
-  if (ok) {
-    Serial.println("✅ PCF8574 kết nối thành công.");
-
-    // Tắt relay để tránh bật ngẫu nhiên lúc khởi động
-    relay1.off();
-
-    blinkLED(1, 200); // báo hiệu OK
-  } else {
-    Serial.println("❌ Lỗi kết nối PCF8574.");
-    blinkLED(3, 200); // báo hiệu lỗi
-    while (true); // Dừng chương trình
-  }
-
+  // Khởi động DS18B20
   Serial.println("🚀 Khởi động cảm biến DS18B20...");
   tempSensor.begin();
+  if (!tempSensor.isFound()) {
+    Serial.println("❌ Không tìm thấy cảm biến DS18B20!");
+    blinkLED(3, 200);
+    while (true);  // Dừng chương trình
+  } else {
+    Serial.println("✅ Cảm biến DS18B20 đã sẵn sàng");
+    blinkLED(1, 100);  // Báo hiệu sẵn sàng
+  }
 
-  Serial.println("🚀 Khởi động cảm biến DHT...");
-  dht.begin();
+  // Khởi động bus I2C và PCF8574 dùng chung cho relay
+  Serial.println("🚀 Khởi động PCF8574...");
+  if (ExpanderRelay::beginBus()) {
+    Serial.println("✅ PCF8574 kết nối thành công.");
+    // Tắt tất cả relay ban đầu
+    relay1.off();
+    relay2.off();
+    relay3.off();
+  } else {
+    Serial.println("❌ Lỗi kết nối PCF8574.");
+    blinkLED(2, 200);
+    while (true);
+  }
 }
 
 void loop() {
-  Serial.println("🔁 Bật relay...");
-  relay1.on();
-  delay(1000);
-
-  Serial.println("🛑 Tắt relay...");
-  relay1.off();
-  delay(10000);
-
-  dht.update();
-
-  if (dht.hasData()) {
-    float t = dht.getTemperature();
-    float h = dht.getHumidity();
-
-    Serial.print("✅ Temp: ");
-    Serial.print(t);
-    Serial.print(" °C | 💧 Humidity: ");
-    Serial.print(h);
-    Serial.println(" %");
-
-    blinkLED(1, 200);
-  } else {
-    blinkLED(3, 200);
-  }
-
-  delay(10000);
-
-
+  // Đo nhiệt độ DS18B20
   float temp = tempSensor.getTemperature();
-
+  delay(100);  // Cho thư viện xử lý
   if (!isnan(temp)) {
     Serial.print("🌡️ Nhiệt độ: ");
     Serial.print(temp);
     Serial.println(" °C");
-
-    blinkLED(1, 200);  // ✅ Nháy 1 lần khi đọc thành công
+    blinkLED(1, 200);  // Nháy 1 lần khi đọc thành công
   } else {
     Serial.println("❌ Không đọc được dữ liệu từ DS18B20");
-    blinkLED(3, 200);  // ❌ Nháy 3 lần khi lỗi
+    blinkLED(3, 200);  // Nháy 3 lần khi lỗi
   }
+  
+  // Chuỗi điều khiển relay:
+  Serial.println("🔁 Bắt đầu chu trình relay...");
+  relay1.on();
+  delay(1000);
+  
+  relay2.on();
+  delay(1000);
+  
+  relay3.on();
+  delay(1000);
+  
+  Serial.println("🛑 Tắt tất cả relay");
+  relay1.off();
+  relay2.off();
+  relay3.off();
+  delay(2000);
 
-  delay(10000);
+  // Thực hiện đo nhiệt độ mỗi 3 giây (với chu kỳ relay kéo dài thêm ~5 giây => tổng ~8 giây/lần)
 }
