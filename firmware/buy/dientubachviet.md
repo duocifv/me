@@ -46,3 +46,21 @@ OUT+ → [R1] → [R2] → (+)LED1(–) → (+)LED2(–) → (+)LED3(–) → (+
 8+ LED, dòng cao ✅ XL4016
 
 https://vi.aliexpress.com/w/wholesale-esp32-cam.html?spm=a2g0o.detail.search.0
+
+\
+
+Combo:
+MODULE CHUYỂN TÍN HIỆU RTD TO DIGITAL MAX31865 – 119.000₫
+
+CẢM BIẾN NHIỆT PT100 3 DÂY KHÔNG REN – 59.000₫
+
+🔹 Tổng cộng: 119.000 + 59.000 = 👉 178.000₫
+
+✅ Có dùng được không?
+✔️ Câu trả lời: DÙNG ĐƯỢC, và rất TỐT nếu bạn dùng cho:
+
+Arduino / ESP32 / Raspberry Pi
+
+Đo nhiệt độ nước trong thủy canh
+
+Cần độ chính xác cao hơn DS18B20, LM35…
