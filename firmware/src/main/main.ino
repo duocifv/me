@@ -146,14 +146,12 @@ bool initCamera()
   Serial.println("Initializing camera...");
   if (!cameraModule.init())
   {
-    reportError("Camera", "init fail");
+    reportError("Camera init", "init fail");
     return false;
   }
-
   const char *p = httpConfig.cameraEndpoint.length() ? httpConfig.cameraEndpoint.c_str() : imgPath;
   const char *h = httpConfig.configuredHost.length() ? httpConfig.configuredHost.c_str() : host;
   uint16_t r = httpConfig.configuredPort ? httpConfig.configuredPort : port;
-
   static HttpCameraModule m(h, r, p, deviceToken, deviceId);
   httpCamera = &m;
   httpCamera->setTimeout(20000);
@@ -186,11 +184,11 @@ void setup()
   unsigned long now = millis();
   wifiPrev = fanPrev = ledPrev = pumpPrev = sensorPrev = cameraPrev = errorPrev = now;
 
-  if (!relayOk || !sensorsOk || !cameraOk)
-  {
-    delay(1000);
-    ESP.restart();
-  }
+  // if (!relayOk || !sensorsOk || !cameraOk)
+  // {
+  //   delay(1000);
+  //   ESP.restart();
+  // }
 
   Serial.println("Setup complete, entering loop");
 }
@@ -207,21 +205,21 @@ void loop()
     }
   }
 
-  if (throttle(fanPrev, 1000))
+  if (throttle(fanPrev, 10000))
   {
     fanRelay.on();
     delay(1000);
     fanRelay.off();
   }
 
-  if (throttle(ledPrev, 2000))
+  if (throttle(ledPrev, 20000))
   {
     ledRelay.on();
     delay(1000);
     ledRelay.off();
   }
 
-  if (throttle(pumpPrev, 3000))
+  if (throttle(pumpPrev, 30000))
   {
     pumpRelay.on();
     delay(1000);
@@ -235,7 +233,16 @@ void loop()
     // humidity = dht.getHumidity();
     // if (!dht.hasData())
     //   reportError("DHT22", "no data");
-    waterTemp = tempSensor.getTemperature();
+    float t = tempSensor.getTemperature();
+    if (isnan(t)) {
+      reportError("DS18B20", "no data");
+      waterTemp = 0;
+    } else {
+      waterTemp = t;
+    }
+
+    ambientTemp = 0;
+    humidity = 0;
     delay(200);
     if (isnan(waterTemp))
       reportError("DS18B20", "no data");
@@ -249,17 +256,18 @@ void loop()
     }
   }
 
-  if (throttle(cameraPrev, 20000))
+  if (throttle(cameraPrev, 30000))
   {
-    if (wifi.isConnected() && httpCamera)
+    if (httpCamera)
     {
       camera_fb_t *fb = cameraModule.capture();
-      unsigned long dummy = 0;
-      if (fb && fb->len > 1000)
+      if (fb)
       {
-        if (!httpCamera->send(fb, dummy))
+        unsigned long durationMs;  
+        bool sent = httpCamera->send(fb, durationMs);
+        if (!sent)
           reportError("HTTP-Camera", "send fail");
-        cameraModule.release(fb);
+        cameraModule.release(fb); // Luôn giải phóng buffer
       }
       else
       {
