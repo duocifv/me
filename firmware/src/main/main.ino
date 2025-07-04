@@ -128,117 +128,6 @@ bool initCamera()
   return true;
 }
 
-void handlePumpSchedule()
-{
-  static bool isOn = false;
-  static unsigned long onAt = 0;
-  static int lastMinute = -1;
-
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo))
-  {
-    reportError("NTP", "no time");
-    return;
-  }
-
-  int hour = timeinfo.tm_hour;
-  int minute = timeinfo.tm_min;
-
-  for (int i = 0; i < PUMP_SCHEDULE_COUNT; i++)
-  {
-    if (PUMP_SCHEDULE[i][0] == hour && PUMP_SCHEDULE[i][1] == minute && lastMinute != minute)
-    {
-      pumpRelay.on();
-      onAt = millis();
-      isOn = true;
-      lastMinute = minute;
-      Serial.printf("💧 Tưới lúc %02d:%02d\n", hour, minute);
-      break;
-    }
-  }
-
-  if (isOn && millis() - onAt > PUMP_DURATION)
-  {
-    pumpRelay.off();
-    isOn = false;
-    Serial.println("🛑 Dừng tưới");
-  }
-}
-
-void handleFanSchedule()
-{
-  static bool isOn = false;
-  static unsigned long onAt = 0;
-  static int lastMinute = -1;
-
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo))
-  {
-    reportError("NTP", "no time");
-    return;
-  }
-
-  int hour = timeinfo.tm_hour;
-  int minute = timeinfo.tm_min;
-
-  for (int i = 0; i < FAN_SCHEDULE_COUNT; i++)
-  {
-    if (FAN_SCHEDULE[i][0] == hour && FAN_SCHEDULE[i][1] == minute && lastMinute != minute)
-    {
-      fanRelay.on();
-      onAt = millis();
-      isOn = true;
-      lastMinute = minute;
-      Serial.printf("🌬️ Quạt bật lúc %02d:%02d\n", hour, minute);
-      break;
-    }
-  }
-
-  if (isOn && millis() - onAt > FAN_DURATION)
-  {
-    fanRelay.off();
-    isOn = false;
-    Serial.println("🛑 Quạt tắt");
-  }
-}
-
-void handleLedSchedule()
-{
-  static bool isOn = false;
-  static unsigned long onAt = 0;
-  static int lastMinute = -1;
-
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo))
-  {
-    reportError("NTP", "no time");
-    return;
-  }
-
-  int hour = timeinfo.tm_hour;
-  int minute = timeinfo.tm_min;
-
-  for (int i = 0; i < LED_SCHEDULE_COUNT; i++)
-  {
-    if (LED_SCHEDULE[i][0] == hour && LED_SCHEDULE[i][1] == minute && lastMinute != minute)
-    {
-      ledRelay.on();
-      onAt = millis();
-      isOn = true;
-      lastMinute = minute;
-      Serial.printf("💡 Đèn bật lúc %02d:%02d\n", hour, minute);
-      break;
-    }
-  }
-
-  if (isOn && millis() - onAt > LED_DURATION)
-  {
-    ledRelay.off();
-    isOn = false;
-    Serial.println("🛑 Đèn tắt");
-  }
-}
-
 void setup()
 {
 
@@ -275,28 +164,29 @@ void loop()
   unsigned long now = millis();
 
   if (throttle(wifiPrev, 5000))
+ {
+  if (wifi.isConnected())
   {
-    if (!wifi.isConnected())
+    if (!httpConfig.fetchConfig())
     {
-      if (wifi.connect())
-      {
-        if (!httpConfig.fetchConfig())
-        {
-          reportError("Config", "Config fail");
-        }
-      }
-      else
-      {
-        reportError("WiFi", "WiFi fail");
-      }
+      reportError("Config", "Config fail");
     }
   }
+  else
+  {
+    if (!wifi.connect())
+    {
+      reportError("WiFi", "WiFi fail");
+    }
+  }
+}
 
-  handleFanSchedule();
-  handleLedSchedule();
-  handlePumpSchedule();
+  auto on = httpConfig.devices;
+  fanRelay.set(on.fan);
+  ledRelay.set(on.led);
+  pumpRelay.set(on.pump);
 
-  if (throttle(sensorPrev, 30000))
+  if (throttle(sensorPrev, httpConfig.intervals.dataInterval))
   {
     // dht.update();
     // ambientTemp = dht.getTemperature();
@@ -329,7 +219,7 @@ void loop()
     }
   }
 
-  if (throttle(cameraPrev, 35000))
+  if (throttle(cameraPrev, httpConfig.intervals.imageInterval))
   {
     if (httpCamera)
     {
@@ -349,7 +239,7 @@ void loop()
     }
   }
 
-  if (errorBuffer.length() && throttle(errorPrev, 40000))
+  if (errorBuffer.length() && throttle(errorPrev, 30000))
   {
     errorBuffer.remove(errorBuffer.length() - 1);
     if (httpError.sendError("Batch", errorBuffer.c_str()))

@@ -7,6 +7,7 @@ import {
   Post,
   Req,
   ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import {
   CreateDeviceConfigDto,
@@ -36,6 +37,20 @@ export class DeviceController {
     return this.deviceService.upsertWithVersion(dto);
   }
 
+  /**
+   * Cập nhật cấu hình hiện tại cho device (partial update)
+   */
+  @Patch('config')
+  @DeviceAuth()
+  @HttpCode(200)
+  async updateConfig(
+    @BodySchema(CreateDeviceConfigSchema.partial())
+    dto: Partial<CreateDeviceConfigDto>,
+    @Req() req,
+  ): Promise<DeviceConfigEntity> {
+    return this.deviceService.updateConfig(req.deviceId, dto);
+  }
+
   /** Lấy config mới nhất cho device */
   @Get('config')
   @DeviceAuth()
@@ -49,9 +64,7 @@ export class DeviceController {
     name: 'deviceId',
     example: 'device-001',
   })
-  async getConfigForAdmin(
-    @Param('deviceId') deviceId: string,
-  ): Promise<DeviceConfigEntity> {
+  async getConfigForAdmin(@Param('deviceId') deviceId: string) {
     return this.deviceService.getLatestConfigbyDevice(deviceId);
   }
 

@@ -11,7 +11,6 @@ import { CreateDeviceConfigDto } from '../dto/create-device-config.dto';
 import { DeviceConfigEntity } from '../entities/device-config.entity';
 import { DeviceErrorEntity } from '../entities/device-error.entity';
 import { ReportDeviceErrorDto } from '../dto/report-device-error.dto';
-import { toMs } from 'src/shared/utils/toMs';
 
 @Injectable()
 export class DeviceService {
@@ -60,7 +59,24 @@ export class DeviceService {
     return cfg;
   }
 
-  async getLatestConfigbyDevice(deviceId: string): Promise<any> {
+  async updateConfig(
+    deviceId: string,
+    partialDto: Partial<CreateDeviceConfigDto>,
+  ): Promise<DeviceConfigEntity> {
+    // Lấy cấu hình hiện tại mới nhất
+    const currentConfig = await this.getLatestConfig(deviceId);
+    if (!currentConfig) {
+      throw new NotFoundException('Config not found for device ' + deviceId);
+    }
+
+    // Cập nhật các trường từ partialDto
+    Object.assign(currentConfig, partialDto);
+
+    // Lưu lại (tùy theo cách bạn quản lý version, có thể là upsert hoặc tạo bản mới)
+    return this.cfgRepo.save(currentConfig);
+  }
+
+  async getLatestConfigbyDevice(deviceId: string) {
     const cfg = await this.cfgRepo.findOne({
       where: { deviceId },
       order: { version: 'DESC' },
