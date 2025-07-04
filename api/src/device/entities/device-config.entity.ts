@@ -15,20 +15,12 @@ export class DeviceConfigEntity {
   @PrimaryColumn({ name: 'version', type: 'int' })
   version: number;
 
-  @Column({ name: 'wifi_ssid', type: 'varchar', length: 64 })
-  wifiSsid: string;
-
-  @Column({ name: 'wifi_password', type: 'varchar', length: 64 })
-  wifiPassword: string;
-
-  @Column({ name: 'host', type: 'varchar', length: 128, default: '' })
+  // ====== SERVER ======
+  @Column({ name: 'host', type: 'varchar', length: 128 })
   host: string;
 
-  @Column({ name: 'port', type: 'int', default: 0 })
+  @Column({ name: 'port', type: 'int' })
   port: number;
-
-  @Column({ name: 'deep_sleep_interval_us', type: 'int', default: 0 })
-  deepSleepIntervalUs: number;
 
   @Column({ name: 'sensor_endpoint', type: 'varchar', length: 128 })
   sensorEndpoint: string;
@@ -36,60 +28,24 @@ export class DeviceConfigEntity {
   @Column({ name: 'camera_endpoint', type: 'varchar', length: 128 })
   cameraEndpoint: string;
 
-  @Column({ name: 'sensor_interval', type: 'int', default: 0 })
-  sensorInterval: number;
-
-  @Column({ name: 'data_interval', type: 'int', default: 0 })
+  // ====== INTERVALS ======
+  @Column({ name: 'data_interval', type: 'int', default: 30000 }) // ms
   dataInterval: number;
 
-  @Column({ name: 'image_interval', type: 'int', default: 0 })
+  @Column({ name: 'image_interval', type: 'int', default: 20000 }) // ms
   imageInterval: number;
 
-  @Column({ name: 'pump_cycle_ms', type: 'int', default: 0 })
-  pumpCycleMs: number;
+  // ====== DEVICES ======
+  @Column({ name: 'enable_pump', type: 'boolean', default: true })
+  pumpOn: boolean;
 
-  @Column({ name: 'pump_on_ms', type: 'int', default: 0 })
-  pumpOnMs: number;
+  @Column({ name: 'enable_led', type: 'boolean', default: true })
+  ledOn: boolean;
 
-  @Column({ name: 'pump_off_ms', type: 'int', default: 0 })
-  pumpOffMs: number;
+  @Column({ name: 'enable_fan', type: 'boolean', default: true })
+  fanOn: boolean;
 
-  @Column({ name: 'pump_start_hour', type: 'int', default: 6 })
-  pumpStartHour: number;
-
-  @Column({ name: 'pump_end_hour', type: 'int', default: 18 })
-  pumpEndHour: number;
-
-  @Column({ name: 'led_cycle_ms', type: 'int', default: 0 })
-  ledCycleMs: number;
-
-  @Column({ name: 'led_on_ms', type: 'int', default: 0 })
-  ledOnMs: number;
-
-  @Column({ name: 'led_off_ms', type: 'int', default: 0 })
-  ledOffMs: number;
-
-  @Column({ name: 'led_start_hour', type: 'int', default: 6 })
-  ledStartHour: number;
-
-  @Column({ name: 'led_end_hour', type: 'int', default: 18 })
-  ledEndHour: number;
-
-  @Column({ name: 'fan_small_on_ms', type: 'int', default: 0 })
-  fanSmallOnMs: number;
-
-  @Column({ name: 'fan_small_off_ms', type: 'int', default: 0 })
-  fanSmallOffMs: number;
-
-  @Column({ name: 'fan_large_continuous', type: 'boolean', default: true })
-  fanLargeContinuous: boolean;
-
-  @Column({ name: 'fan_large_on_ms', type: 'int', default: 0 })
-  fanLargeOnMs: number;
-
-  @Column({ name: 'fan_large_off_ms', type: 'int', default: 0 })
-  fanLargeOffMs: number;
-
+  // ====== Timestamps ======
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 

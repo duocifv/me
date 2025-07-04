@@ -13,8 +13,7 @@
 #include "camera_module.h"
 #include "led_indicator.h"
 #include <time.h>
-#include "schedule.h"  // 👈 Thêm dòng này để dùng lịch đã định nghĩa
-
+#include "schedule.h" // 👈 Thêm dòng này để dùng lịch đã định nghĩa
 
 // =====================================
 // CẤU HÌNH TOÀN CỤC
@@ -61,53 +60,19 @@ bool throttle(unsigned long &lastTime, unsigned long interval)
   return false;
 }
 
-void fetchConfigOverTempWiFi()
-{
-  const char *trySsids[] = {ssid1, ssid2};
-  for (int i = 0; i < 2; ++i)
-  {
-    Serial.printf("Trying temp WiFi: %s\n", trySsids[i]);
-    WiFi.begin(trySsids[i], password);
-    unsigned long start = millis();
-    while (millis() - start < 10000 && WiFi.status() != WL_CONNECTED)
-      delay(200);
-
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      Serial.println("Connected to temp WiFi");
-      if (httpConfig.fetchConfig())
-      {
-        Serial.println("Config fetched successfully");
-        break;
-      }
-      else
-      {
-        reportError("Config", (String("fetch fail ") + trySsids[i]).c_str());
-      }
-    }
-    else
-    {
-      reportError("WiFi-Temp", (String("fail ") + trySsids[i]).c_str());
-    }
-
-    WiFi.disconnect(true);
-    delay(500);
-  }
-}
-
 bool initRelays()
 {
 
   if (ExpanderRelay::beginBus())
   {
-    reportError("PCF8574","✅ PCF8574 kết nối thành công.");
+    reportError("PCF8574", "✅ PCF8574 kết nối thành công.");
     fanRelay.off();
     ledRelay.off();
     pumpRelay.off();
   }
   else
   {
-    reportError("PCF8574","❌ Lỗi kết nối PCF8574.");
+    reportError("PCF8574", "❌ Lỗi kết nối PCF8574.");
     led.blink(3, 200);
     return false;
   }
@@ -128,7 +93,7 @@ bool initSensors()
   }
   else
   {
-    reportError("DS18B20","✅ Cảm biến DS18B20 đã sẵn sàng");
+    reportError("DS18B20", "✅ Cảm biến DS18B20 đã sẵn sàng");
     led.blink(1, 200);
   }
 
@@ -163,14 +128,15 @@ bool initCamera()
   return true;
 }
 
-
-void handlePumpSchedule() {
+void handlePumpSchedule()
+{
   static bool isOn = false;
   static unsigned long onAt = 0;
   static int lastMinute = -1;
 
   struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
+  if (!getLocalTime(&timeinfo))
+  {
     reportError("NTP", "no time");
     return;
   }
@@ -178,8 +144,10 @@ void handlePumpSchedule() {
   int hour = timeinfo.tm_hour;
   int minute = timeinfo.tm_min;
 
-  for (int i = 0; i < PUMP_SCHEDULE_COUNT; i++) {
-    if (PUMP_SCHEDULE[i][0] == hour && PUMP_SCHEDULE[i][1] == minute && lastMinute != minute) {
+  for (int i = 0; i < PUMP_SCHEDULE_COUNT; i++)
+  {
+    if (PUMP_SCHEDULE[i][0] == hour && PUMP_SCHEDULE[i][1] == minute && lastMinute != minute)
+    {
       pumpRelay.on();
       onAt = millis();
       isOn = true;
@@ -189,21 +157,23 @@ void handlePumpSchedule() {
     }
   }
 
-  if (isOn && millis() - onAt > PUMP_DURATION) {
+  if (isOn && millis() - onAt > PUMP_DURATION)
+  {
     pumpRelay.off();
     isOn = false;
     Serial.println("🛑 Dừng tưới");
   }
 }
 
-
-void handleFanSchedule() {
+void handleFanSchedule()
+{
   static bool isOn = false;
   static unsigned long onAt = 0;
   static int lastMinute = -1;
 
   struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
+  if (!getLocalTime(&timeinfo))
+  {
     reportError("NTP", "no time");
     return;
   }
@@ -211,8 +181,10 @@ void handleFanSchedule() {
   int hour = timeinfo.tm_hour;
   int minute = timeinfo.tm_min;
 
-  for (int i = 0; i < FAN_SCHEDULE_COUNT; i++) {
-    if (FAN_SCHEDULE[i][0] == hour && FAN_SCHEDULE[i][1] == minute && lastMinute != minute) {
+  for (int i = 0; i < FAN_SCHEDULE_COUNT; i++)
+  {
+    if (FAN_SCHEDULE[i][0] == hour && FAN_SCHEDULE[i][1] == minute && lastMinute != minute)
+    {
       fanRelay.on();
       onAt = millis();
       isOn = true;
@@ -222,20 +194,23 @@ void handleFanSchedule() {
     }
   }
 
-  if (isOn && millis() - onAt > FAN_DURATION) {
+  if (isOn && millis() - onAt > FAN_DURATION)
+  {
     fanRelay.off();
     isOn = false;
     Serial.println("🛑 Quạt tắt");
   }
 }
 
-void handleLedSchedule() {
+void handleLedSchedule()
+{
   static bool isOn = false;
   static unsigned long onAt = 0;
   static int lastMinute = -1;
 
   struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
+  if (!getLocalTime(&timeinfo))
+  {
     reportError("NTP", "no time");
     return;
   }
@@ -243,8 +218,10 @@ void handleLedSchedule() {
   int hour = timeinfo.tm_hour;
   int minute = timeinfo.tm_min;
 
-  for (int i = 0; i < LED_SCHEDULE_COUNT; i++) {
-    if (LED_SCHEDULE[i][0] == hour && LED_SCHEDULE[i][1] == minute && lastMinute != minute) {
+  for (int i = 0; i < LED_SCHEDULE_COUNT; i++)
+  {
+    if (LED_SCHEDULE[i][0] == hour && LED_SCHEDULE[i][1] == minute && lastMinute != minute)
+    {
       ledRelay.on();
       onAt = millis();
       isOn = true;
@@ -254,13 +231,13 @@ void handleLedSchedule() {
     }
   }
 
-  if (isOn && millis() - onAt > LED_DURATION) {
+  if (isOn && millis() - onAt > LED_DURATION)
+  {
     ledRelay.off();
     isOn = false;
     Serial.println("🛑 Đèn tắt");
   }
 }
-
 
 void setup()
 {
@@ -269,7 +246,7 @@ void setup()
   delay(2000);
   Serial.println("Setup start, brownout disabled");
 
-  fetchConfigOverTempWiFi();
+  wifi.connect();
 
   bool relayOk = initRelays();
 
@@ -279,11 +256,7 @@ void setup()
 
   delay(500);
 
-  String uS = httpConfig.wifiSsid.length() ? httpConfig.wifiSsid : ssid1;
-  String uP = httpConfig.wifiPassword.length() ? httpConfig.wifiPassword : password;
-  wifi.updateCredentials(uS.c_str(), uP.c_str());
-
-   configTime(7 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+  configTime(7 * 3600, 0, "pool.ntp.org", "time.nist.gov");
 
   unsigned long now = millis();
   wifiPrev = fanPrev = ledPrev = pumpPrev = sensorPrev = cameraPrev = errorPrev = now;
@@ -301,11 +274,21 @@ void loop()
 {
   unsigned long now = millis();
 
-  if (throttle(wifiPrev, 3000))
+  if (throttle(wifiPrev, 5000))
   {
-    if (!wifi.isConnected() && !wifi.connect())
+    if (!wifi.isConnected())
     {
-      reportError("WiFi", "reconnect fail");
+      if (wifi.connect())
+      {
+        if (!httpConfig.fetchConfig())
+        {
+          reportError("Config", "Config fail");
+        }
+      }
+      else
+      {
+        reportError("WiFi", "WiFi fail");
+      }
     }
   }
 
@@ -321,10 +304,13 @@ void loop()
     // if (!dht.hasData())
     //   reportError("DHT22", "no data");
     float t = tempSensor.getTemperature();
-    if (isnan(t)) {
+    if (isnan(t))
+    {
       reportError("DS18B20", "no data");
       waterTemp = 0;
-    } else {
+    }
+    else
+    {
       waterTemp = t;
     }
 
@@ -350,7 +336,7 @@ void loop()
       camera_fb_t *fb = cameraModule.capture();
       if (fb)
       {
-        unsigned long durationMs;  
+        unsigned long durationMs;
         bool sent = httpCamera->send(fb, durationMs);
         if (!sent)
           reportError("HTTP-Camera", "send fail");

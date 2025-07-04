@@ -60,7 +60,7 @@ export class DeviceService {
     return cfg;
   }
 
-  async getLatestConfigbyDevice(deviceId: string): Promise<DeviceConfigEntity> {
+  async getLatestConfigbyDevice(deviceId: string): Promise<any> {
     const cfg = await this.cfgRepo.findOne({
       where: { deviceId },
       order: { version: 'DESC' },
@@ -69,23 +69,23 @@ export class DeviceService {
     if (!cfg)
       throw new NotFoundException(`No config for deviceId='${deviceId}'`);
 
-    // Convert một số field sang giây (ms / us => s)
-    const msToSec = (ms: number) => Math.floor(ms / 1000);
-    const usToSec = (us: number | string) => Math.floor(Number(us) / 1_000_000);
-
+    // Gộp lại thành cấu trúc đơn giản hơn
     return {
-      ...cfg,
-      deepSleepIntervalUs: usToSec(cfg.deepSleepIntervalUs),
-      pumpCycleMs: msToSec(cfg.pumpCycleMs),
-      pumpOnMs: msToSec(cfg.pumpOnMs),
-      pumpOffMs: msToSec(cfg.pumpOffMs),
-      ledCycleMs: msToSec(cfg.ledCycleMs),
-      ledOnMs: msToSec(cfg.ledOnMs),
-      ledOffMs: msToSec(cfg.ledOffMs),
-      fanSmallOnMs: msToSec(cfg.fanSmallOnMs),
-      fanSmallOffMs: msToSec(cfg.fanSmallOffMs),
-      fanLargeOnMs: msToSec(cfg.fanLargeOnMs),
-      fanLargeOffMs: msToSec(cfg.fanLargeOffMs),
+      server: {
+        host: cfg.host,
+        port: cfg.port,
+        sensorEndpoint: cfg.sensorEndpoint,
+        cameraEndpoint: cfg.cameraEndpoint,
+      },
+      intervals: {
+        data: cfg.dataInterval,
+        image: cfg.imageInterval,
+      },
+      devices: {
+        pump: cfg.port,
+        led: cfg.ledOn,
+        fan: cfg.fanOn,
+      },
     };
   }
 
@@ -114,16 +114,6 @@ export class DeviceService {
 
       const entity = this.cfgRepo.create({
         ...dto,
-        pumpCycleMs: toMs(dto.pumpCycleMs),
-        pumpOnMs: toMs(dto.pumpOnMs),
-        pumpOffMs: toMs(dto.pumpOffMs),
-        ledCycleMs: toMs(dto.ledCycleMs),
-        ledOnMs: toMs(dto.ledOnMs),
-        ledOffMs: toMs(dto.ledOffMs),
-        fanSmallOnMs: toMs(dto.fanSmallOnMs),
-        fanSmallOffMs: toMs(dto.fanSmallOffMs),
-        fanLargeOnMs: toMs(dto.fanLargeOnMs),
-        fanLargeOffMs: toMs(dto.fanLargeOffMs),
         version: nextVersion,
       });
       return await this.cfgRepo.save(entity);
