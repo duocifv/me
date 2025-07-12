@@ -11,18 +11,23 @@ import { CreateDeviceConfigDto } from '../dto/create-device-config.dto';
 import { DeviceConfigEntity } from '../entities/device-config.entity';
 import { DeviceErrorEntity } from '../entities/device-error.entity';
 import { ReportDeviceErrorDto } from '../dto/report-device-error.dto';
+import { DeviceScheduleEntity } from '../entities/device-schedule.entity';
+import { DeviceScheduleDto } from '../dto/device-schedule.dto';
 
 @Injectable()
 export class DeviceService {
   private readonly logger = new Logger(DeviceService.name);
 
   constructor(
+    @InjectRepository(DeviceScheduleEntity)
+    private readonly scheduleRepo: Repository<DeviceScheduleEntity>,
+
     @InjectRepository(DeviceConfigEntity)
     private readonly cfgRepo: Repository<DeviceConfigEntity>,
 
     @InjectRepository(DeviceErrorEntity)
     private readonly errRepo: Repository<DeviceErrorEntity>,
-  ) {}
+  ) { }
 
   /** Ghi nhận lỗi */
   async reportDeviceError(
@@ -163,5 +168,56 @@ export class DeviceService {
       updatedAt: undefined,
     });
     return this.cfgRepo.save(clone);
+  }
+
+  async saveSchedule(deviceId: string, dto: DeviceScheduleDto) {
+    await this.scheduleRepo.save({ ...dto, deviceId });
+  }
+
+  async getSchedules(deviceId: string): Promise<DeviceScheduleDto[]> {
+    return this.scheduleRepo.find({
+      where: { deviceId },
+      order: { startTime: 'ASC' },
+    });
+  }
+
+  async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const schedules = await this.getSchedules(deviceId);
+
+    const state = { pumpOn: false, fanOn: false, ledOn: false };
+
+    for (const sch of schedules) {
+      const [sh, sm] = sch.startTime.split(':').map(Number);
+      const [eh, em] = sch.endTime.split(':').map(Number);
+      const start = sh * 60 + sm;
+      const end = eh * 60 + em;
+      const active = start <= nowMin && nowMin < end;
+
+      if (active) {
+        state.pumpOn ||= sch.pumpOn;
+        state.fanOn ||= sch.fanOn;
+        state.ledOn ||= sch.ledOn;
+      }
+    }
+
+    const latest = await this.cfgRepo.findOne({
+      where: { deviceId },
+      order: { version: 'DESC' },
+    });
+
+    if (latest) {
+      await this.cfgRepo.update(latest.deviceId, state);
+    }
+  }
+
+  async getAllDeviceIds(): Promise<string[]> {
+    const rows: { deviceId: string }[] = await this.cfgRepo
+      .createQueryBuilder('c')
+      .select('DISTINCT c.deviceId', 'deviceId')
+      .getRawMany();
+
+    return rows.map((r) => r.deviceId);
   }
 }
