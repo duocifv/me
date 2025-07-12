@@ -12,13 +12,11 @@
 #include "json_builder.h"
 #include "camera_module.h"
 #include "led_indicator.h"
-#include <time.h>
-#include "schedule.h" // 👈 Thêm dòng này để dùng lịch đã định nghĩa
 
 // =====================================
 // CẤU HÌNH TOÀN CỤC
 // =====================================
-WifiModule wifi(ssid1, password);
+WifiModule wifi(ssid, password);
 HttpConfigModule httpConfig(host, port, configPath, deviceToken, deviceId);
 HttpErrorModule httpError(host, port, errorPath, deviceToken, deviceId);
 HttpSensorsModule *httpSensor = nullptr;
@@ -33,6 +31,7 @@ ExpanderRelay pumpRelay(2);
 DS18B20Module tempSensor;
 CameraModule cameraModule;
 LedIndicator led;
+bool relayOk = false;
 
 char jsonBuffer[1024];
 String errorBuffer;
@@ -60,24 +59,31 @@ bool throttle(unsigned long &lastTime, unsigned long interval)
   return false;
 }
 
-bool initRelays()
-{
+bool initRelays() {
+  const int maxAttempts = 5;
+  bool connected = false;
 
-  if (ExpanderRelay::beginBus())
-  {
+  for (int i = 0; i < maxAttempts; i++) {
+    if (ExpanderRelay::beginBus()) {
+      connected = true;
+      break;
+    }
+    delay(300);  // chờ một chút trước khi thử lại
+  }
+
+  if (connected) {
     reportError("PCF8574", "✅ PCF8574 kết nối thành công.");
     fanRelay.off();
     ledRelay.off();
     pumpRelay.off();
-  }
-  else
-  {
-    reportError("PCF8574", "❌ Lỗi kết nối PCF8574.");
+    return true;
+  } else {
+    reportError("PCF8574", "❌ Lỗi kết nối PCF8574 sau 5 lần thử.");
     led.blink(3, 200);
     return false;
   }
-  return true;
 }
+
 
 bool initSensors()
 {
@@ -135,17 +141,22 @@ void setup()
   delay(2000);
   Serial.println("Setup start, brownout disabled");
 
-  wifi.connect();
+  if (!wifi.connect()) {
+    reportError("WiFi", "❌ Không kết nối được WiFi");
+    led.blink(3, 100); // Nháy cảnh báo
+    delay(2000);
+    ESP.restart(); // Không có WiFi thì không làm gì được, khởi động lại
+  }
 
-  bool relayOk = initRelays();
+  httpConfig.fetchConfig(); 
+
+  relayOk = initRelays();
 
   bool sensorsOk = initSensors();
 
   bool cameraOk = initCamera();
 
   delay(500);
-
-  configTime(7 * 3600, 0, "pool.ntp.org", "time.nist.gov");
 
   unsigned long now = millis();
   wifiPrev = fanPrev = ledPrev = pumpPrev = sensorPrev = cameraPrev = errorPrev = now;
@@ -157,13 +168,14 @@ void setup()
   // }
 
   Serial.println("Setup complete, entering loop");
+  led.blink(1, 400);
 }
 
 void loop()
 {
   unsigned long now = millis();
 
-  if (throttle(wifiPrev, 5000))
+  if (throttle(wifiPrev, 10000))
  {
   if (wifi.isConnected())
   {
@@ -181,12 +193,15 @@ void loop()
   }
 }
 
+  if (relayOk) {
   auto on = httpConfig.devices;
   fanRelay.set(on.fan);
   ledRelay.set(on.led);
   pumpRelay.set(on.pump);
+}
 
-  if (throttle(sensorPrev, httpConfig.intervals.dataInterval))
+
+  if (throttle(sensorPrev, httpConfig.dataInterval))
   {
     // dht.update();
     // ambientTemp = dht.getTemperature();
@@ -219,11 +234,17 @@ void loop()
     }
   }
 
-  if (throttle(cameraPrev, httpConfig.intervals.imageInterval))
+  if (throttle(cameraPrev, httpConfig.imageInterval))
   {
     if (httpCamera)
     {
       camera_fb_t *fb = cameraModule.capture();
+
+      if (!fb) {
+        delay(100); // đợi 100ms rồi thử lại
+        fb = cameraModule.capture();
+      }
+
       if (fb)
       {
         unsigned long durationMs;

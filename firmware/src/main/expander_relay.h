@@ -43,6 +43,12 @@ public:
     bool val = sharedPCF.read(pinNum);
     return activeLow ? (val == LOW) : (val == HIGH);
   }
+  
+  void set(bool state) {
+    if (state) on();
+    else off();
+  }
+
 };
 
 #endif // EXPANDER_RELAY_H

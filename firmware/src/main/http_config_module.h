@@ -129,8 +129,8 @@ public:
     sensorEndpoint = doc["sensorEndpoint"] | sensorEndpoint;
     cameraEndpoint = doc["cameraEndpoint"] | cameraEndpoint;
 
-    dataInterval = (doc["dataInterval"] | (dataInterval / 1000UL)) * 1000UL;
-    imageInterval = (doc["imageInterval"] | (imageInterval / 1000UL)) * 1000UL;
+    dataInterval = doc["dataInterval"];
+    imageInterval = doc["imageInterval"];
 
     devices.pump = doc["pumpOn"] | false;
     devices.led = doc["ledOn"] | false;
