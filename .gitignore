@@ -1,2 +1,7 @@
 ai/kale_growth_model.h5
 ai/venv
+api/node_modules/
+api/build/
+api/tmp/
+api/temp/
+api/dist/
