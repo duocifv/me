@@ -18,7 +18,6 @@ import {
 // Mapping nhãn theo API flat fields
 const labelMap: Record<keyof CreateDeviceConfigDto, string> = {
   deviceId: $t`ID thiết bị`,
-  version: $t`Phiên bản`,
   host: $t`Địa chỉ máy chủ`,
   port: $t`Cổng kết nối`,
   sensorEndpoint: $t`Endpoint cảm biến`,
@@ -41,7 +40,7 @@ const groups: {
   {
     icon: <Cpu className="w-5 h-5 text-blue-500" />,
     title: "Thông tin cơ bản",
-    fields: ["deviceId", "version", "createdAt", "updatedAt"],
+    fields: ["deviceId", "createdAt", "updatedAt"],
   },
   {
     icon: <Cpu className="w-5 h-5 text-blue-500" />,

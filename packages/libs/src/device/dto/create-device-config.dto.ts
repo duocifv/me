@@ -2,8 +2,6 @@ import { z } from "zod";
 
 export const CreateDeviceConfigSchema = z.object({
   deviceId: z.string().max(32),
-  version: z.number().int().nonnegative(),
-
   host: z.string().max(128),
   port: z.number().int().min(1).max(65535),
 
