@@ -29,7 +29,7 @@ export const useHydroponicsStore = create<HydroponicsState>()(
       cropInstances: [],
       filters: {
         page: 1,
-        limit: 10,
+        limit: 30,
       },
       snapshots: {
         items: [],

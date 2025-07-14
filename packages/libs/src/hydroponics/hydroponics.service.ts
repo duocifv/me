@@ -10,7 +10,7 @@ class HydroponicsService {
     return this.hydroponics.get<CropInstance[]>("crop-instances");
   }
 
-  async getSnapshots(page = 1, limit = 10): Promise<SnapshotResponse> {
+  async getSnapshots(page = 1, limit = 30): Promise<SnapshotResponse> {
     return this.hydroponics.get<SnapshotResponse>("snapshots/by-device", {
       deviceId: "device-001",
       page,
