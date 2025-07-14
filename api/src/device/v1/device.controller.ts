@@ -8,7 +8,7 @@ import {
   Req,
   ParseIntPipe,
   Patch,
-  Version,
+  Query,
 } from '@nestjs/common';
 import {
   CreateDeviceConfigDto,
@@ -28,10 +28,14 @@ import {
   DeviceScheduleDto,
   DeviceScheduleSchema,
 } from '../dto/device-schedule.dto';
+import { UpdateDeviceConfigTask } from '../tasks/update-device-config.task';
 
 @Controller('device')
 export class DeviceController {
-  constructor(private readonly deviceService: DeviceService) {}
+  constructor(
+    private readonly deviceService: DeviceService,
+    private readonly cronTask: UpdateDeviceConfigTask,
+  ) {}
 
   /** Upsert config với version tự động tăng */
   @Post('config')
@@ -144,5 +148,19 @@ export class DeviceController {
   @DeviceAuth()
   async getSchedules(@Req() req): Promise<DeviceScheduleDto[]> {
     return this.deviceService.getSchedules(req.deviceId);
+  }
+
+  @Get('apply-schedule')
+  async applyScheduleNow(@Query('id') id: string) {
+    await this.deviceService.applyScheduleAndUpdateConfig(id);
+    return { success: true };
+  }
+
+  @Get('cron-status')
+  getCronStatus() {
+    return {
+      message: 'Cron is running',
+      runCount: this.cronTask.getRunCount(),
+    };
   }
 }

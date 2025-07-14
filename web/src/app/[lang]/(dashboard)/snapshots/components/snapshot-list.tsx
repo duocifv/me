@@ -1,15 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
 import { format } from "date-fns";
 import { Picture } from "@/components/share/picture/ui-picture";
 import { $t } from "@/app/lang";
+import { SnapshotPagination } from "./snapshot-pagination";
 
-export default function SnapshotsListSimple() {
-  const snapshots = useHydroponicsStore((s) => s.snapshots);
+export default function SnapshotsListGallery() {
+  const { snapshots } = useHydroponicsStore((s) => s);
   const setSelectedSnapshotById = useHydroponicsStore(
     (s) => s.setSelectedSnapshotById
   );
@@ -17,53 +18,56 @@ export default function SnapshotsListSimple() {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6 text-gray-800">
-        {$t`Snapshots List`}
+        {$t`Snapshots Gallery`}
       </h1>
-      <ul className="space-y-4 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {snapshots.items.map((snapshot) => (
-          <li
+          <div
             key={snapshot.id}
-            className="bg-[#fffeec] rounded-xl shadow p-3 flex justify-between items-center hover:shadow-md transition cursor-pointer relative border-2 border-[#293d84]"
+            className="group relative cursor-pointer overflow-hidden rounded-xl border-2 border-[#293d84] bg-[#fffeec] shadow hover:shadow-lg transition"
             onClick={() => setSelectedSnapshotById(snapshot.id)}
           >
-            <div className="min-w-24">
+            <div className="h-40 w-full overflow-hidden">
               {snapshot.images.length > 0 ? (
                 <Picture
-                  src={"/uploads/esp32/"+snapshot.images[0].filePath}
-                  className="h-20 w-full object-cover rounded-t-xl"
+                  src={`/uploads/esp32/${snapshot.images[0].filePath}`}
+                  className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                 />
               ) : (
-                <div className="h-20 w-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-md">
+                <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
                   {$t`No Image`}
                 </div>
               )}
             </div>
-            <div className="w-full ml-4">
-              <div className="absolute right-4 top-4">
-                <Badge
+
+            <div className="p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-[#293d84]">
+                  {$t`#`}
+                  {snapshot.id}
+                </h2>
+                {/* <Badge
                   variant={snapshot.isActive ? "default" : "secondary"}
-                  className={`text-xs bg-[#e43eb5] border-2 border-[#293d84] rounded-full ${
+                  className={`rounded-full border-2 border-[#293d84] px-2 py-1 text-xs ${
                     snapshot.isActive ? "bg-[#e43eb5] text-[#faf0bc]" : ""
                   }`}
                 >
                   {snapshot.isActive ? $t`Active` : $t`Inactive`}
-                </Badge>
+                </Badge> */}
               </div>
-              <h2 className="text-lg font-semibold text-[#293d84]">
-                {$t`Snapshot #`}
-                {snapshot.id}
-              </h2>
-
-              <div className="flex items-center space-x-4 mt-1">
-                <span className="flex items-center text-gray-500 text-sm">
-                  <Clock className="w-4 h-4 mr-1" />
-                  {format(new Date(snapshot.timestamp), "dd MMM yyyy, HH:mm")}
-                </span>
+              <div className="mt-2 flex items-center text-sm text-gray-500">
+                <Clock className="h-4 w-4 mr-1" />
+                {format(new Date(snapshot.timestamp), "dd MMM yyyy, HH:mm")}
               </div>
             </div>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <SnapshotPagination />
+      </div>
     </div>
   );
 }

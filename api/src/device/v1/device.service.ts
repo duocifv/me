@@ -27,7 +27,7 @@ export class DeviceService {
 
     @InjectRepository(DeviceErrorEntity)
     private readonly errRepo: Repository<DeviceErrorEntity>,
-  ) { }
+  ) {}
 
   /** Ghi nhận lỗi */
   async reportDeviceError(
@@ -91,23 +91,7 @@ export class DeviceService {
       throw new NotFoundException(`No config for deviceId='${deviceId}'`);
 
     // Gộp lại thành cấu trúc đơn giản hơn
-    return {
-      server: {
-        host: cfg.host,
-        port: cfg.port,
-        sensorEndpoint: cfg.sensorEndpoint,
-        cameraEndpoint: cfg.cameraEndpoint,
-      },
-      intervals: {
-        data: cfg.dataInterval,
-        image: cfg.imageInterval,
-      },
-      devices: {
-        pump: cfg.port,
-        led: cfg.ledOn,
-        fan: cfg.fanOn,
-      },
-    };
+    return cfg;
   }
 
   /** Danh sách version */
@@ -184,21 +168,27 @@ export class DeviceService {
   async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
     const now = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
-    const schedules = await this.getSchedules(deviceId);
+    const today = now.getDay();
 
+    const schedules = await this.getSchedules(deviceId);
     const state = { pumpOn: false, fanOn: false, ledOn: false };
 
-    for (const sch of schedules) {
-      const [sh, sm] = sch.startTime.split(':').map(Number);
-      const [eh, em] = sch.endTime.split(':').map(Number);
+    for (const s of schedules) {
+      if (!s.isEnabled) continue;
+
+      const days = (s.repeatOn || []).map(Number);
+      if (!days.includes(today)) continue;
+
+      const [sh, sm] = s.startTime.split(':').map(Number);
+      const [eh, em] = s.endTime.split(':').map(Number);
       const start = sh * 60 + sm;
       const end = eh * 60 + em;
-      const active = start <= nowMin && nowMin < end;
 
-      if (active) {
-        state.pumpOn ||= sch.pumpOn;
-        state.fanOn ||= sch.fanOn;
-        state.ledOn ||= sch.ledOn;
+      const isActive = start <= nowMin && nowMin < end;
+      if (isActive) {
+        state.pumpOn ||= s.pumpOn;
+        state.fanOn ||= s.fanOn;
+        state.ledOn ||= s.ledOn;
       }
     }
 
@@ -208,7 +198,10 @@ export class DeviceService {
     });
 
     if (latest) {
-      await this.cfgRepo.update(latest.deviceId, state);
+      await this.cfgRepo.update(
+        { deviceId: latest.deviceId, version: latest.version },
+        state,
+      );
     }
   }
 

@@ -1,8 +1,11 @@
 import { z } from 'zod';
 
 export const CreateDeviceConfigSchema = z.object({
+  // ====== METADATA ======
   deviceId: z.string().max(32).default('device-001'),
   version: z.number().int().nonnegative(),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 
   // ====== SERVER ======
   host: z.string().max(128).default('my.duocnv.top'),

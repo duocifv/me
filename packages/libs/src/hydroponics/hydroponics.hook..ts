@@ -1,6 +1,7 @@
+// hydroponics.hook.ts
 "use client";
 
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { hydroponicsService } from "./hydroponics.service";
 import { useHydroponicsStore } from "./hydroponics.store";
 
@@ -14,16 +15,19 @@ export function useCropInstancesQuery() {
       setCropInstances(data);
       return data;
     },
-    placeholderData: keepPreviousData,
   });
 }
 
-export function useSnapshotsQuery() {
+export function useSnapshotsQuery(page = 1, limit = 10) {
+  const setSnapshots = useHydroponicsStore((s) => s.setSnapshots);
+
   return useQuery({
-    queryKey: ["snapshots"],
-    queryFn: () => hydroponicsService.getSnapshots("device-001"),
-    placeholderData: keepPreviousData,
-    refetchInterval: 5000,
+    queryKey: ["snapshots", "device-001", page, limit],
+    queryFn: async () => {
+      const data = await hydroponicsService.getSnapshots(page, limit);
+      setSnapshots(data);
+      return data;
+    },
   });
 }
 

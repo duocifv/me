@@ -3,7 +3,7 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Cpu, Wifi, Clock, Camera } from "lucide-react";
+import { Cpu, Clock, Camera } from "lucide-react";
 import { FormWrapper } from "@adapter/share/components/FormWrapper";
 import { Label } from "@/components/ui/label";
 import CreateSettingsSubmit from "./dispatch/dispatch-settings-create";
@@ -15,41 +15,24 @@ import {
   CreateDeviceConfigSchema,
 } from "@adapter/device/dto/create-device-config.dto";
 
+// Mapping nhãn theo API flat fields
 const labelMap: Record<keyof CreateDeviceConfigDto, string> = {
   deviceId: $t`ID thiết bị`,
-  wifiSsid: $t`Tên WiFi (SSID)`,
-  wifiPassword: $t`Mật khẩu WiFi`,
+  version: $t`Phiên bản`,
   host: $t`Địa chỉ máy chủ`,
   port: $t`Cổng kết nối`,
-  deepSleepIntervalUs: $t`Chu kỳ ngủ sâu (us)`,
-
   sensorEndpoint: $t`Endpoint cảm biến`,
   cameraEndpoint: $t`Endpoint camera`,
-
-  sensorInterval: $t`Chu kỳ cảm biến (giây)`,
-  dataInterval: $t`Chu kỳ gửi dữ liệu (giây)`,
-  imageInterval: $t`Chu kỳ gửi ảnh (giây)`,
-
-  pumpCycleMs: $t`Chu kỳ bơm (giây)`,
-  pumpOnMs: $t`Thời gian bật bơm (giây)`,
-  pumpOffMs: $t`Thời gian tắt bơm (giây)`,
-  pumpStartHour: $t`Giờ bắt đầu bơm`,
-  pumpEndHour: $t`Giờ kết thúc bơm`,
-
-  ledCycleMs: $t`Chu kỳ đèn LED (giây)`,
-  ledOnMs: $t`Thời gian bật đèn LED (giây)`,
-  ledOffMs: $t`Thời gian tắt đèn LED (giây)`,
-  ledStartHour: $t`Giờ bắt đầu đèn LED`,
-  ledEndHour: $t`Giờ kết thúc đèn LED`,
-
-  fanSmallOnMs: $t`Thời gian bật quạt nhỏ (giây)`,
-  fanSmallOffMs: $t`Thời gian tắt quạt nhỏ (giây)`,
-
-  fanLargeContinuous: $t`Quạt lớn luôn bật`,
-  fanLargeOnMs: $t`Thời gian bật quạt lớn (giây)`,
-  fanLargeOffMs: $t`Thời gian tắt quạt lớn (giây)`,
+  dataInterval: $t`Chu kỳ gửi dữ liệu (ms)`,
+  imageInterval: $t`Chu kỳ gửi ảnh (ms)`,
+  pumpOn: $t`Bật máy bơm`,
+  ledOn: $t`Bật đèn LED`,
+  fanOn: $t`Bật quạt`,
+  createdAt: $t`Tạo lúc`,
+  updatedAt: $t`Cập nhật lúc`,
 };
 
+// Nhóm trường cho giao diện
 const groups: {
   icon: React.ReactNode;
   title: string;
@@ -57,55 +40,28 @@ const groups: {
 }[] = [
   {
     icon: <Cpu className="w-5 h-5 text-blue-500" />,
-    title: "Thông tin thiết bị",
-    fields: ["deviceId", "host", "port"],
+    title: "Thông tin cơ bản",
+    fields: ["deviceId", "version", "createdAt", "updatedAt"],
   },
   {
-    icon: <Wifi className="w-5 h-5 text-green-500" />,
-    title: "Kết nối WiFi",
-    fields: ["wifiSsid", "wifiPassword"],
-  },
-  {
-    icon: <Clock className="w-5 h-5 text-yellow-500" />,
-    title: "Cấu hình thời gian & hoạt động",
-    fields: [
-      "deepSleepIntervalUs",
-      "sensorInterval",
-      "dataInterval",
-      "imageInterval",
-    ],
+    icon: <Cpu className="w-5 h-5 text-blue-500" />,
+    title: "Server",
+    fields: ["host", "port"],
   },
   {
     icon: <Camera className="w-5 h-5 text-purple-500" />,
-    title: "Đầu cuối dữ liệu",
+    title: "Endpoints",
     fields: ["sensorEndpoint", "cameraEndpoint"],
   },
   {
+    icon: <Clock className="w-5 h-5 text-yellow-500" />,
+    title: "Intervals",
+    fields: ["dataInterval", "imageInterval"],
+  },
+  {
     icon: <Cpu className="w-5 h-5 text-rose-500" />,
-    title: "Cấu hình bơm",
-    fields: [
-      "pumpCycleMs",
-      "pumpOnMs",
-      "pumpOffMs",
-      "pumpStartHour",
-      "pumpEndHour",
-    ],
-  },
-  {
-    icon: <Cpu className="w-5 h-5 text-orange-500" />,
-    title: "Cấu hình đèn LED",
-    fields: ["ledCycleMs", "ledOnMs", "ledOffMs", "ledStartHour", "ledEndHour"],
-  },
-  {
-    icon: <Cpu className="w-5 h-5 text-cyan-500" />,
-    title: "Cấu hình quạt",
-    fields: [
-      "fanSmallOnMs",
-      "fanSmallOffMs",
-      "fanLargeContinuous",
-      "fanLargeOnMs",
-      "fanLargeOffMs",
-    ],
+    title: "Devices",
+    fields: ["pumpOn", "ledOn", "fanOn"],
   },
 ];
 
@@ -134,7 +90,7 @@ export default function SettingsPage() {
       >
         {(form) => (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
+            <div className="grid grid-cols-1 gap-8">
               {groups.map((group) => (
                 <Card key={group.title} className="shadow-sm">
                   <CardHeader>
@@ -145,46 +101,54 @@ export default function SettingsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {group.fields.map((key) => (
-                        <div key={key} className="space-y-1">
-                          <Label htmlFor={key} className="text-sm font-medium">
-                            {labelMap[key]}
-                          </Label>
-                          {typeof data[key] === "boolean" ? (
-                            <Checkbox
-                              id={key}
-                              checked={!!form.watch(key)}
-                              onCheckedChange={(value) =>
-                                form.setValue(key, value === true)
-                              }
-                            />
-                          ) : (
-                            <Input
-                              id={key}
-                              {...form.register(key, {
-                                valueAsNumber: typeof data[key] === "number",
-                              })}
-                              defaultValue={data[key] ?? ""}
-                              type={
-                                typeof data[key] === "number"
-                                  ? "number"
-                                  : "text"
-                              }
-                            />
-                          )}
-                          <div className="text-gray-600 text-sm">{key}</div>
-                          {form.formState.errors[key] && (
-                            <p className="text-red-500 mt-2 text-sm leading-none">
-                              {form.formState.errors[key]?.message}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                      {group.fields.map((key) => {
+                        const value = data[key];
+                        const isBoolean = typeof value === "boolean";
+
+                        return (
+                          <div key={key} className="space-y-1">
+                            <Label
+                              htmlFor={key}
+                              className="text-sm font-medium"
+                            >
+                              {labelMap[key]}
+                            </Label>
+
+                            {isBoolean ? (
+                              <Checkbox
+                                id={key}
+                                checked={!!form.watch(key)}
+                                onCheckedChange={(val) =>
+                                  form.setValue(key, val === true)
+                                }
+                              />
+                            ) : (
+                              <Input
+                                id={key}
+                                type={
+                                  typeof value === "number" ? "number" : "text"
+                                }
+                                defaultValue={value?.toString() ?? ""}
+                                {...form.register(key, {
+                                  valueAsNumber: typeof value === "number",
+                                })}
+                              />
+                            )}
+
+                            {form.formState.errors[key] && (
+                              <p className="text-red-500 text-sm mt-1">
+                                {form.formState.errors[key]?.message}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
+
             <div className="mt-8 flex justify-center">
               <CreateSettingsSubmit {...form} />
             </div>
