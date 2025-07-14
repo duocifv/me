@@ -27,7 +27,7 @@ export class DeviceService {
 
     @InjectRepository(DeviceErrorEntity)
     private readonly errRepo: Repository<DeviceErrorEntity>,
-  ) {}
+  ) { }
 
   /** Ghi nhận lỗi */
   async reportDeviceError(
@@ -166,9 +166,12 @@ export class DeviceService {
   }
 
   async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    const today = now.getDay();
+    // 👉 Tạo giờ Việt Nam thủ công (UTC + 7 giờ)
+    const nowUTC = new Date();
+    const nowVN = new Date(nowUTC.getTime() + 7 * 60 * 60 * 1000);
+
+    const nowMin = nowVN.getHours() * 60 + nowVN.getMinutes();
+    const today = nowVN.getDay(); // 0 = Chủ Nhật, 6 = Thứ Bảy
 
     const schedules = await this.getSchedules(deviceId);
     const state = { pumpOn: false, fanOn: false, ledOn: false };
@@ -184,7 +187,12 @@ export class DeviceService {
       const start = sh * 60 + sm;
       const end = eh * 60 + em;
 
-      const isActive = start <= nowMin && nowMin < end;
+      // ✅ Hỗ trợ thời gian chạy qua đêm
+      const isActive =
+        start <= end
+          ? start <= nowMin && nowMin < end
+          : nowMin >= start || nowMin < end;
+
       if (isActive) {
         state.pumpOn ||= s.pumpOn;
         state.fanOn ||= s.fanOn;
@@ -203,7 +211,14 @@ export class DeviceService {
         state,
       );
     }
+
+    // 👉 Log để kiểm tra
+    console.log(
+      `[VN TIME] ${nowVN.toLocaleString('vi-VN')} | Updated ${deviceId} →`,
+      state,
+    );
   }
+
 
   async getAllDeviceIds(): Promise<string[]> {
     const rows: { deviceId: string }[] = await this.cfgRepo
