@@ -8,7 +8,6 @@ import {
   Req,
   ParseIntPipe,
   Patch,
-  Query,
 } from '@nestjs/common';
 import {
   CreateDeviceConfigDto,
@@ -24,10 +23,6 @@ import { DeviceAuth } from 'src/shared/decorators/device-token.decorator';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import { DeviceService } from './device.service';
 import { ApiParam } from '@nestjs/swagger';
-import {
-  DeviceScheduleDto,
-  DeviceScheduleSchema,
-} from '../dto/device-schedule.dto';
 import { UpdateDeviceConfigTask } from '../tasks/update-device-config.task';
 
 @Controller('device')
@@ -131,36 +126,5 @@ export class DeviceController {
     @Req() req,
   ): Promise<{ success: true }> {
     return this.deviceService.reportDeviceError(req.deviceId, dto);
-  }
-
-  @Post('schedule')
-  @DeviceAuth()
-  @HttpCode(201)
-  async createSchedule(
-    @BodySchema(DeviceScheduleSchema) dto: DeviceScheduleDto,
-    @Req() req,
-  ): Promise<{ success: true }> {
-    await this.deviceService.saveSchedule(req.deviceId, dto);
-    return { success: true };
-  }
-
-  @Get('schedule')
-  @DeviceAuth()
-  async getSchedules(@Req() req): Promise<DeviceScheduleDto[]> {
-    return this.deviceService.getSchedules(req.deviceId);
-  }
-
-  @Get('apply-schedule')
-  async applyScheduleNow(@Query('id') id: string) {
-    await this.deviceService.applyScheduleAndUpdateConfig(id);
-    return { success: true };
-  }
-
-  @Get('cron-status')
-  getCronStatus() {
-    return {
-      message: 'Cron is running',
-      runCount: this.cronTask.getRunCount(),
-    };
   }
 }

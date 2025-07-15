@@ -213,4 +213,33 @@ export class DeviceService {
 
     return rows.map((r) => r.deviceId);
   }
+
+  /** Lấy một schedule theo ID */
+  async getScheduleById(
+    deviceId: string,
+    id: number,
+  ): Promise<DeviceScheduleEntity> {
+    const schedule = await this.scheduleRepo.findOne({
+      where: { id, deviceId },
+    });
+    if (!schedule) throw new NotFoundException('Schedule not found');
+    return schedule;
+  }
+
+  /** Cập nhật một schedule */
+  async updateSchedule(
+    deviceId: string,
+    id: number,
+    dto: DeviceScheduleDto,
+  ): Promise<DeviceScheduleEntity> {
+    const schedule = await this.getScheduleById(deviceId, id);
+    Object.assign(schedule, dto);
+    return this.scheduleRepo.save(schedule);
+  }
+
+  /** Xoá một schedule */
+  async deleteSchedule(deviceId: string, id: number): Promise<void> {
+    const schedule = await this.getScheduleById(deviceId, id);
+    await this.scheduleRepo.remove(schedule);
+  }
 }

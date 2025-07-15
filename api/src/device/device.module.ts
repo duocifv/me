@@ -8,17 +8,18 @@ import { DeviceErrorEntity } from './entities/device-error.entity';
 import { DeviceController } from './v1/device.controller';
 import { DeviceScheduleEntity } from './entities/device-schedule.entity';
 import { UpdateDeviceConfigTask } from './tasks/update-device-config.task';
+import { DeviceScheduleController } from './v1/device-schedule.controller';
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(), // 👈 BẮT BUỘC CÓ DÒNG NÀY
+    ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([
       DeviceConfigEntity,
       DeviceErrorEntity,
       DeviceScheduleEntity,
     ]),
   ],
-  controllers: [DeviceController],
+  controllers: [DeviceController, DeviceScheduleController],
   providers: [DeviceService, UpdateDeviceConfigTask],
 })
 export class DeviceModule {}
