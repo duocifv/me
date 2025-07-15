@@ -14,6 +14,7 @@ import {
   SearchIcon,
   SettingsIcon,
   UsersIcon,
+  Calendar,
 } from "lucide-react";
 
 import { $t } from "@/app/lang";
@@ -96,6 +97,11 @@ const data = {
       name: $t`Ảnh chụp`,
       url: "/vi/snapshots/",
       icon: FileIcon,
+    },
+    {
+      name: $t`Lịch trình`,
+      url: "/vi/schedule/",
+      icon: Calendar,
     },
   ],
 };
