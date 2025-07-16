@@ -1,7 +1,4 @@
 {
-  "projects": {
-    "ui/web": {
-      "framework": "nextjs"
-    }
-  }
+  "framework": "nextjs",
+  "rootDirectory": "ui/web"
 }
