@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -20,7 +20,7 @@ import { CoreModule } from './shared/core.module';
 // import { LogsModule } from './shared/logs/logs.module';
 import { AppConfigService } from './shared/config/config.service';
 import { APP_GUARD } from '@nestjs/core';
-// import { UserRoleSeeder } from './seeder/user-role.seeder';
+import { UserRoleSeeder } from './seeder/user-role.seeder';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { PermissionsGuard } from './permissions/permissions.guard';
 import { join } from 'path';
@@ -73,7 +73,7 @@ import { DeviceModule } from './device/device.module';
   controllers: [AppController],
   providers: [
     AppService,
-    // UserRoleSeeder,
+    UserRoleSeeder,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
@@ -88,16 +88,15 @@ import { DeviceModule } from './device/device.module';
     },
   ],
 })
-export class AppModule {}
+// export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private readonly userRoleSeeder: UserRoleSeeder) {}
 
-// export class AppModule implements OnModuleInit {
-//   constructor(private readonly userRoleSeeder: UserRoleSeeder) {}
-
-//   async onModuleInit() {
-//     if (process.env.NODE_ENV !== 'production') {
-//       await this.userRoleSeeder.onModuleInit();
-//     } else {
-//       // console.log('Skipping seeding in production environment.');
-//     }
-//   }
-// }
+  async onModuleInit() {
+    if (process.env.NODE_ENV !== 'production') {
+      await this.userRoleSeeder.onModuleInit();
+    } else {
+      // console.log('Skipping seeding in production environment.');
+    }
+  }
+}

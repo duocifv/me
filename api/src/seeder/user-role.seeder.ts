@@ -101,6 +101,7 @@ export class UserRoleSeeder implements OnModuleInit {
       const adminUser = this.userRepo.create({
         email: 'admin@example.com',
         password: hash,
+        fullName: 'Administrator',
       });
 
       const adminRole = await this.roleRepo.findOne({

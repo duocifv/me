@@ -17,20 +17,32 @@ export class AppConfigService {
     return this.config.get<number>('PORT', 3000);
   }
 
-  // Cấu hình TypeORM
   get typeOrmConfig(): TypeOrmModuleOptions {
     return {
-      type: 'mysql',
-      host: this.config.get('DB_HOST'),
-      port: this.config.get<number>('DB_PORT'),
-      username: this.config.get('DB_USER'),
-      password: this.config.get('DB_PASS'),
-      database: this.config.get('DB_NAME'),
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      type: 'postgres',
+      url: this.config.get<string>('DB_URL'),
       synchronize: this.config.get<boolean>('DB_SYNC'),
       autoLoadEntities: true,
+      ssl: {
+        rejectUnauthorized: false,
+      },
     };
   }
+
+  // Cấu hình TypeORM
+  // get typeOrmConfig(): TypeOrmModuleOptions {
+  //   return {
+  //     type: 'mysql',
+  //     host: this.config.get('DB_HOST'),
+  //     port: this.config.get<number>('DB_PORT'),
+  //     username: this.config.get('DB_USER'),
+  //     password: this.config.get('DB_PASS'),
+  //     database: this.config.get('DB_NAME'),
+  //     entities: [__dirname + '/**/*.entity{.ts,.js}'],
+  //     synchronize: this.config.get<boolean>('DB_SYNC'),
+  //     autoLoadEntities: true,
+  //   };
+  // }
 
   // Cấu hình JWT
   get jwtConfig(): JwtModuleOptions {
