@@ -1,5 +1,8 @@
 {
-  "dependencies": {
-    "@nestjs/schedule": "^6.0.0"
-  }
+  "name": "duoc-monorepo",
+  "private": true,
+  "workspaces": [
+    "web/*",
+    "packages/*"
+  ]
 }
