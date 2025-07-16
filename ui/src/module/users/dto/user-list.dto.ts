@@ -5,8 +5,8 @@ import { PaginationMetaSchema } from "../../share/schema/paginate";
 
 export const IUserListResponseSchema = z.object({
   items: UserListSchema.default([]),
-  meta: PaginationMetaSchema.default({}),
-  stats: UserStatsSchema.default({}),
+  meta: PaginationMetaSchema,
+  stats: UserStatsSchema,
 });
 
 export type IUserListResponse = z.infer<typeof IUserListResponseSchema>;
