@@ -1,0 +1,31 @@
+
+.alert {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: sans-serif;
+    font-size: 13px;
+}
+
+.alert>i {
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.alert>i>svg {
+    width: 18px;
+    height: 18px;
+    fill: #307c34;
+}
+
+.alert>span {
+    flex: 1;
+    color: #2e7d32;
+}
+
+.alert.success {
+    background-color: #f5f8f0;
+    color: #2e7d32;
+}

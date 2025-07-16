@@ -1,0 +1,60 @@
+.ui-button {
+    background-color: #3f3f46;
+    border-radius: 6px;
+    color: white;
+    min-width: 120px;
+    min-height: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 22px 6px 14px;
+    font-weight: 500;
+    border: none;
+    font-size: 14px;
+    line-height: 14px;
+}
+
+.ui-button.full {
+    min-width: 100%;
+    justify-content: center;
+}
+
+.ui-button i {
+    display: inline-block;
+    vertical-align: middle;
+    border: 5px solid rgb(63, 63, 63);
+    width: 20px;
+    height: 20px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background-color: hsl(0, 0%, 100%);
+    transition: all 800ms cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+.ui-button span {
+    margin-left: 4px;
+}
+.ui-button:hover i {
+    border: 5px solid hsl(0, 0%, 45%);
+}
+
+.ui-button em.loading::before {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    width: 12px;
+    margin: 0 4px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner 0.6s linear infinite;
+    position: relative;
+    top: -1px;
+  }
+  
+  /* Keyframes cho hiệu ứng quay */
+  @keyframes spinner {
+    to {
+      transform: rotate(360deg);
+    }
+  }
