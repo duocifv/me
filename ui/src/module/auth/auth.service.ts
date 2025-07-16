@@ -7,7 +7,7 @@ import {
 } from "./dto/change-password.dto";
 import { LoginDto, MeDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
-import { ResetPasswordDto, ResetPasswordTokenDto } from "./dto/reset-password";
+import { ResetPasswordTokenDto } from "./dto/reset-password";
 import { SignInDto } from "./dto/sign-in.dto";
 
 class AuthService {
@@ -50,8 +50,11 @@ class AuthService {
       const data = await this.authApi.get<MeDto>("me");
       api.storage.login();
       return data;
-    } catch (error: any) {
-      throw new Error(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(error.message);
+      }
+      throw new Error("Đã xảy ra lỗi không xác định");
     }
   }
 

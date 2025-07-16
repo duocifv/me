@@ -77,7 +77,7 @@ export class ApiClient {
             throw new ApiError("RefreshExpired", 401, "RefreshExpired");
           }
           this.setToken(data.accessToken);
-        } catch (err: any) {
+        } catch (err: unknown) {
           this.clearToken();
           if (err instanceof ApiError && err.name === "RefreshExpired") {
             errorHandler.handle(err);
@@ -186,8 +186,10 @@ export class ApiClient {
   }
 
   // Public HTTP methods
+
   get<T>(
     path: string = "",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     params?: Record<string, any>,
     opts?: ApiOpts<T>
   ): Promise<T> {
@@ -195,14 +197,15 @@ export class ApiClient {
     return this.request<T>("GET", path, { ...opts, params });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   post<T>(path: string, body?: any, opts?: ApiOpts<T>): Promise<T> {
     return this.request<T>("POST", path, { ...opts, body });
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   put<T>(path: string, body?: any, opts?: ApiOpts<T>): Promise<T> {
     return this.request<T>("PUT", path, { ...opts, body });
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   patch<T>(path: string, body?: any, opts?: ApiOpts<T>): Promise<T> {
     return this.request<T>("PATCH", path, { ...opts, body });
   }

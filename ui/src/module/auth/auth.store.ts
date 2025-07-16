@@ -29,7 +29,7 @@ type AuthState = {
 
 export const useAuthStore = create<AuthState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       isLoggedIn: null,
       user: null,
       captcha: {

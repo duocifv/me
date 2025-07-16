@@ -42,6 +42,7 @@ export const retryFetch = async <T>(
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let resData: any = null;
     try {
       if (responseType === "blob") {
@@ -90,8 +91,8 @@ export const retryFetch = async <T>(
       status,
       statusText,
     };
-  } catch (err: any) {
-    if (err.name === "AbortError") {
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
       return {
         data: null,
         error: {
@@ -103,9 +104,12 @@ export const retryFetch = async <T>(
       };
     }
 
+    const errorMessage =
+      err instanceof Error ? err.message : "Lỗi không xác định khi tải dữ liệu";
+
     if (attempt <= maxRetries) {
       log.warn(
-        `Lỗi: ${err.message}. Đang thử lại lần ${attempt}/${maxRetries}`
+        `Lỗi: ${errorMessage}. Đang thử lại lần ${attempt}/${maxRetries}`
       );
       await delayRetry(attempt, baseDelay);
       return retryFetch<T>(url, opts, maxRetries, baseDelay, attempt + 1);
@@ -114,7 +118,7 @@ export const retryFetch = async <T>(
     return {
       data: null,
       error: {
-        message: err.message || "Lỗi không xác định khi tải dữ liệu",
+        message: errorMessage,
         statusCode: 500,
       },
       status: 500,

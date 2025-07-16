@@ -12,7 +12,7 @@ export interface DeviceConfigState {
 
 export const useDeviceConfigStore = create<DeviceConfigState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       data: null,
       setData: (data) => set({ data }),
     })),

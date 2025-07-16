@@ -20,7 +20,7 @@ export function isTokenExpiringSoon(
     // console.log(`Còn lại (hh:mm:ss): ${hours}h ${minutes}m ${seconds}s`);
 
     return remaining < thresholdSeconds;
-  } catch (err) {
+  } catch {
     return true; // lỗi khi decode thì coi như sắp hết hạn
   }
 }

@@ -1,5 +1,4 @@
 import { BulkDeleteDto, BulkDeleteSchema } from "../auth/dto/bulk-delete.dto";
-import { IdParamDto } from "../roles/dto/Id-role.dto";
 import { api } from "../share/api/apiClient";
 import { ValidationError } from "../share/api/zod-error";
 import { uuidDto, uuidSchema } from "../share/schema/uuid";

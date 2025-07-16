@@ -15,7 +15,7 @@ type PermissionsState = {
 
 export const permissionsStore = create<PermissionsState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       permissions: [],
       setPermissions: (newPermissions) => set({ permissions: newPermissions }),
     })),

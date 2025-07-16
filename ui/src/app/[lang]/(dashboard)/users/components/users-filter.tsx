@@ -39,7 +39,7 @@ export default function UsersFilter({ table }: { table: Table<UserDto> }) {
     if (parsed.success) {
       setFilters(parsed.data);
     } else {
-      console.warn("Invalid filter:", parsed.error.errors);
+      console.warn("Invalid filter:", parsed.error.message);
     }
   }, 300);
 

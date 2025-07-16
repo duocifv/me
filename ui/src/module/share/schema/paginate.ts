@@ -16,7 +16,7 @@ export const PaginationLinksSchema = z.object({
 });
 
 export const PaginationSchema = z.object({
-  meta: PaginationMetaSchema.default({}),
+  meta: PaginationMetaSchema,
 });
 
 export type IPaginationMeta = z.infer<typeof PaginationMetaSchema>;

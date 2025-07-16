@@ -16,7 +16,7 @@ export interface PlantTypeState {
 
 export const usePlantTypeStore = create<PlantTypeState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       data: [],
       selectedPlantId: null,
 

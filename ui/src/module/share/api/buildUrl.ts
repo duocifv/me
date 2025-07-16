@@ -6,7 +6,7 @@ export const makeUrl = (
   params?: ReqParams | unknown[]
 ): string => {
   // nếu front-end đóng gói object trong 'params', hãy lấy luôn cái bên trong
-  let realParams = params as any;
+  let realParams = params as unknown;
   if (realParams && typeof realParams === "object" && "params" in realParams) {
     realParams = realParams.params;
   }

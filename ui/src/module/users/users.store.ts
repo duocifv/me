@@ -15,7 +15,7 @@ export interface IUserState {
 
 export const useUsersStore = create<IUserState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       data: {
         items: [],
         meta: {

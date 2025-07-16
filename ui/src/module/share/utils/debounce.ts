@@ -1,5 +1,5 @@
 export function debounce(
-  func: (value: any) => void,
+  func: (value: unknown) => void,
   wait: number,
   immediate: boolean = false
 ): ((value: string | object | number) => void) & { cancel: () => void } {

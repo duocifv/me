@@ -8,6 +8,7 @@ import { X } from "lucide-react";
 import { useMediaStore } from "@adapter/media/media.store";
 import { FileUploadSchema } from "@adapter/media/dto/media-upload.dto";
 import { Picture } from "@/components/share/picture/ui-picture";
+import { ZodError } from "zod";
 
 export default function FileUpload() {
   const file = useMediaStore((s) => s.file);
@@ -24,7 +25,8 @@ export default function FileUpload() {
 
     const result = FileUploadSchema.safeParse(selected);
     if (!result.success) {
-      setError(result.error.errors[0].message);
+      const error = result.error as ZodError;
+      setError(error.message ?? "Tệp không hợp lệ");
       return;
     }
     if (!selected.type.startsWith("image/")) {

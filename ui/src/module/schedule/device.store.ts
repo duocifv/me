@@ -14,7 +14,7 @@ export interface DeviceConfigState {
 
 export const useDeviceScheduleStore = create<DeviceConfigState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       data: [],
       item: null,
       setData: (data) => set({ data }),

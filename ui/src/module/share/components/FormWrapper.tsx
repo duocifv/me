@@ -8,10 +8,11 @@ import {
   useFormContext,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ZodSchema } from "zod";
+import { ZodType } from "zod";
 
 export interface FormWrapperProps<T extends FieldValues> {
-  schema: ZodSchema<T>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  schema: ZodType<T, any, any>;
   defaultValues: DefaultValues<T>;
   children: (methods: UseFormReturn<T>) => ReactNode;
 }

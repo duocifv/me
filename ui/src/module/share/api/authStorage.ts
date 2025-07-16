@@ -20,7 +20,7 @@ export const loginState = {
     if (typeof window === "undefined") return false;
     try {
       return localStorage.getItem(LOGIN_STATE_KEY) === "true";
-    } catch (error) {
+    } catch {
       // console.warn(
       //   "LoginState.isLoggedIn(): unable to access localStorage",
       //   error
