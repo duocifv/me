@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "ui/web": {
+      "framework": "nextjs"
+    }
+  }
+}
