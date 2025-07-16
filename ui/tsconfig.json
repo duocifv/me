@@ -30,19 +30,15 @@
         "./src/*"
       ],
       "@adapter/*": [
-        "../packages/libs/src/*"
+        "./src/module/*"
       ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    "../packages/adapter/src/share/utils/resouce.tsx___",
-    "../packages/libs/src/**/*.ts",
-    "../packages/libs/src/**/*.tsx",
     "next-env.d.ts",
     ".next/types/**/*.ts",
-    "../api/src/auth/guard/cache-control.guard.ts"
   ],
   "exclude": [
     "node_modules"
