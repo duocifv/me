@@ -9,6 +9,7 @@ const timeToMinutes = (t: string) => {
 export const DeviceScheduleSchema = z
   .object({
     id: z.number().optional(),
+    deviceId: z.string(),
     pumpOn: z.boolean(),
     fanOn: z.boolean(),
     ledOn: z.boolean(),

@@ -53,6 +53,40 @@ export function ScheduleUpdate() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="mb-1 block text-sm font-medium">
+                        Tên thiết bị
+                      </Label>
+                      <Input type="text" {...form.register("deviceId")} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <Label className="flex items-center gap-2 text-sm">
+                      <Switch
+                        checked={form.watch("pumpOn")}
+                        onCheckedChange={(v) => form.setValue("pumpOn", v)}
+                      />
+                      Bơm
+                    </Label>
+
+                    <Label className="flex items-center gap-2 text-sm">
+                      <Switch
+                        checked={form.watch("fanOn")}
+                        onCheckedChange={(v) => form.setValue("fanOn", v)}
+                      />
+                      Quạt
+                    </Label>
+
+                    <Label className="flex items-center gap-2 text-sm">
+                      <Switch
+                        checked={form.watch("ledOn")}
+                        onCheckedChange={(v) => form.setValue("ledOn", v)}
+                      />
+                      Đèn
+                    </Label>
+                  </div>
+                  {/* Thời gian */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="mb-1 block text-sm font-medium">
                         Giờ bắt đầu
                       </Label>
                       <Input type="time" {...form.register("startTime")} />
@@ -94,7 +128,10 @@ export function ScheduleUpdate() {
 
                   {/* Kích hoạt */}
                   <div className="flex items-center gap-2">
-                    <Switch {...form.register("isEnabled")} />
+                    <Switch
+                      checked={form.watch("isEnabled")}
+                      onCheckedChange={(v) => form.setValue("isEnabled", v)}
+                    />
                     <Label className="text-sm text-muted-foreground">
                       Kích hoạt lịch
                     </Label>

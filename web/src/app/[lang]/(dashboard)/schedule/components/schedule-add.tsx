@@ -58,6 +58,18 @@ export default function ScheduleAdd() {
 
             return (
               <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="mb-1 block text-sm font-medium">
+                      Tên thiết bị
+                    </Label>
+                    <Input
+                      type="text"
+                      {...form.register("deviceId")}
+                      defaultValue="device-001"
+                    />
+                  </div>
+                </div>
                 {/* Bơm / Quạt / Đèn */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Label className="flex items-center gap-2 text-sm">

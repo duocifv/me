@@ -5,11 +5,8 @@ import ScheduleSyncData from "./dispatch/dispatch-schedule-sync-data";
 
 export default function HydroponicsPage() {
   return (
-    <div className="px-6 py-8 space-y-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          📋 Danh sách lịch thiết bị
-        </h1>
+    <div className="px-6 space-y-10">
+      <div className="flex justify-end md:items-center gap-4 mb-2">
         <ScheduleAdd />
       </div>
       <ScheduleSyncData />

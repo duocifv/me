@@ -3,7 +3,6 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -23,14 +22,11 @@ export default function ScheduleTable() {
   const updateItem = useDeviceScheduleStore((s) => s.updateItem);
 
   return (
-    <div className="rounded-md border p-4 md:p-8 overflow-auto shadow-sm max-w-5xl mx-auto">
+    <div className="overflow-hidden rounded-lg border">
       <Table>
-        <TableCaption className="text-muted-foreground">
-          Danh sách lịch điều khiển thiết bị
-        </TableCaption>
-
-        <TableHeader>
+        <TableHeader className="sticky top-0 z-10 bg-muted">
           <TableRow className="bg-gray-100">
+            <TableHead className="w-[120px]">Thiết bị</TableHead>
             <TableHead className="w-[150px]">Thời gian</TableHead>
             <TableHead className="text-center w-16">Máy bơm</TableHead>
             <TableHead className="text-center w-16">Quạt</TableHead>
@@ -47,6 +43,9 @@ export default function ScheduleTable() {
               key={s.id}
               className="hover:bg-accent/10 transition-colors"
             >
+              <TableCell className="font-medium">
+                {s.deviceId ?? "---"}
+              </TableCell>
               <TableCell className="font-medium">
                 {s.startTime} – {s.endTime}
               </TableCell>

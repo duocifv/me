@@ -17,7 +17,7 @@ import {
   DeviceScheduleSchema,
 } from '../dto/device-schedule.dto';
 import { UpdateDeviceConfigTask } from '../tasks/update-device-config.task';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiParam, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Schedule')
 @Controller('device')
@@ -27,22 +27,30 @@ export class DeviceScheduleController {
     private readonly cronTask: UpdateDeviceConfigTask,
   ) {}
 
-  @Post('schedule')
-  @HttpCode(201)
-  async createSchedule(
-    @BodySchema(DeviceScheduleSchema) dto: DeviceScheduleDto,
-    @Req() req,
-  ): Promise<{ success: true }> {
-    await this.deviceService.saveSchedule(req.deviceId, dto);
-    return { success: true };
-  }
-
   @Get('schedule')
   async getSchedules(@Req() req): Promise<DeviceScheduleDto[]> {
     return this.deviceService.getSchedules(req.deviceId);
   }
 
+  @Post(':deviceId/schedule')
+  @HttpCode(201)
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
+  async createSchedule(
+    @Param('deviceId') deviceId: string,
+    @BodySchema(DeviceScheduleSchema) dto: DeviceScheduleDto,
+  ): Promise<{ success: true }> {
+    await this.deviceService.saveSchedule(deviceId, dto);
+    return { success: true };
+  }
+
   @Get(':deviceId/schedule/:id')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
   async getSchedule(
     @Param('deviceId') deviceId: string,
     @Param('id') id: number,
@@ -53,6 +61,10 @@ export class DeviceScheduleController {
   }
 
   @Put(':deviceId/schedule/:id')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
   async updateSchedule(
     @Param('deviceId') deviceId: string,
     @Param('id') id: number,
@@ -63,6 +75,10 @@ export class DeviceScheduleController {
   }
 
   @Delete(':deviceId/schedule/:id')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
   @HttpCode(204)
   async deleteSchedule(
     @Param('deviceId') deviceId: string,

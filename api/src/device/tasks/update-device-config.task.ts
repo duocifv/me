@@ -17,7 +17,7 @@ export class UpdateDeviceConfigTask {
       `[CRON] ${new Date().toLocaleTimeString()} - Run #${this.counter}`,
     );
 
-    const ids = await this.deviceService.getAllDeviceIds();
+    const ids = ['device-001'];
     for (const id of ids) {
       await this.deviceService.applyScheduleAndUpdateConfig(id);
     }

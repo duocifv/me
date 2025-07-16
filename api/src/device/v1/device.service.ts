@@ -13,6 +13,7 @@ import { DeviceErrorEntity } from '../entities/device-error.entity';
 import { ReportDeviceErrorDto } from '../dto/report-device-error.dto';
 import { DeviceScheduleEntity } from '../entities/device-schedule.entity';
 import { DeviceScheduleDto } from '../dto/device-schedule.dto';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class DeviceService {
@@ -27,7 +28,7 @@ export class DeviceService {
 
     @InjectRepository(DeviceErrorEntity)
     private readonly errRepo: Repository<DeviceErrorEntity>,
-  ) { }
+  ) {}
 
   /** Ghi nhận lỗi */
   async reportDeviceError(
@@ -158,7 +159,7 @@ export class DeviceService {
     await this.scheduleRepo.save({ ...dto, deviceId });
   }
 
-  async getSchedules(deviceId: string): Promise<DeviceScheduleDto[]> {
+  async getSchedules(deviceId: string): Promise<DeviceScheduleEntity[]> {
     return this.scheduleRepo.find({
       where: { deviceId },
       order: { startTime: 'ASC' },
@@ -166,31 +167,48 @@ export class DeviceService {
   }
 
   async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
-    // 👉 Tạo giờ Việt Nam thủ công (UTC + 7 giờ)
-    const nowUTC = new Date();
-    const nowVN = new Date(nowUTC.getTime() + 7 * 60 * 60 * 1000);
+    // 👉 Giờ Việt Nam (UTC+7)
+    const nowVN = DateTime.now().setZone('Asia/Ho_Chi_Minh');
+    const hour = nowVN.hour;
+    const minute = nowVN.minute;
+    const nowMin = hour * 60 + minute;
+    const today = nowVN.weekday % 7; // Luxon: 1 (Mon) - 7 (Sun) => chuyển về 0-6 như JS
 
-    const nowMin = nowVN.getHours() * 60 + nowVN.getMinutes();
-    const today = nowVN.getDay(); // 0 = Chủ Nhật, 6 = Thứ Bảy
-
+    // Lấy lịch của thiết bị
     const schedules = await this.getSchedules(deviceId);
+    if (!schedules.length) {
+      console.warn(`[WARN] No schedules for device ${deviceId}`);
+      return;
+    }
+
     const state = { pumpOn: false, fanOn: false, ledOn: false };
 
     for (const s of schedules) {
       if (!s.isEnabled) continue;
 
-      const days = (s.repeatOn || []).map(Number);
+      const days = s.repeatOn?.map(Number) ?? [];
       if (!days.includes(today)) continue;
+
+      // Kiểm tra định dạng thời gian
+      if (
+        !s.startTime ||
+        !s.endTime ||
+        !s.startTime.includes(':') ||
+        !s.endTime.includes(':')
+      ) {
+        console.warn(`[WARN] Invalid time format in schedule ID=${s.id}`);
+        continue;
+      }
 
       const [sh, sm] = s.startTime.split(':').map(Number);
       const [eh, em] = s.endTime.split(':').map(Number);
       const start = sh * 60 + sm;
       const end = eh * 60 + em;
 
-      // ✅ Hỗ trợ thời gian chạy qua đêm
+      // ✅ Hỗ trợ chạy qua đêm
       const isActive =
         start <= end
-          ? start <= nowMin && nowMin < end
+          ? nowMin >= start && nowMin < end
           : nowMin >= start || nowMin < end;
 
       if (isActive) {
@@ -198,6 +216,32 @@ export class DeviceService {
         state.fanOn ||= s.fanOn;
         state.ledOn ||= s.ledOn;
       }
+
+      // // 👉 Log mỗi schedule
+      // console.log(
+      //   's=>',
+      //   nowVN.toFormat('HH:mm dd/MM/yyyy'),
+      //   `nowMin=${nowMin}`,
+      //   `start=${start}`,
+      //   `end=${end}`,
+      //   s.pumpOn,
+      //   s.fanOn,
+      //   s.ledOn,
+      // );
+
+      console.log(
+        `[SCHEDULE] ID=${s.id} | ${s.startTime}-${s.endTime} | Days=${days.join(',')} | Active=${isActive}`,
+      );
+    }
+
+    console.log('state0', state);
+
+    // 👉 Nếu không có gì thay đổi, bỏ qua
+    if (!state.pumpOn && !state.fanOn && !state.ledOn) {
+      console.log(
+        `[SKIP] No active schedules at ${nowVN.toFormat('HH:mm dd/MM/yyyy')}`,
+      );
+      return;
     }
 
     const latest = await this.cfgRepo.findOne({
@@ -205,20 +249,21 @@ export class DeviceService {
       order: { version: 'DESC' },
     });
 
-    if (latest) {
-      await this.cfgRepo.update(
-        { deviceId: latest.deviceId, version: latest.version },
-        state,
-      );
+    if (!latest) {
+      console.warn(`[WARN] No config found for device ${deviceId}`);
+      return;
     }
 
-    // 👉 Log để kiểm tra
+    await this.cfgRepo.update(
+      { deviceId: latest.deviceId, version: latest.version },
+      state,
+    );
+
     console.log(
-      `[VN TIME] ${nowVN.toLocaleString('vi-VN')} | Updated ${deviceId} →`,
+      `[VN TIME] ${nowVN.toFormat('HH:mm dd/MM/yyyy')} | Updated ${deviceId} →`,
       state,
     );
   }
-
 
   async getAllDeviceIds(): Promise<string[]> {
     const rows: { deviceId: string }[] = await this.cfgRepo
