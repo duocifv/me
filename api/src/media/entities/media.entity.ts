@@ -36,6 +36,9 @@ export class MediaFile {
   @OneToMany(() => PlantType, (pt) => pt.mediaFile)
   plantTypes: PlantType[];
 
+  @Column({ nullable: true })
+  cloudinaryPublicId?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 }

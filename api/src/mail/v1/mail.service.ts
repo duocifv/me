@@ -31,9 +31,11 @@ export class MailService {
 
   private async send(opts: SendMailOptions): Promise<SentMessageInfo> {
     try {
+      console.log('Sending mail with options:', opts);
       return await this.fastify.mailer.sendMail(opts);
     } catch (err) {
       this.fastify.log.error('MailService.send error:', err);
+      console.error('SEND ERROR:', err); // Bổ sung dòng này
       throw new InternalServerErrorException('Gửi mail thất bại');
     }
   }
@@ -95,9 +97,19 @@ export class MailService {
     },
   ): Promise<SentMessageInfo> {
     const { template, context, ...mailOpts } = opts;
+
+    // ✅ Nếu có template thì render pug template
     if (template) {
       mailOpts.html = this.renderTemplate(template, context);
     }
+
+    // ✅ Nếu không có template, không có text hoặc html, thì gán nội dung test
+    if (!mailOpts.html && !mailOpts.text) {
+      mailOpts.text = `Test email gửi đến với chủ đề: "${mailOpts.subject}"`;
+    }
+
+    this.fastify.log.info('🟢 Sending mail with options:', mailOpts); // debug log
+
     return this.send(mailOpts);
   }
 }

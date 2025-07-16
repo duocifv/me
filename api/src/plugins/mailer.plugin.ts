@@ -111,7 +111,9 @@ export const mailerPlugin = fp(async (app: FastifyInstance) => {
       const parsed = mailOptionsSchema.parse(opts);
       const { to, subject, template, context, text } = parsed;
       const tplPath = path.join(MAIL_TEMPLATE_PATH, `${template}.pug`);
-      const html = pug.renderFile(tplPath, context || {});
+      const html = template
+        ? pug.renderFile(tplPath, context || {})
+        : opts.html || undefined;
       try {
         await app.mailer.sendMail({
           to,
@@ -127,7 +129,9 @@ export const mailerPlugin = fp(async (app: FastifyInstance) => {
             to,
           },
         };
-      } catch {
+      } catch (err) {
+        this.log.error('Mailer failed:', err);
+        console.error('Mailer sendMail ERROR:', err); // <-- Dòng quan trọng
         throw new InternalServerErrorException('Gửi mail thất bại');
       }
     },

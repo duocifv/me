@@ -33,6 +33,7 @@ import { MediaFileDto } from '../dto/media-file.dto';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import { BulkDeleteDto, BulkDeleteSchema } from '../dto/bulk-delete.dto';
 import { UploadFileService } from './media.service';
+import cloudinary from 'src/plugins/media/cloudinary.provider';
 
 @ApiTags('Media')
 @Controller('media')
@@ -92,50 +93,6 @@ export class MediaController {
     };
     return this.uploadService.saveImage(mediaDto);
   }
-
-  // @Post('upload/esp32')
-  // @ApiOperation({
-  //   summary: 'Upload ảnh ESP32 (chỉ lưu file gốc, không resize)',
-  // })
-  // @ApiConsumes('multipart/form-data')
-  // @ApiBody({ type: UploadFileDto })
-  // async uploadEsp32(@Req() req: FastifyRequest) {
-  //   if (!req.isMultipart()) {
-  //     throw new BadRequestException('Form must be multipart/form-data');
-  //   }
-  //   const part = await req.file();
-
-  //   if (!part) throw new NotFoundException('File không có');
-
-  //   if (!['image/jpeg', 'image/png'].includes(part.mimetype)) {
-  //     throw new BadRequestException('Chỉ JPG hoặc PNG được phép cho ESP32');
-  //   }
-  //   const { url } = await req.server.fileManager.saveEsp32Image(part);
-  //   const mediaDto: CreateMediaDto = {
-  //     mimetype: part.mimetype,
-  //     size: part.file?.bytesRead || 0,
-  //     variants: { original: url },
-  //     category: [MediaCategory.ESP32],
-  //   };
-  //   return this.uploadService.saveImage(mediaDto);
-  // }
-
-  // @Get('esp32')
-  // @ApiOperation({ summary: 'Danh sách ảnh ESP32 có phân trang' })
-  // async findAllEsp32(@QuerySchema(MediaEsp32Schema) dto: MediaEsp32Dto) {
-  //   const paginated = await this.uploadService.paginateMediaByCategory({
-  //     ...dto,
-  //     category: [MediaCategory.ESP32],
-  //   });
-  //   const stats = await this.uploadService.getMediaStatsByCategory([
-  //     MediaCategory.ESP32,
-  //   ]);
-
-  //   return {
-  //     ...paginated,
-  //     stats,
-  //   };
-  // }
 
   @Get('categories')
   getCategories() {
@@ -263,5 +220,52 @@ export class MediaController {
     );
 
     return;
+  }
+
+  @Post('upload/cloudinary')
+  @ApiOperation({ summary: 'Upload ảnh lên Cloudinary' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: UploadFileDto })
+  @Permissions(PermissionName.MANAGE_MEDIA)
+  async uploadToCloudinary(@Req() req: FastifyRequest) {
+    if (!req.isMultipart()) {
+      throw new BadRequestException('Form must be multipart/form-data');
+    }
+
+    const part = await req.file();
+    if (!part) throw new NotFoundException('File không có');
+
+    if (!['image/jpeg', 'image/png', 'image/gif'].includes(part.mimetype)) {
+      throw new BadRequestException('Chỉ JPG/PNG/GIF');
+    }
+
+    const buffer = await part.toBuffer();
+
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: 'media', // tuỳ chọn folder trên Cloudinary
+            resource_type: 'image',
+          },
+          (error, result) => {
+            if (error)
+              reject(new Error(error.message || 'Cloudinary upload failed'));
+            else resolve(result);
+          },
+        )
+        .end(buffer);
+    });
+
+    const mediaDto: CreateMediaDto = {
+      mimetype: result.format,
+      size: part.file?.bytesRead || 0,
+      variants: {
+        original: result.secure_url,
+      },
+      cloudinaryPublicId: result.public_id,
+    };
+
+    return this.uploadService.saveImage(mediaDto);
   }
 }

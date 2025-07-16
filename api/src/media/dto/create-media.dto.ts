@@ -1,3 +1,4 @@
+// 📄 src/media/dto/create-media.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MediaCategory } from '../type/media-category.type';
 
@@ -24,4 +25,9 @@ export class CreateMediaDto {
   variants: Partial<
     Record<'original' | 'thumbnail' | 'medium' | 'large', string>
   >;
+
+  @ApiPropertyOptional({
+    description: 'Cloudinary Public ID để xoá hoặc resize sau này',
+  })
+  cloudinaryPublicId?: string;
 }
