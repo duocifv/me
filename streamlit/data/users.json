@@ -1,0 +1,10 @@
+{
+  "duoc": {
+    "password": "4daa5cf8aed81238490e7ba19c7f95acbae39aea1e1d1642eebced1835da10cb",
+    "is_admin": false
+  },
+  "admin": {
+    "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+    "is_admin": false
+  }
+}

@@ -1,0 +1,7 @@
+[theme]
+base="light"                       # chọn light theme (mặc định background trắng)
+primaryColor="#1f77b4"             # màu chính (nút, slider…)
+backgroundColor="#ffffff"          # màu nền chung
+secondaryBackgroundColor="#f0f2f6" # màu nền section
+textColor="#000000"                # màu chữ
+font="sans serif"                  # font (sans serif, mono, hoặc serif)
