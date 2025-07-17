@@ -17,7 +17,7 @@ jobs:
       - name: Push ai_py to Hugging Face Space
         run: |
           git config --global user.email "nvduocfpt@gmail.com"
-          git config --global user.name "Bao132!!"
+          git config --global user.name "Bao132132!!"
 
           git clone https://huggingface.co/spaces/nvduocfpt/my-space hf-space
           rm -rf hf-space/*
