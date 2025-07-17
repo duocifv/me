@@ -1,0 +1,29 @@
+name: Deploy ai_py to Hugging Face Space
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai_py/**'  # chỉ chạy nếu có thay đổi trong ai_py
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v3
+
+      - name: Push ai_py to Hugging Face Space
+        run: |
+          git config --global user.email "nvduocfpt@gmail.com"
+          git config --global user.name "Bao132!!"
+
+          git clone https://huggingface.co/spaces/nvduocfpt/my-space hf-space
+          rm -rf hf-space/*
+
+          cp -r ai_py/* hf-space/
+          cd hf-space
+          git add .
+          git commit -m "Sync ai_py from GitHub"
+          git push https://huggingface:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/nvduocfpt/my-space HEAD
