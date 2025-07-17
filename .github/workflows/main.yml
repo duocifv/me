@@ -1,81 +1,29 @@
-name: 🚀 Deploy website on push
+name: Deploy ai_py to Hugging Face Space
 
 on:
   push:
-    branches:
-      - main # hoặc nhánh bạn muốn deploy
+    branches: [main]
+    paths:
+      - 'ai_py/**'  # chỉ chạy nếu có thay đổi trong ai_py
 
 jobs:
-  web-deploy:
-    name: 🎉 Deploy
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🚚 Get latest code
-        uses: actions/checkout@v4
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v3
 
-      # 🧱 Shared libraries (nếu có)
-      - name: 🧱 Build shared libs (if any)
+      - name: Push ai_py to Hugging Face Space
         run: |
-          cd packages/libs
-          npm install
+          git config --global user.email "nvduocfpt@gmail.com"
+          git config --global user.name "Bao132132!!"
 
-      # 📦 Next.js (web)
-      - name: "📦 Install dependencies for Next.js"
-        run: |
-          cd web
-          npm install
+          git clone https://huggingface.co/spaces/nvduocfpt/my-space hf-space
+          rm -rf hf-space/*
 
-      - name: "🛠 Build Next.js project"
-        run: |
-          cd web
-          npm run build
-
-      - name: "📂 Verify Next.js build output"
-        run: |
-          cd web
-          ls -R out/
-
-      - name: 📂 Sync Next.js files to cPanel
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: 103.221.223.51
-          username: web@duocnv.top
-          password: Khanh132132!!
-          server-dir: /
-          local-dir: "web/out/"
-
-      # 📦 NestJS (api)
-      - name: "📦 Install dependencies for NestJS"
-        run: |
-          cd api
-          npm install
-
-      - name: "🛠 Build NestJS project"
-        run: |
-          cd api
-          npm run build
-
-      - name: "📂 Verify NestJS build output"
-        run: |
-          cd api
-          ls -R dist/
-
-      - name: 📂 Sync NestJS files to cPanel
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: 103.221.223.51
-          username: me@my.duocnv.top
-          password: Khanh132132!!
-          server-dir: /
-          local-dir: "api/dist/"
-
-      # 🐍 Python AI (ai)
-      - name: 📂 Sync Python files to cPanel
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: 103.221.223.51
-          username: ai@duocnv.top
-          password: Khanh132132!!
-          server-dir: /
-          local-dir: "ai/dist/"
+          cp -r ai_py/* hf-space/
+          cd hf-space
+          git add .
+          git commit -m "Sync ai_py from GitHub"
+          git push https://huggingface:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/nvduocfpt/my-space HEAD
