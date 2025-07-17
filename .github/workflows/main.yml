@@ -19,7 +19,7 @@ jobs:
           git config --global user.email "nvduocfpt@gmail.com"
           git config --global user.name "Bao132132!!"
 
-          git clone https://huggingface.co/spaces/nvduocfpt/my-space hf-space
+          git clone https://huggingface.co/spaces/nvduocfpt/duoc2 hf-space
           rm -rf hf-space/*
 
           cp -r ai_py/* hf-space/
