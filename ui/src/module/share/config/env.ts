@@ -13,7 +13,7 @@ interface EnvConfig {
 
 // Cung cấp giá trị mặc định cho các biến môi trường
 const defaultConfig: EnvConfig = {
-  API_URL: "https://my.duocnv.top/v1", // Secret key cho JWT
+  API_URL: "https://vegetable-container.onrender.com/", // Secret key cho JWT
   API_KEY: "", // API Key
   LOG_LEVEL: "info", // Cấp độ log
   NODE_ENV: "development",
