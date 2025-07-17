@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'ai_py/**'  # chỉ chạy nếu có thay đổi trong ai_py
+      - "ai_py/**" # chỉ chạy nếu có thay đổi trong ai_py
 
 jobs:
   deploy:
@@ -26,4 +26,4 @@ jobs:
           cd hf-space
           git add .
           git commit -m "Sync ai_py from GitHub"
-          git push https://huggingface:${{ secrets.DUOCNV }}@huggingface.co/spaces/nvduocfpt/my-space HEAD
+          git push https://huggingface:${{ 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 }}@huggingface.co/spaces/nvduocfpt/my-space HEAD
