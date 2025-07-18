@@ -29,6 +29,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 // import { HttpModule } from '@nestjs/axios';
 import { HydroponicsModule } from './hydroponics/hydroponics.module';
 import { DeviceModule } from './device/device.module';
+import { MqttModule } from './mqtt/mqtt.module';
 
 @Module({
   imports: [
@@ -55,7 +56,7 @@ import { DeviceModule } from './device/device.module';
       rootPath: join(__dirname, '..', 'uploads'),
     }),
     // TerminusModule,
-    // HttpModule,
+    MqttModule,
     CoreModule,
     AuthModule,
     RolesModule,

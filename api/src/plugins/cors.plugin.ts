@@ -3,8 +3,10 @@ import fastifyCors, { FastifyCorsOptions } from '@fastify/cors';
 
 export const corsConfig: FastifyCorsOptions = {
   origin: (origin, cb) => {
+    console.log('🔍 Origin:', origin);
     const allowedOrigins = [
       'https://duoc2.vercel.app',
+      'http://localhost:5000',
       'http://localhost:3000',
     ];
 
