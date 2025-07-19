@@ -10,7 +10,7 @@ const char* password = "1234567899";
 // Thông tin thiết bị
 const char* deviceToken  = "esp32";
 const char* deviceId     = "device-001";
-const char* host         = "my.duocnv.top";
+const char* host         = "vegetable-container.onrender.com";
 const uint16_t port      = 443;
 
 // Đường dẫn API

@@ -5,6 +5,7 @@ export const corsConfig: FastifyCorsOptions = {
   origin: (origin, cb) => {
     console.log('🔍 Origin:', origin);
     const allowedOrigins = [
+      'https://vegetable-container.onrender.com',
       'https://duoc2.vercel.app',
       'http://localhost:5000',
       'http://localhost:3000',
