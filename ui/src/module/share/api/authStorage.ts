@@ -19,7 +19,7 @@ export const loginState = {
   isLoggedIn(): boolean {
     if (typeof window === "undefined") return false;
     try {
-      return localStorage.getItem(LOGIN_STATE_KEY) === "true";
+      return localStorage.getItem(LOGIN_STATE_KEY) !== null;
     } catch {
       // console.warn(
       //   "LoginState.isLoggedIn(): unable to access localStorage",
@@ -32,9 +32,23 @@ export const loginState = {
   /**
    * Marks the user as logged in.
    */
-  setLoggedIn(): void {
+  getToken() {
     try {
-      localStorage.setItem(LOGIN_STATE_KEY, "true");
+      return localStorage.getItem(LOGIN_STATE_KEY);
+    } catch (error) {
+      console.warn(
+        "LoginState.setLoggedIn(): unable to access localStorage",
+        error
+      );
+    }
+  },
+  /**
+   * Marks the user as logged in.
+   */
+  setLoggedIn(token: string): void {
+    console.log("token token", token);
+    try {
+      localStorage.setItem(LOGIN_STATE_KEY, token);
     } catch (error) {
       console.warn(
         "LoginState.setLoggedIn(): unable to access localStorage",

@@ -1,3 +1,5 @@
+"use client";
+
 import { SiteHeader } from "@/components/site-header";
 import HydroponicsSyncData from "./snapshots/dispatch/dispatch-snapshots-sync-data";
 import PlantTypeSyncData from "./plant-type/dispatch/dispatch-plant-type-sync-data";

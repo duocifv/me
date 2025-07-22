@@ -1,3 +1,5 @@
+"use client";
+
 import { LoginForm } from "./components/auth-login";
 import WrapperAuth from "../components/wrapper-auth";
 import { Suspense } from "react";

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAuthStore } from "./auth.store";
 import { errorHandler } from "../share/api/errorHandler";
 import { loggedIn, useAuthProfileQuery } from "./auth.hook";
+import AppLoading from "@/app/[lang]/(dashboard)/components/app-loading";
 
 export function AuthGuard({
   children,
@@ -12,13 +13,17 @@ export function AuthGuard({
   children: React.ReactNode;
   fallback: React.ReactNode;
 }) {
-  const isStogareLoggedIn = loggedIn();
+  const stogareLoggedIn = loggedIn();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const setLogin = useAuthStore((s) => s.setLogin);
   const setLogout = useAuthStore((s) => s.setLogout);
+
   useEffect(() => {
-    setLogin(isStogareLoggedIn);
-  }, [isLoggedIn, setLogin]);
+    if (!stogareLoggedIn) {
+      return setLogout();
+    }
+    return setLogin();
+  }, [stogareLoggedIn, setLogin, setLogout, isLoggedIn]);
 
   useEffect(() => {
     const unsub = errorHandler.register((err) => {
@@ -29,17 +34,19 @@ export function AuthGuard({
       return false;
     });
     return () => unsub();
-  }, []);
+  }, [setLogout]);
+
   console.log("================start auth===================");
-  console.log("isStogareLoggedIn:", isStogareLoggedIn);
-  console.log("isLoggedIn:", isLoggedIn);
+  console.log("isStogareLoggedIn:", stogareLoggedIn);
   console.log("================end auth===================");
-  if (isLoggedIn === false) {
+
+  if (!stogareLoggedIn && isLoggedIn === false) {
     return <>{fallback}</>;
   }
-  if (isLoggedIn) {
+  if (stogareLoggedIn && isLoggedIn === true) {
     return <AuthenticatedApp>{children}</AuthenticatedApp>;
   }
+  return <AppLoading />;
 }
 
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {

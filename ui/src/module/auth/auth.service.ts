@@ -19,7 +19,6 @@ class AuthService {
       useFingerprint: true,
     });
     if (res.accessToken) {
-      api.storage.login();
       api.setToken(res.accessToken);
     }
     return res;
@@ -48,7 +47,6 @@ class AuthService {
   async getMe(): Promise<MeDto | null> {
     try {
       const data = await this.authApi.get<MeDto>("me");
-      api.storage.login();
       return data;
     } catch (error: unknown) {
       if (error instanceof Error) {
