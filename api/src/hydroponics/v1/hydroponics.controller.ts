@@ -26,6 +26,7 @@ import { DeviceAuth } from 'src/shared/decorators/device-token.decorator';
 import { QuerySchema } from 'src/shared/decorators/query-schema.decorator';
 import { GetSnapshotsDto, GetSnapshotsSchema } from '../dto/get-snapshots.dto';
 import { Logger } from '@nestjs/common';
+import cloudinary from 'src/plugins/media/cloudinary.provider';
 
 @Controller('hydroponics')
 export class HydroponicsController {
@@ -142,12 +143,27 @@ export class HydroponicsController {
       throw new BadRequestException('Chỉ chấp nhận JPG hoặc PNG');
     }
 
-    const { size, filename } =
-      await fastifyReq.server.fileManager.saveEsp32Image(part);
+    const buffer = await part.toBuffer();
+
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: 'media',
+            resource_type: 'image',
+          },
+          (error, result) => {
+            if (error)
+              reject(new Error(error.message || 'Cloudinary upload failed'));
+            else resolve(result);
+          },
+        )
+        .end(buffer);
+    });
 
     const imageDto: CreateCameraImageDto = {
-      filePath: filename,
-      size: size ?? 0,
+      filePath: result.secure_url,
+      size: part.file?.bytesRead || 0,
     };
 
     // Trả về trước

@@ -31,7 +31,7 @@ export default function SnapshotsListGallery() {
             <div className="h-40 w-full overflow-hidden">
               {snapshot.images.length > 0 ? (
                 <Picture
-                  src={`/uploads/esp32/${snapshot.images[0].filePath}`}
+                  src={snapshot.images[0].filePath}
                   className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                 />
               ) : (
