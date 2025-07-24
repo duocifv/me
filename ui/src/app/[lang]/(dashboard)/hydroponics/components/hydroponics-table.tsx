@@ -33,7 +33,7 @@ export default function HydroponicsList() {
               ))}
             <CardHeader className="text-center">
               <CardTitle className="text-xl text-green-800">
-                {snapshot.timestamp}
+                {snapshot.createdAt}
               </CardTitle>
               <p className="text-xs text-green-500 font-mono">
                 Sensor:
