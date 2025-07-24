@@ -64,7 +64,7 @@ export default function ChartAreaInteractive() {
   const allData = React.useMemo(() => {
     return snapshots.items
       .map((snap) => ({
-        date: snap!.timestamp,
+        date: snap!.createdAt,
         waterTemp: snap!.waterTemp,
         ambientTemp: snap!.ambientTemp,
         humidity: snap!.humidity,
