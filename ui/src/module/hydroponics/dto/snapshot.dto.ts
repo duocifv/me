@@ -1,7 +1,7 @@
 export interface Snapshot {
   id: number;
   cropInstanceId: number;
-  timestamp: string;
+  createdAt: string;
   isActive: boolean;
   waterTemp: number;
   ambientTemp: number;
