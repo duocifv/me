@@ -19,7 +19,7 @@ DS18B20Module tempSensor;
 CameraModule cameraModule;  // ✅ Sử dụng đúng kiểu đã định nghĩa
 LedIndicator led;
 
-float ambientTemp = 0, humidity = 0, waterTemp = 0;
+float ambientTemp = 1, humidity = 1, waterTemp = 1;
 unsigned long sensorPrev = 0, cameraPrev = 0;
 
 bool initRelays() {
@@ -45,29 +45,48 @@ bool initCamera() {
 void reportError(const char* msg) {
   Serial.print("⚠️  MQTT Error: ");
   Serial.println(msg);
-  mqtt.publish("esp32/errors", msg, strlen(msg)); 
+  mqtt.publish("esp32/errors", msg, strlen(msg));
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  StaticJsonDocument<256> doc;
-  DeserializationError err = deserializeJson(doc, payload, length);
-  if (err) {
-    reportError("Invalid JSON from screen");
-    return;
+  String t = String(topic);
+  String payloadStr;
+
+  for (unsigned int i = 0; i < length; i++) {
+    payloadStr += (char)payload[i];
   }
 
-  if (String(topic) == "esp32/screen") {
-    fanRelay.set(doc["fanOn"] | false);
-    ledRelay.set(doc["ledOn"] | false);
-    pumpRelay.set(doc["pumpOn"] | false);
+  Serial.print("[DEBUG] Payload nhận được: ");
+  Serial.println(payloadStr);
+
+  // Chỉ xử lý JSON nếu là topic "esp32/screen"
+  if (t == "esp32/screen") {
+    if (!payloadStr.startsWith("{")) {
+      reportError("❌ JSON lỗi: không parse được (không bắt đầu bằng '{')");
+      return;
+    }
+
+    StaticJsonDocument<256> doc;
+    DeserializationError err = deserializeJson(doc, payloadStr);
+    if (err) {
+      reportError("❌ JSON lỗi: không parse được");
+      return;
+    }
+
+    if (doc.containsKey("fanOn")) fanRelay.set(doc["fanOn"]);
+    if (doc.containsKey("ledOn")) ledRelay.set(doc["ledOn"]);
+    if (doc.containsKey("pumpOn")) pumpRelay.set(doc["pumpOn"]);
   }
+
+  // Bạn có thể thêm xử lý các topic khác nếu cần ở đây
 }
+
 
 
 void sendSensorData() {
   float t = tempSensor.getTemperature();
   if (isnan(t)) {
-    waterTemp = 0;
+    waterTemp = 10;
     reportError("DS18B20:no data");
   } else {
     waterTemp = t;
@@ -80,7 +99,7 @@ void sendSensorData() {
 
   char buffer[256];
   size_t len = serializeJson(doc, buffer, sizeof(buffer));
-  
+
   Serial.println("📤 Sending sensor data via MQTT:");
   Serial.println(buffer);
 
@@ -126,11 +145,6 @@ void setup() {
   if (!initCamera()) reportError("Camera:init fail");
 
   mqtt.begin(MQTT_HOST, MQTT_PORT, mqttCallback);
-  if (mqtt.isConnected()) {
-  Serial.println("✅ MQTT connected successfully");
-} else {
-  Serial.println("❌ MQTT connection failed");
-}
 
   mqtt.subscribe("esp32/screen");
 
@@ -152,4 +166,3 @@ void loop() {
 
   delay(50);
 }
-
