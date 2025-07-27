@@ -18,16 +18,20 @@ export class AppConfigService {
   }
 
   get typeOrmConfig(): TypeOrmModuleOptions {
-    return {
-      type: 'postgres',
-      url: this.config.get<string>('DB_URL'),
-      synchronize: this.config.get<boolean>('DB_SYNC'),
-      autoLoadEntities: true,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-    };
-  }
+  return {
+    type: 'postgres',
+    url: this.config.get<string>('DB_URL'),
+    synchronize: this.config.get<boolean>('DB_SYNC'),
+    autoLoadEntities: true,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+    extra: {
+      family: 4, // 👈 Buộc kết nối IPv4, tránh lỗi ENETUNREACH
+    },
+  };
+}
+
 
   // Cấu hình TypeORM
   // get typeOrmConfig(): TypeOrmModuleOptions {
