@@ -16,7 +16,7 @@ import { SensorReading } from './sensor-reading.entity';
 import { Decision } from './decision.entity';
 
 @Entity({ name: 'snapshots' })
-@Index('IDX_SNAPSHOT_CROP_TIME', ['cropInstanceId', 'timestamp'])
+@Index('IDX_SNAPSHOT_CROP_TIME', ['cropInstanceId', 'createdAt'])
 export class Snapshot {
   @PrimaryGeneratedColumn('increment')
   id: number;
@@ -31,9 +31,9 @@ export class Snapshot {
   @Column({ name: 'crop_instance_id', type: 'bigint' })
   cropInstanceId: number;
 
-  @CreateDateColumn({ name: 'timestamp', type: 'timestamp' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   @Index('IDX_SNAPSHOT_TIME')
-  timestamp: Date;
+  createdAt: Date;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;

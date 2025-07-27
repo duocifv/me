@@ -30,7 +30,7 @@ export function LoginSubmit() {
         if (last === "login") {
           router.replace(`/${segments[1]}`);
         }
-        setLogin(true);
+        setLogin();
         toast.success("Đăng nhập thành công", {
           duration: 5000,
           icon: <CheckCircle className="h-5 w-5 text-green-500" />,

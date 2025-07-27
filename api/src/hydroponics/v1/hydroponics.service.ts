@@ -151,7 +151,7 @@ export class HydroponicsService {
       .createQueryBuilder('snapshot')
       .leftJoinAndSelect('snapshot.images', 'image')
       .where('snapshot.cropInstanceId = :cropId', { cropId: crop.id })
-      .orderBy('snapshot.timestamp', 'DESC');
+      .orderBy('snapshot.createdAt', 'DESC');
 
     return paginate<Snapshot>(qb, {
       page,
@@ -214,7 +214,7 @@ export class HydroponicsService {
 
     const latest = await this.snapRepo.findOne({
       where: { cropInstanceId: crop.id },
-      order: { timestamp: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
     if (!latest) {
       throw new NotFoundException('Không tìm thấy snapshot gần nhất');

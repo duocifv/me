@@ -2,16 +2,17 @@
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
 
 import { MeDto } from "./dto/login.dto";
 import { api } from "../share/api/apiClient";
-import { immer } from "zustand/middleware/immer";
 
 export enum CaptchaStatus {
   Unchecked,
   Failed,
   Success,
 }
+
 export type CaptchaState = {
   status: CaptchaStatus;
   token?: string;
@@ -23,7 +24,7 @@ type AuthState = {
   captcha: CaptchaState;
   setUser: (user: MeDto | null) => void;
   setLogout: () => void;
-  setLogin: (is: boolean) => void;
+  setLogin: () => void;
   setCaptcha: (s: CaptchaState) => void;
 };
 
@@ -36,10 +37,12 @@ export const useAuthStore = create<AuthState>()(
         status: CaptchaStatus.Unchecked,
       },
       setUser: (user) => set({ user }),
-      setLogin: (isLoggedIn) => set({ isLoggedIn }),
+      setLogin: () => {
+        set({ isLoggedIn: true });
+      },
       setLogout: () => {
-        set({ user: null, isLoggedIn: null });
         api.storage.logout();
+        set({ isLoggedIn: false, user: null });
       },
       setCaptcha: (captcha) => set({ captcha }),
     })),

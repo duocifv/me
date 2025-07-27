@@ -21,23 +21,25 @@ export class ApiClient {
 
   storage = {
     is: loginState.isLoggedIn,
+    token: loginState.getToken,
     login: loginState.setLoggedIn,
     logout: loginState.clear,
   };
 
   /** Sets the current access token in memory */
   setToken(token: string): void {
-    this.accessToken = token;
+    // this.accessToken = token;
+    loginState.setLoggedIn(token);
   }
 
   /** Clears the current access token */
   clearToken(): void {
-    this.accessToken = null;
+    loginState.clear();
   }
 
   /** Checks if an access token is present */
   hasToken(): boolean {
-    return Boolean(this.accessToken);
+    return Boolean(this.storage.token());
   }
 
   redirectLogin(): void {
@@ -106,9 +108,9 @@ export class ApiClient {
     // if (process.env.NODE_ENV === "development") {
     //   console.log("AccessToken:", this.accessToken);
     // }
-    console.log("AccessToken:", this.accessToken);
-
-    if (this.accessToken && isTokenExpiringSoon(this.accessToken)) {
+    console.log("AccessToken:", this.storage.token());
+    const accessToken = this?.storage?.token();
+    if (accessToken && isTokenExpiringSoon(accessToken)) {
       await this.refreshToken();
     }
 
@@ -118,9 +120,7 @@ export class ApiClient {
     const mergedHeaders = {
       ...opts.headers,
       ...(fingerprint ? { "X-Device-Fingerprint": fingerprint } : {}),
-      ...(this.accessToken
-        ? { Authorization: `Bearer ${this.accessToken}` }
-        : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     };
 
     const { data, error, status } = await callApi<T>(method, url, {
@@ -174,7 +174,7 @@ export class ApiClient {
 
     // Share token state and methods
     Object.defineProperty(client, "accessToken", {
-      get: () => this.accessToken,
+      get: () => this.storage.token(),
       set: (val: string | null) => {
         this.accessToken = val;
       },

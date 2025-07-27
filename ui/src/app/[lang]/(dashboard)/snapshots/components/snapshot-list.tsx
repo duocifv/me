@@ -31,7 +31,7 @@ export default function SnapshotsListGallery() {
             <div className="h-40 w-full overflow-hidden">
               {snapshot.images.length > 0 ? (
                 <Picture
-                  src={`/uploads/esp32/${snapshot.images[0].filePath}`}
+                  src={snapshot.images[0].filePath}
                   className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                 />
               ) : (
@@ -58,7 +58,7 @@ export default function SnapshotsListGallery() {
               </div>
               <div className="mt-2 flex items-center text-sm text-gray-500">
                 <Clock className="h-4 w-4 mr-1" />
-                {format(new Date(snapshot.timestamp), "dd MMM yyyy, HH:mm")}
+                {format(new Date(snapshot.createdAt), "dd MMM yyyy, HH:mm")}
               </div>
             </div>
           </div>
