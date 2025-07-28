@@ -5,6 +5,9 @@ export class SendMqttDto {
   @ApiProperty({ description: 'Topic MQTT', example: 'esp32/screen' })
   topic: string;
 
-  @ApiProperty({ description: 'Nội dung message', example: 'Turn on the screen' })
+  @ApiProperty({
+    description: 'Nội dung message',
+    example: 'Turn on the screen',
+  })
   message: string;
 }

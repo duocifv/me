@@ -2,16 +2,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSnapshotDto {
-  @ApiProperty() id: number;
-  @ApiProperty() cropInstanceId: number;
-  @ApiProperty() createdAt: Date;
-  @ApiProperty() isActive: boolean;
-  @ApiProperty() waterTemp: number;
-  @ApiProperty() ambientTemp: number;
+  @ApiProperty() waterTemperature: number;
+  @ApiProperty() ambientTemperature: number;
   @ApiProperty() humidity: number;
-  @ApiProperty() ph: number;
-  @ApiProperty() ec: number;
-  @ApiProperty() orp: number;
-  @ApiProperty({ type: [Object] })
-  images: Array<{ id: number; snapshotId: number; filePath: string; size: number }>;
 }

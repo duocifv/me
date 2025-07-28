@@ -23,14 +23,10 @@ import { DeviceAuth } from 'src/shared/decorators/device-token.decorator';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import { DeviceService } from './device.service';
 import { ApiParam } from '@nestjs/swagger';
-import { UpdateDeviceConfigTask } from '../tasks/update-device-config.task';
 
 @Controller('device')
 export class DeviceController {
-  constructor(
-    private readonly deviceService: DeviceService,
-    private readonly cronTask: UpdateDeviceConfigTask,
-  ) {}
+  constructor(private readonly deviceService: DeviceService) {}
 
   /** Upsert config với version tự động tăng */
   @Post('config')

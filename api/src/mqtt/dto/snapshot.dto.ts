@@ -11,9 +11,15 @@ export class SnapshotDto {
   @ApiProperty({ example: 65, description: 'Độ ẩm môi trường (%)' })
   envHumidity: number;
 
-  @ApiProperty({ example: 'esp32-001', description: 'ID của thiết bị gửi dữ liệu' })
+  @ApiProperty({
+    example: 'esp32-001',
+    description: 'ID của thiết bị gửi dữ liệu',
+  })
   deviceId: string;
 
-  @ApiProperty({ example: 1722057555555, description: 'Thời điểm đo (timestamp UNIX ms)' })
+  @ApiProperty({
+    example: 1722057555555,
+    description: 'Thời điểm đo (timestamp UNIX ms)',
+  })
   timestamp: number;
 }

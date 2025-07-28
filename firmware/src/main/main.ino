@@ -5,7 +5,7 @@
 #include "expander_relay.h"
 #include "config.h"
 #include "ds18b20_module.h"
-#include "camera_module.h"  // Module chuẩn đã gom
+#include "camera_module.h"
 #include "led_indicator.h"
 
 WifiModule wifi(ssid, password);
@@ -16,7 +16,7 @@ ExpanderRelay ledRelay(1);
 ExpanderRelay pumpRelay(2);
 
 DS18B20Module tempSensor;
-CameraModule cameraModule;  // ✅ Sử dụng đúng kiểu đã định nghĩa
+CameraModule cameraModule; 
 LedIndicator led;
 
 float ambientTemp = 1, humidity = 1, waterTemp = 1;
@@ -39,7 +39,7 @@ bool initSensors() {
 }
 
 bool initCamera() {
-  return cameraModule.begin();  // ✅ Gọi đúng hàm begin() trong CameraModule
+  return cameraModule.begin(); 
 }
 
 void reportError(const char* msg) {
@@ -59,7 +59,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print("[DEBUG] Payload nhận được: ");
   Serial.println(payloadStr);
 
-  // Chỉ xử lý JSON nếu là topic "esp32/screen"
   if (t == "esp32/screen") {
     if (!payloadStr.startsWith("{")) {
       reportError("❌ JSON lỗi: không parse được (không bắt đầu bằng '{')");
@@ -78,7 +77,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     if (doc.containsKey("pumpOn")) pumpRelay.set(doc["pumpOn"]);
   }
 
-  // Bạn có thể thêm xử lý các topic khác nếu cần ở đây
 }
 
 

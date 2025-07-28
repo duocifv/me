@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { MqttService } from './mqtt.service';
 import { SendMqttDto } from './dto/send-mqtt.dto';
-import { AddImagesDto } from './dto/add-camera-image.dto';
 import { CreateSnapshotDto } from './dto/create-snapshot.dto';
-import { UpdateScreenDto } from './dto/screen.dto';
+import { AddCameraChunkDto } from './dto/add-camera-chunk.dto';
+import { UpdateControlDto } from './dto/control.dto';
 
 @ApiTags('MQTT')
 @Controller('mqtt')
@@ -20,67 +20,83 @@ export class MqttController {
     return { status: 'ok', topic: dto.topic, sent: dto.message };
   }
 
+  @Post('control')
+  @ApiOperation({ summary: 'Thiết bị gửi trạng thái control (relay)' })
+  @ApiBody({ type: UpdateControlDto })
+  controlState(@Body() dto: UpdateControlDto) {
+    this.mqttService['latestControl'] = dto;
+    const payload = JSON.stringify(dto);
+    console.log('payload', payload);
+    this.mqttService.publish('esp32/control', payload);
+    return { status: 'received' };
+  }
+
+  @Get('control')
+  @ApiOperation({ summary: 'Lấy trạng thái control từ cache' })
+  getControl() {
+    return this.mqttService.getLatestControl();
+  }
+
+  @Delete('control')
+  @ApiOperation({ summary: 'Xóa trạng thái control' })
+  clearControl() {
+    this.mqttService.clearLatestControl();
+    return { status: 'cleared control' };
+  }
+
   @Post('sensors')
   @ApiOperation({ summary: 'Thiết bị gửi sensor snapshots' })
   @ApiBody({ type: CreateSnapshotDto })
   sensorSnapshot(@Body() dto: CreateSnapshotDto) {
-    this.mqttService['latestSensor'] = dto; // hoặc dùng setter nếu bạn muốn rõ ràng hơn
+    this.mqttService['latestSensor'] = dto;
     return { status: 'received' };
   }
 
-  @Post('camera')
-  @ApiOperation({ summary: 'Thiết bị gửi camera images' })
-  @ApiBody({ type: AddImagesDto })
-  cameraImage(@Body() dto: AddImagesDto) {
-    this.mqttService['latestCamera'] = dto;
-    return { status: 'received' };
-  }
-
-  @Post('screen')
-  @ApiOperation({ summary: 'Thiết bị gửi trạng thái screen (relay)' })
-  @ApiBody({ type: UpdateScreenDto })
-  screenState(@Body() dto: UpdateScreenDto) {
-    this.mqttService['latestScreen'] = dto;
-    this.mqttService.publish('esp32/screen', dto); // publish nếu cần
-    return { status: 'received' };
-  }
-
-  @Get('cache/sensors')
+  @Get('sensors')
   @ApiOperation({ summary: 'Lấy cache sensor snapshot' })
   getSensor() {
     return this.mqttService.getLatestSensor();
   }
 
-  @Get('cache/camera')
-  @ApiOperation({ summary: 'Lấy cache camera images' })
-  getCamera() {
-    return this.mqttService.getLatestCamera();
-  }
-
-  @Get('cache/screen')
-  @ApiOperation({ summary: 'Lấy trạng thái screen từ cache' })
-  getScreen() {
-    return this.mqttService.getLatestScreen();
-  }
-
-  @Post('cache/clear/sensors')
+  @Delete('sensors')
   @ApiOperation({ summary: 'Xóa cache sensor' })
   clearSensor() {
     this.mqttService.clearLatestSensor();
     return { status: 'cleared sensor' };
   }
 
-  @Post('cache/clear/camera')
+  @Post('camera')
+  @ApiOperation({ summary: 'Thiết bị gửi từng phần ảnh base64' })
+  @ApiBody({ type: AddCameraChunkDto })
+  handleCameraChunk(@Body() dto: AddCameraChunkDto) {
+    return this.mqttService.handleImageChunk(dto);
+  }
+
+  @Get('camera')
+  @ApiOperation({ summary: 'Lấy cache camera images' })
+  getCamera() {
+    const data = this.mqttService.getLatestCamera();
+    console.log('📤 Client requested latest camera image:', data);
+    return data;
+  }
+
+  @Delete('camera')
   @ApiOperation({ summary: 'Xóa cache camera' })
   clearCamera() {
     this.mqttService.clearLatestCamera();
     return { status: 'cleared camera' };
   }
 
-  @Post('cache/clear/screen')
-  @ApiOperation({ summary: 'Xóa trạng thái screen' })
-  clearScreen() {
-    this.mqttService.clearLatestScreen();
-    return { status: 'cleared screen' };
+  @Get('errors')
+  @ApiOperation({ summary: 'Lấy lỗi gần nhất từ ESP32' })
+  getError() {
+    return this.mqttService.getLatestError();
+  }
+
+  @Delete('errors')
+  @ApiOperation({ summary: 'Xóa lỗi đã lưu từ ESP32' })
+  clearError() {
+    this.mqttService.clearLatestError();
+    return { status: 'cleared error' };
   }
 }

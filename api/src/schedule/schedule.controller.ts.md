@@ -11,17 +11,17 @@ import {
   Delete,
 } from '@nestjs/common';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
-import { DeviceService } from './device.service';
+import { DeviceService } from '../device/v1/device.service';
 import {
   DeviceScheduleDto,
   DeviceScheduleSchema,
-} from '../dto/device-schedule.dto';
-import { UpdateDeviceConfigTask } from '../tasks/update-device-config.task';
+} from './dto/device-schedule.dto';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { UpdateDeviceConfigTask } from './update-device-config.task';
 
 @ApiTags('Schedule')
 @Controller('device')
-export class DeviceScheduleController {
+export class ScheduleController {
   constructor(
     private readonly deviceService: DeviceService,
     private readonly cronTask: UpdateDeviceConfigTask,
