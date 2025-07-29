@@ -19,7 +19,6 @@ type DeviceConfigMap = {
   [deviceId: string]: DeviceState;
 };
 
-import CreateSettingsSubmit from "./dispatch/dispatch-settings-create";
 import {
   DeviceControlDto,
   DeviceControlSchema,

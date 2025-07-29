@@ -1,10 +1,7 @@
 "use client";
 
 import * as React from "react";
-// import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
 import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
-import { format } from "date-fns";
 import { Picture } from "@/components/share/picture/ui-picture";
 import { $t } from "@/app/lang";
 import { SnapshotPagination } from "./snapshot-pagination";
