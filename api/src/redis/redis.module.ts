@@ -1,5 +1,5 @@
 // src/redis/redis.module.ts
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { RedisService } from './redis.service';
 
@@ -11,6 +11,6 @@ import { RedisService } from './redis.service';
     }),
   ],
   providers: [RedisService],
-  exports: [RedisService],
+  exports: [RedisService, CacheModule],
 })
 export class RedisModule {}
