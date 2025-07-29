@@ -24,7 +24,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async keys(pattern = '*'): Promise<string[]> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return await this.client.keys(pattern); // ✅ Không còn warning
   }
 
