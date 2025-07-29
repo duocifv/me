@@ -1,4 +1,4 @@
-export class Esp32ErrorDto {
+export class ErrorDto {
   message: string;
   timestamp: number;
   deviceId?: string;

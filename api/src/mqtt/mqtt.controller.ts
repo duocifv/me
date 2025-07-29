@@ -30,8 +30,8 @@ export class MqttController {
 
   @Get('control')
   @ApiOperation({ summary: 'Lấy trạng thái control từ cache' })
-  getControl() {
-    return this.mqttService.getLatestControl();
+  async getControl() {
+    return await this.mqttService.getLatestControl();
   }
 
   @Delete('control')
@@ -45,14 +45,14 @@ export class MqttController {
   @ApiOperation({ summary: 'Thiết bị gửi sensor snapshots' })
   @ApiBody({ type: CreateSnapshotDto })
   sensorSnapshot(@Body() dto: CreateSnapshotDto) {
-    this.mqttService['latestSensor'] = dto;
+     this.mqttService['latestSensor'] = dto;
     return { status: 'received' };
   }
 
   @Get('sensors')
   @ApiOperation({ summary: 'Lấy cache sensor snapshot' })
-  getSensor() {
-    return this.mqttService.getLatestSensor();
+  async getSensor() {
+    return await this.mqttService.getLatestSensor();
   }
 
   @Delete('sensors')

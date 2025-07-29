@@ -3,9 +3,10 @@ import { DateTime } from 'luxon';
 import { DeviceScheduleDto } from './dto/device-schedule.dto';
 import { RedisService } from 'src/redis/redis.service';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
+import { MqttService } from 'src/mqtt/mqtt.service';
 
 type DeviceConfigState = Record<
-  'pump' | 'fan' | 'led' | 'sensor' | 'camera',
+  'pumpOn' | 'ledOn' | 'fanOn' | 'sensor' | 'camera',
   boolean
 >;
 
@@ -13,7 +14,10 @@ type DeviceConfigState = Record<
 export class ScheduleService {
   private latestConfig: Record<string, DeviceConfigState> = {};
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(
+    private readonly redis: RedisService,
+    private readonly mqtt: MqttService
+  ) {}
 
   private async getDeviceSchedules(
     deviceId: string,
@@ -102,10 +106,10 @@ export class ScheduleService {
       return;
     }
 
-    const activeStates: DeviceConfigState = {
-      pump: false,
-      fan: false,
-      led: false,
+    const activeStates = {
+      pumpOn: false,
+      ledOn: false,
+      fanOn: false,
       sensor: false,
       camera: false,
     };
@@ -145,6 +149,8 @@ export class ScheduleService {
       `[UPDATE] ${deviceId} - ${nowVN.toFormat('HH:mm')} →`,
       activeStates,
     );
+
+    await this.mqtt.handleControlCommand(activeStates);
   }
 
   getCurrentConfig(deviceId: string): DeviceConfigState | null {
