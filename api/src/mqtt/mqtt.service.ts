@@ -24,7 +24,7 @@ export class MqttService implements OnModuleInit {
   constructor(
     private readonly config: ConfigService,
     private readonly redis: RedisService,
-  ) { }
+  ) {}
 
   onModuleInit() {
     const protocol = this.config.get<'mqtt' | 'mqtts' | 'ws' | 'wss'>(
@@ -90,7 +90,6 @@ export class MqttService implements OnModuleInit {
     this.logger.warn(`Unknown topic: ${topic}`);
   }
 
-
   private async handleCamera(obj: any, msg: string) {
     this.logger.debug(`[esp32/camera] => ${msg}`);
     if (this.isValidChunk(obj)) {
@@ -100,7 +99,6 @@ export class MqttService implements OnModuleInit {
       }
     }
   }
-
 
   private async uploadToCloudinary(buffer: Buffer): Promise<string> {
     const result: UploadApiResponse = await new Promise((resolve, reject) => {
@@ -144,46 +142,45 @@ export class MqttService implements OnModuleInit {
     );
   }
 
- public async handleImageChunk(dto: AddCameraChunkDto) {
-  const { id, index, total, data } = dto;
+  public async handleImageChunk(dto: AddCameraChunkDto) {
+    const { id, index, total, data } = dto;
 
-  let cache = this.chunkCache.get(id);
+    let cache = this.chunkCache.get(id);
 
-  if (!cache || Date.now() - cache.ts > 120_000) {
-    cache = {
-      total,
-      received: Array(total).fill(''),
-      receivedCount: 0,
-      ts: Date.now(),
-    };
+    if (!cache || Date.now() - cache.ts > 120_000) {
+      cache = {
+        total,
+        received: Array(total).fill(''),
+        receivedCount: 0,
+        ts: Date.now(),
+      };
+    }
+
+    if (!cache.received[index]) {
+      cache.received[index] = data;
+      cache.receivedCount++;
+      cache.ts = Date.now();
+    }
+
+    // Đã nhận xong toàn bộ
+    if (cache.receivedCount === total) {
+      this.chunkCache.delete(id);
+      const full = cache.received.join('');
+      const buffer = Buffer.from(full, 'base64');
+      const url = await this.uploadToCloudinary(buffer);
+      await this.appendCameraImage(url, id);
+      this.logger.log(`📷 Full image received and uploaded: ${url}`);
+      return { status: 'image_complete', id, url };
+    } else {
+      this.chunkCache.set(id, cache);
+      return {
+        status: 'chunk_received',
+        id,
+        index,
+        progress: `${cache.receivedCount}/${total}`,
+      };
+    }
   }
-
-  if (!cache.received[index]) {
-    cache.received[index] = data;
-    cache.receivedCount++;
-    cache.ts = Date.now();
-  }
-
-  // Đã nhận xong toàn bộ
-  if (cache.receivedCount === total) {
-    this.chunkCache.delete(id);
-    const full = cache.received.join('');
-    const buffer = Buffer.from(full, 'base64');
-    const url = await this.uploadToCloudinary(buffer);
-    await this.appendCameraImage(url, id);
-    this.logger.log(`📷 Full image received and uploaded: ${url}`);
-    return { status: 'image_complete', id, url };
-  } else {
-    this.chunkCache.set(id, cache);
-    return {
-      status: 'chunk_received',
-      id,
-      index,
-      progress: `${cache.receivedCount}/${total}`,
-    };
-  }
-}
-
 
   publish(topic: string, message: string | object) {
     if (!this.client.connected) {

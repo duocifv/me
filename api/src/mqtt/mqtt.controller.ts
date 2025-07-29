@@ -45,7 +45,7 @@ export class MqttController {
   @ApiOperation({ summary: 'Thiết bị gửi sensor snapshots' })
   @ApiBody({ type: CreateSnapshotDto })
   sensorSnapshot(@Body() dto: CreateSnapshotDto) {
-     this.mqttService['latestSensor'] = dto;
+    this.mqttService['latestSensor'] = dto;
     return { status: 'received' };
   }
 

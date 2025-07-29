@@ -16,7 +16,7 @@ export class ScheduleService {
 
   constructor(
     private readonly redis: RedisService,
-    private readonly mqtt: MqttService
+    private readonly mqtt: MqttService,
   ) {}
 
   private async getDeviceSchedules(
