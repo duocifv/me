@@ -2,6 +2,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as mqtt from 'mqtt';
+import { RedisService } from 'src/redis/redis.service';
 import { CreateSnapshotDto } from './dto/create-snapshot.dto';
 import { AddCameraChunkDto, ChunkCache } from './dto/add-camera-chunk.dto';
 import { Esp32ErrorDto } from './dto/error.dto';
@@ -17,13 +18,10 @@ export class MqttService implements OnModuleInit {
   private readonly logger = new Logger(MqttService.name);
   private client: mqtt.MqttClient;
 
-  private latestSensor: CreateSnapshotDto | null = null;
-  private latestControl: UpdateControlDto | null = null;
-  private latestError: Esp32ErrorDto | null = null;
-  private latestCamera: AddImagesDto | null = null;
-  private chunkStore = new Map<number, ChunkCacheWithTimestamp>();
-
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly redis: RedisService,
+  ) {}
 
   onModuleInit() {
     const protocol = this.config.get<'mqtt' | 'mqtts' | 'ws' | 'wss'>(
@@ -45,7 +43,6 @@ export class MqttService implements OnModuleInit {
     this.client.on('connect', () => {
       this.logger.log(`MQTT connected to ${url}`);
       const topics = [
-        'esp32/response',
         'esp32/errors',
         'esp32/control',
         'esp32/sensors',
@@ -60,16 +57,17 @@ export class MqttService implements OnModuleInit {
       });
     });
 
-    this.client.on('message', (topic, payload) => {
-      this.processMessage(topic, payload.toString());
-    });
+    this.client.on(
+      'message',
+      (topic, payload) => void this.processMessage(topic, payload.toString()),
+    );
 
     this.client.on('error', (err) =>
       this.logger.error('MQTT error', err.message),
     );
   }
 
-  private processMessage(topic: string, msg: string) {
+  private async processMessage(topic: string, msg: string) {
     this.logger.debug(`Received [${topic}]: ${msg}`);
     let obj: any;
     try {
@@ -79,115 +77,90 @@ export class MqttService implements OnModuleInit {
     }
 
     switch (topic) {
-      case 'esp32/response':
-        this.handleResponse(obj);
-        break;
       case 'esp32/errors':
-        this.handleError(obj);
+        await this.redis.set('mqtt:latestError', obj);
+        this.logger.error(`ESP32 error saved to Redis: ${JSON.stringify(obj)}`);
         break;
+
       case 'esp32/control':
-        this.handleControl(obj);
+        await this.redis.set('mqtt:latestControl', obj);
+        this.logger.log(`Control state saved to Redis: ${JSON.stringify(obj)}`);
+        this.publish('esp32/control', 'Control command received');
         break;
+
       case 'esp32/sensors':
-        this.handleSensor(obj);
+        await this.redis.set('mqtt:latestSensor', obj);
+        this.logger.log(
+          `Sensor snapshot saved to Redis: ${JSON.stringify(obj)}`,
+        );
         break;
+
       case 'esp32/camera':
         this.logger.debug(`[esp32/camera] => ${msg}`);
-        if (
-          typeof obj === 'object' &&
-          typeof obj.id === 'number' &&
-          typeof obj.index === 'number' &&
-          typeof obj.total === 'number' &&
-          typeof obj.data === 'string'
-        ) {
-          const result = this.handleImageChunk(obj);
+        if (this.isValidChunk(obj)) {
+          const result = await this.handleImageChunk(obj);
           if (result.status === 'image_complete') {
             this.logger.log(`📷 Full image received (id=${obj.id})`);
           }
         }
         break;
+
       default:
         this.logger.warn(`Unknown topic: ${topic}`);
     }
   }
 
-  private handleResponse(data: any) {
-    this.logger.log(`Response: ${JSON.stringify(data)}`);
-  }
-
-  private handleError(data: Esp32ErrorDto) {
-    this.latestError = data;
-    this.logger.error(`ESP32 error: ${JSON.stringify(data)}`);
-  }
-
-  private handleControl(data: UpdateControlDto) {
-    this.latestControl = data;
-    this.logger.log(`Updated control state: ${JSON.stringify(data)}`);
-    this.publish('esp32/response', 'Control command received');
-  }
-
-  private handleSensor(data: CreateSnapshotDto) {
-    this.latestSensor = data;
-    this.logger.log(
-      `✅ Updated latest sensor snapshot: ${JSON.stringify(data)}`,
+  private isValidChunk(o: any): o is AddCameraChunkDto {
+    return (
+      typeof o === 'object' &&
+      typeof o.id === 'number' &&
+      typeof o.index === 'number' &&
+      typeof o.total === 'number' &&
+      typeof o.data === 'string'
     );
   }
 
-  private cleanupOldChunks() {
-    const now = Date.now();
-    for (const [id, cache] of this.chunkStore.entries()) {
-      if (now - cache.ts > 120_000) {
-        this.chunkStore.delete(id);
-        this.logger.warn(`⏳ Removed stale image chunks for id=${id}`);
-      }
-    }
-  }
-
-  handleImageChunk(dto: AddCameraChunkDto) {
+  public async handleImageChunk(dto: AddCameraChunkDto) {
     const { id, index, total, data } = dto;
+    const cacheKey = `mqtt:chunk:${id}`;
 
-    this.cleanupOldChunks();
-
-    if (!this.chunkStore.has(id)) {
-      this.chunkStore.set(id, {
+    // 1) Lấy cache từ Redis
+    let cache = await this.redis.get<ChunkCacheWithTimestamp>(cacheKey);
+    if (!cache || Date.now() - cache.ts > 120_000) {
+      cache = {
         total,
         received: Array(total).fill(''),
         receivedCount: 0,
         ts: Date.now(),
-      });
+      };
     }
 
-    const cache = this.chunkStore.get(id)!;
-
+    // 2) Cập nhật chunk
     if (!cache.received[index]) {
       cache.received[index] = data;
       cache.receivedCount++;
-      cache.ts = Date.now(); // ✅ cập nhật thời gian mỗi khi nhận chunk mới
+      cache.ts = Date.now();
     }
 
+    // 3) Nếu xong thì gộp, lưu kết quả và xóa cache
     if (cache.receivedCount === total) {
-      const fullBase64 = cache.received.join('');
-      this.chunkStore.delete(id);
-
-      this.latestCamera = {
+      await this.redis.del(cacheKey);
+      const full = cache.received.join('');
+      await this.redis.set('mqtt:latestCamera', {
         snapshotId: id,
-        images: [fullBase64],
-      };
-
-      this.logger.log(`✅ Full image base64 length: ${fullBase64.length}`);
-      this.logger.debug(
-        '✅ Ảnh đầy đủ nhận được: ' + fullBase64.substring(0, 100) + '...',
-      );
-
+        images: [full],
+      });
       return { status: 'image_complete', id };
+    } else {
+      // ngược lại lưu lại cache mới
+      await this.redis.set(cacheKey, cache);
+      return {
+        status: 'chunk_received',
+        id,
+        index,
+        progress: `${cache.receivedCount}/${total}`,
+      };
     }
-
-    return {
-      status: 'chunk_received',
-      id,
-      index,
-      progress: `${cache.receivedCount}/${cache.total}`,
-    };
   }
 
   publish(topic: string, message: string | object) {
@@ -195,42 +168,50 @@ export class MqttService implements OnModuleInit {
       this.logger.warn('MQTT not connected');
       return;
     }
-
     const payload =
       typeof message === 'string' ? message : JSON.stringify(message);
     this.client.publish(topic, payload);
     this.logger.log(`Published to ${topic}: ${payload}`);
   }
 
-  getLatestSensor(): CreateSnapshotDto | null {
-    return this.latestSensor;
+  // --- Redis-backed getters & clear ---
+  async getLatestSensor(): Promise<CreateSnapshotDto | null> {
+    return this.redis.get<CreateSnapshotDto>('mqtt:latestSensor');
   }
 
-  getLatestError(): Esp32ErrorDto | null {
-    return this.latestError;
+  async clearLatestSensor() {
+    await this.redis.del('mqtt:latestSensor');
+    return { success: true };
   }
 
-  getLatestCamera(): AddImagesDto | null {
-    return this.latestCamera;
+  async getLatestCamera(): Promise<AddImagesDto | null> {
+    return this.redis.get('mqtt:latestCamera');
   }
 
-  getLatestControl(): UpdateControlDto | null {
-    return this.latestControl;
+  async clearLatestCamera() {
+    await this.redis.del('mqtt:latestCamera');
+    return { success: true };
   }
 
-  clearLatestSensor(): void {
-    this.latestSensor = null;
+  async getLatestError(): Promise<Esp32ErrorDto | null> {
+    return this.redis.get<Esp32ErrorDto>('mqtt:latestError');
   }
 
-  clearLatestCamera(): void {
-    this.latestCamera = null;
+  async clearLatestError() {
+    await this.redis.del('mqtt:latestError');
+    return { success: true };
   }
 
-  clearLatestControl(): void {
-    this.latestControl = null;
+  async handleControlCommand(dto: UpdateControlDto): Promise<void> {
+    await this.redis.set('mqtt:latestControl', dto);
+    this.publish('esp32/control', dto);
   }
 
-  clearLatestError(): void {
-    this.latestError = null;
+  async getLatestControl(): Promise<UpdateControlDto | null> {
+    return this.redis.get<UpdateControlDto>('mqtt:latestControl');
+  }
+
+  async clearLatestControl(): Promise<void> {
+    await this.redis.del('mqtt:latestControl');
   }
 }

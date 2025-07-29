@@ -1,3 +1,5 @@
+"use client";
+
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 let cachedFingerprint: string | null = null;

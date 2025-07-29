@@ -4,35 +4,33 @@ import {
   HttpCode,
   Param,
   Post,
-  Req,
   Query,
-  NotFoundException,
   Put,
   Delete,
 } from '@nestjs/common';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
-import { DeviceService } from '../device/v1/device.service';
 import {
   DeviceScheduleDto,
   DeviceScheduleSchema,
 } from './dto/device-schedule.dto';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
-import { UpdateDeviceConfigTask } from './update-device-config.task';
+import { ScheduleService } from './schedule.service';
+import { CronTaskSchedule } from './schedule.task';
 
 @ApiTags('Schedule')
-@Controller('device')
+@Controller('schedule')
 export class ScheduleController {
   constructor(
-    private readonly deviceService: DeviceService,
-    private readonly cronTask: UpdateDeviceConfigTask,
+    private readonly scheduleService: ScheduleService,
+    private readonly cronTask: CronTaskSchedule,
   ) {}
 
-  @Get('schedule')
-  async getSchedules(@Req() req): Promise<DeviceScheduleDto[]> {
-    return this.deviceService.getSchedules(req.deviceId);
+  @Get()
+  async getSchedules() {
+    return await this.scheduleService.getSchedules();
   }
 
-  @Post(':deviceId/schedule')
+  @Post(':deviceId')
   @HttpCode(201)
   @ApiParam({
     name: 'deviceId',
@@ -41,40 +39,49 @@ export class ScheduleController {
   async createSchedule(
     @Param('deviceId') deviceId: string,
     @BodySchema(DeviceScheduleSchema) dto: DeviceScheduleDto,
-  ): Promise<{ success: true }> {
-    await this.deviceService.saveSchedule(deviceId, dto);
+  ) {
+    await this.scheduleService.saveSchedule(deviceId, dto);
     return { success: true };
   }
 
-  @Get(':deviceId/schedule/:id')
+  @Get(':deviceId')
   @ApiParam({
     name: 'deviceId',
     example: 'device-001',
   })
-  async getSchedule(
+  async getScheduleByDevice(
     @Param('deviceId') deviceId: string,
-    @Param('id') id: number,
-  ): Promise<DeviceScheduleDto> {
-    const result = await this.deviceService.getScheduleById(deviceId, id);
-    if (!result) throw new NotFoundException('Schedule not found');
-    return result;
+  ): Promise<DeviceScheduleDto[]> {
+    return await this.scheduleService.getScheduleByDevice(deviceId);
   }
 
-  @Put(':deviceId/schedule/:id')
+  @Get(':deviceId/:id')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
+  async getScheduleById(
+    @Param('deviceId') deviceId: string,
+    @Param('id') id: string,
+  ): Promise<DeviceScheduleDto> {
+    return await this.scheduleService.getScheduleById(deviceId, id);
+  }
+
+  @Put(':deviceId/:id')
   @ApiParam({
     name: 'deviceId',
     example: 'device-001',
   })
   async updateSchedule(
     @Param('deviceId') deviceId: string,
-    @Param('id') id: number,
+    @Param('id') id: string,
     @BodySchema(DeviceScheduleSchema) dto: DeviceScheduleDto,
-  ): Promise<{ success: true }> {
-    await this.deviceService.updateSchedule(deviceId, id, dto);
+  ) {
+    await this.scheduleService.updateSchedule(deviceId, id, dto);
     return { success: true };
   }
 
-  @Delete(':deviceId/schedule/:id')
+  @Delete(':deviceId/:id')
   @ApiParam({
     name: 'deviceId',
     example: 'device-001',
@@ -83,13 +90,18 @@ export class ScheduleController {
   async deleteSchedule(
     @Param('deviceId') deviceId: string,
     @Param('id') id: number,
-  ): Promise<void> {
-    await this.deviceService.deleteSchedule(deviceId, id);
+  ) {
+    await this.scheduleService.deleteSchedule(deviceId, id);
+  }
+
+  @Get('latest-config')
+  getLatestDeviceConfig() {
+    return this.scheduleService.getLatestConfig();
   }
 
   @Get('apply-schedule')
   async applyScheduleNow(@Query('id') id: string) {
-    await this.deviceService.applyScheduleAndUpdateConfig(id);
+    await this.scheduleService.applyScheduleAndUpdateConfig(id);
     return { success: true };
   }
 
