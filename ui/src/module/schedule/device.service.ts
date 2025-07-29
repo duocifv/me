@@ -1,42 +1,33 @@
 // src/adapter/schedule/device-schedule.service.ts
 import { api } from "../share/api/apiClient";
-import { ValidationError } from "../share/api/zod-error";
-import {
-  DeviceScheduleDto,
-  DeviceScheduleSchema,
-} from "./dto/device-schedule.dto";
+import { ScheduleItemDto } from "./dto/device-schedule.dto";
+import { ScheduleItem } from "./dto/schedule.type";
+import { UpdateScheduleDto } from "./dto/update-schedule.type";
 
 class DeviceScheduleService {
-  private device = api.group("device");
+  private device = api.group("schedule");
 
-  async getSchedules(): Promise<DeviceScheduleDto[]> {
-    return this.device.get<DeviceScheduleDto[]>(`schedule`);
+  async getSchedules(): Promise<ScheduleItem[]> {
+    return this.device.get<ScheduleItem[]>(`device-001`);
   }
 
-  async getSchedule(id: number): Promise<DeviceScheduleDto> {
-    return this.device.get<DeviceScheduleDto>(`schedule/${id}`);
+  async getSchedule(id: string): Promise<ScheduleItem> {
+    return this.device.get<ScheduleItem>(`device-001/${id}`);
   }
 
-  async createSchedule(dto: DeviceScheduleDto): Promise<DeviceScheduleDto> {
-    return this.device.post<DeviceScheduleDto>("device-001/schedule", dto);
+  async createSchedule(dto: ScheduleItemDto): Promise<{ success: true }> {
+    return this.device.post<{ success: true }>("device-001", dto);
   }
 
   async updateSchedule(
-    id: number,
-    dto: DeviceScheduleDto
-  ): Promise<DeviceScheduleDto> {
-    const { data, success, error } = DeviceScheduleSchema.safeParse(dto);
-    if (!success) {
-      throw new ValidationError(error);
-    }
-    return this.device.put<DeviceScheduleDto>(
-      `device-001/schedule/${id}`,
-      data
-    );
+    ids: string,
+    dto: UpdateScheduleDto
+  ): Promise<UpdateScheduleDto> {
+    return this.device.patch<UpdateScheduleDto>(`device-001/${ids}`, dto);
   }
 
-  async deleteSchedule(id: number): Promise<void> {
-    return this.device.delete<void>(`device-001/schedule/${id}`);
+  async deleteSchedule(id: string): Promise<void> {
+    return this.device.delete<void>(`device-001/${id}`);
   }
 }
 

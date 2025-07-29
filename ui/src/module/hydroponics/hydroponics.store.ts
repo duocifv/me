@@ -5,10 +5,13 @@ import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { CropInstance } from "./dto_/crop-instance.dto";
 import { Snapshot, SnapshotResponse } from "./dto/snapshot.dto";
+import { CameraSnapshot, SensorSnapshot } from "./dto/snap.dto";
 
 export interface HydroponicsState {
   cropInstances: CropInstance[];
   snapshots: SnapshotResponse;
+  sensors: SensorSnapshot | null;
+  camera: CameraSnapshot | null;
   selectedSnapshot: Snapshot | null;
   selectedCropInstanceId: number | null;
   filters: {
@@ -18,6 +21,8 @@ export interface HydroponicsState {
   setFilters: (filters: { page: number; limit: number }) => void;
   setCropInstances: (data: CropInstance[]) => void;
   setSnapshots: (data: SnapshotResponse) => void;
+  setSensors: (sensors: SensorSnapshot) => void;
+  setCamera: (camera: CameraSnapshot) => void;
   setSelectedCropInstanceId: (id: number | null) => void;
   setSelectedSnapshotById: (id: number | null) => void;
   removeSnapshot: (id: number) => void;
@@ -27,6 +32,8 @@ export const useHydroponicsStore = create<HydroponicsState>()(
   devtools(
     immer((set, get) => ({
       cropInstances: [],
+      sensors: null,
+      camera: null,
       filters: {
         page: 1,
         limit: 30,
@@ -46,6 +53,8 @@ export const useHydroponicsStore = create<HydroponicsState>()(
 
       setFilters: (filters) => set({ filters }),
       setCropInstances: (data) => set({ cropInstances: data }),
+      setSensors: (sensors) => set({ sensors }),
+      setCamera: (camera) => set({ camera }),
       setSnapshots: (data) => set({ snapshots: data }),
       setSelectedCropInstanceId: (id) => set({ selectedCropInstanceId: id }),
       setSelectedSnapshotById: (id) => {

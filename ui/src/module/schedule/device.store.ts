@@ -3,13 +3,13 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import { DeviceScheduleDto } from "./dto/device-schedule.dto";
+import { ScheduleItem } from "./dto/schedule.type";
 
 export interface DeviceConfigState {
-  data: DeviceScheduleDto[];
-  item: DeviceScheduleDto | null;
-  setData: (data: DeviceScheduleDto[]) => void;
-  updateItem: (item: DeviceScheduleDto | null) => void;
+  data: ScheduleItem[];
+  item: ScheduleItem | null;
+  setData: (data: ScheduleItem[]) => void;
+  updateItem: (item: ScheduleItem | null) => void;
 }
 
 export const useDeviceScheduleStore = create<DeviceConfigState>()(

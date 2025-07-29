@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import { CronSchedule } from './schedule.task';
+import { CronTaskSchedule } from './schedule.task';
 import { ScheduleController } from './schedule.controller';
 import { ScheduleService } from './schedule.service';
+import { RedisService } from 'src/redis/redis.service';
 
 @Module({
   imports: [ScheduleModule.forRoot()],
   controllers: [ScheduleController],
-  providers: [ScheduleService, CronSchedule],
+  providers: [ScheduleService, CronTaskSchedule, RedisService],
 })
-export class DeviceModule {}
+export class ScheduleTaskModule {}

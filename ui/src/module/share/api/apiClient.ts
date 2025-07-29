@@ -1,3 +1,4 @@
+"use client";
 import type { HttpMethod, ApiOpts } from "./types";
 import { callApi } from "./callApi";
 import { ApiError, errorHandler } from "./errorHandler";

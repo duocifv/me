@@ -10,20 +10,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash } from "lucide-react";
-import { useDeleteDeviceScheduleMutation } from "@adapter/schedule/device.hook.";
+import { CheckCircle, Trash } from "lucide-react";
+import { useDeleteDeviceScheduleMutation } from "@/module/schedule/device.hook";
 
 // 💥 Nút xóa có xác nhận
-export function ScheduleButtonDelete({ id }: { id: number }) {
+export function ScheduleButtonDelete({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
   const deleteSchedule = useDeleteDeviceScheduleMutation();
 
   const confirmDelete = () => {
     deleteSchedule.mutate(id, {
       onSuccess: () => {
-        toast.success("Đã xóa lịch thành công");
+        toast.success("Đã xóa lịch thành công", {
+          duration: 5000,
+          icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+        });
         setOpen(false);
       },
+
       onError: () => toast.error("Xóa thất bại"),
     });
   };

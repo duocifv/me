@@ -1,20 +1,21 @@
 import { z } from 'zod';
 
+export const TimeRangeSchema = z.object({
+  start: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, 'Start time must be in HH:MM format'),
+  end: z.string().regex(/^\d{2}:\d{2}$/, 'End time must be in HH:MM format'),
+});
+
 export const DeviceScheduleSchema = z.object({
-  pumpOn: z.boolean(),
-  fanOn: z.boolean(),
-  ledOn: z.boolean(),
-
-  startTime: z.string().regex(/^\d{2}:\d{2}$/), // "HH:mm"
-  endTime: z.string().regex(/^\d{2}:\d{2}$/), // "HH:mm"
-
-  // Danh sách các ngày trong tuần: 0 (CN) -> 6 (T7)
-  repeatOn: z
-    .array(z.number().int().min(0).max(6))
-    .default([0, 1, 2, 3, 4, 5, 6]),
-
-  // Có bật lịch này không
+  device: z.enum(['pump', 'fan', 'led', 'sensor', 'camera']),
+  times: z.array(TimeRangeSchema).min(1),
+  repeatOn: z.array(z.number().min(0).max(6)).min(1),
   isEnabled: z.boolean().default(true),
 });
 
-export type DeviceScheduleDto = z.infer<typeof DeviceScheduleSchema>;
+// Loại dữ liệu DTO
+export type DeviceScheduleDto = z.infer<typeof DeviceScheduleSchema> & {
+  id?: string;
+  createdAt?: Date;
+};

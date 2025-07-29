@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import isEqual from "lodash/isEqual";
-import { useDeviceScheduleQuery } from "@adapter/schedule/device.hook.";
+import { useDeviceScheduleQuery } from "@/module/schedule/device.hook";
 import { useDeviceScheduleStore } from "@adapter/schedule/device.store";
 
 export default function ScheduleSyncData() {

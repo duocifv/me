@@ -13,11 +13,11 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormWrapper } from "@adapter/share/components/FormWrapper";
-import {
-  DeviceScheduleDto,
-  DeviceScheduleSchema,
-} from "@adapter/schedule/dto/device-schedule.dto";
 import CreateScheduleSubmit from "../dispatch/dispatch-schedule-create";
+import {
+  ScheduleItemDto,
+  ScheduleItemSchema,
+} from "@/module/schedule/dto/device-schedule.dto";
 
 const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
@@ -34,21 +34,23 @@ export default function ScheduleAdd() {
           <DialogTitle>Thêm lịch thiết bị</DialogTitle>
         </DialogHeader>
 
-        <FormWrapper<DeviceScheduleDto>
-          schema={DeviceScheduleSchema}
+        <FormWrapper<ScheduleItemDto>
+          schema={ScheduleItemSchema}
           defaultValues={{
-            pumpOn: false,
-            fanOn: false,
-            ledOn: false,
-            startTime: "00:00",
-            endTime: "00:00",
-            repeatOn: [],
+            device: "sensor",
+            times: [
+              {
+                start: "08:00",
+                end: "09:00",
+              },
+            ],
+            repeatOn: [6],
             isEnabled: true,
           }}
         >
           {(form) => {
-            const repeatOn = form.watch("repeatOn") ?? [];
-
+            const repeatOnRaw = form.watch("repeatOn") ?? [];
+            const repeatOn = repeatOnRaw.map((d) => Number(d)) as number[];
             const toggleDay = (day: number) => {
               const next = repeatOn.includes(day)
                 ? repeatOn.filter((d) => d !== day)
@@ -56,61 +58,68 @@ export default function ScheduleAdd() {
               form.setValue("repeatOn", next);
             };
 
+            const times = form.watch("times") ?? [];
+
+            const addTime = () => {
+              form.setValue("times", [...times, { start: "", end: "" }]);
+            };
+
+            const removeTime = (index: number) => {
+              const updated = [...times];
+              updated.splice(index, 1);
+              form.setValue("times", updated);
+            };
+
             return (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="mb-1 block text-sm font-medium">
                       Tên thiết bị
                     </Label>
-                    <Input
-                      type="text"
-                      {...form.register("deviceId")}
-                      defaultValue="device-001"
-                    />
-                  </div>
-                </div>
-                {/* Bơm / Quạt / Đèn */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Label className="flex items-center gap-2 text-sm">
-                    <Switch {...form.register("pumpOn")} />
-                    Bơm
-                  </Label>
-                  <Label className="flex items-center gap-2 text-sm">
-                    <Switch {...form.register("fanOn")} />
-                    Quạt
-                  </Label>
-                  <Label className="flex items-center gap-2 text-sm">
-                    <Switch {...form.register("ledOn")} />
-                    Đèn
-                  </Label>
-                </div>
-
-                {/* Giờ bắt đầu / kết thúc */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="mb-1 block text-sm">Giờ bắt đầu</Label>
-                    <Input type="time" {...form.register("startTime")} />
-                    {form.formState.errors.startTime && (
-                      <p className="text-red-500 mt-1 text-xs">
-                        {form.formState.errors.startTime.message}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="mb-1 block text-sm">Giờ kết thúc</Label>
-                    <Input type="time" {...form.register("endTime")} />
-                    {form.formState.errors.endTime && (
-                      <p className="text-red-500 mt-1 text-xs">
-                        {form.formState.errors.endTime.message}
+                    <Input type="text" {...form.register("device")} />
+                    {form.formState.errors && (
+                      <p className="text-red-500 text-sm">
+                        {form.formState.errors.device?.message}
                       </p>
                     )}
                   </div>
                 </div>
-
-                {/* Lặp lại vào */}
                 <div>
-                  <Label className="block mb-2 text-sm">Lặp lại vào</Label>
+                  {times.map((time, i) => (
+                    <div key={i} className="grid grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <Label className="mb-1 block text-sm font-medium">
+                          Giờ bắt đầu
+                        </Label>
+                        <Input
+                          type="time"
+                          {...form.register(`times.${i}.start`)}
+                          placeholder="Start"
+                        />
+                      </div>
+                      <div>
+                        <Label className="mb-1 block text-sm font-medium">
+                          Giờ kết thúc
+                        </Label>
+                        <Input
+                          type="time"
+                          {...form.register(`times.${i}.end`)}
+                        />
+                      </div>
+                      <button onClick={() => removeTime(i)}>X</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={addTime}>
+                    + Add Time
+                  </button>
+                </div>
+
+                {/* Ngày lặp lại */}
+                <div>
+                  <Label className="block mb-2 text-sm font-medium">
+                    Lặp lại vào
+                  </Label>
                   <div className="flex flex-wrap gap-2">
                     {weekdays.map((day, index) => (
                       <Button
@@ -120,27 +129,32 @@ export default function ScheduleAdd() {
                           repeatOn.includes(index) ? "default" : "outline"
                         }
                         onClick={() => toggleDay(index)}
+                        className="rounded-full px-3"
                       >
                         {day}
                       </Button>
                     ))}
                   </div>
                   {form.formState.errors.repeatOn && (
-                    <p className="text-red-500 mt-2 text-sm">
+                    <p className="text-sm text-red-500 mt-1">
                       {form.formState.errors.repeatOn.message}
                     </p>
                   )}
                 </div>
 
-                {/* Kích hoạt lịch */}
+                {/* Kích hoạt */}
                 <div className="flex items-center gap-2">
-                  <Switch {...form.register("isEnabled")} />
+                  <Switch
+                    checked={form.watch("isEnabled")}
+                    onCheckedChange={(v) => form.setValue("isEnabled", v)}
+                  />
                   <Label className="text-sm text-muted-foreground">
                     Kích hoạt lịch
                   </Label>
                 </div>
 
-                <DialogFooter>
+                {/* Footer */}
+                <DialogFooter className="pt-4 flex justify-end gap-2">
                   <DialogClose asChild>
                     <Button variant="outline">Huỷ</Button>
                   </DialogClose>

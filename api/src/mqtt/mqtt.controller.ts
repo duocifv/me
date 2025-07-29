@@ -23,11 +23,8 @@ export class MqttController {
   @Post('control')
   @ApiOperation({ summary: 'Thiết bị gửi trạng thái control (relay)' })
   @ApiBody({ type: UpdateControlDto })
-  controlState(@Body() dto: UpdateControlDto) {
-    this.mqttService['latestControl'] = dto;
-    const payload = JSON.stringify(dto);
-    console.log('payload', payload);
-    this.mqttService.publish('esp32/control', payload);
+  async controlState(@Body() dto: UpdateControlDto) {
+    await this.mqttService.handleControlCommand(dto);
     return { status: 'received' };
   }
 
@@ -39,9 +36,9 @@ export class MqttController {
 
   @Delete('control')
   @ApiOperation({ summary: 'Xóa trạng thái control' })
-  clearControl() {
-    this.mqttService.clearLatestControl();
-    return { status: 'cleared control' };
+  async clearControl() {
+    await this.mqttService.clearLatestControl();
+    return { status: 'cleared' };
   }
 
   @Post('sensors')
@@ -60,43 +57,39 @@ export class MqttController {
 
   @Delete('sensors')
   @ApiOperation({ summary: 'Xóa cache sensor' })
-  clearSensor() {
-    this.mqttService.clearLatestSensor();
+  async clearSensor() {
+    await this.mqttService.clearLatestSensor();
     return { status: 'cleared sensor' };
   }
 
   @Post('camera')
   @ApiOperation({ summary: 'Thiết bị gửi từng phần ảnh base64' })
   @ApiBody({ type: AddCameraChunkDto })
-  handleCameraChunk(@Body() dto: AddCameraChunkDto) {
-    return this.mqttService.handleImageChunk(dto);
+  async handleCameraChunk(@Body() dto: AddCameraChunkDto) {
+    return await this.mqttService.handleImageChunk(dto);
   }
 
   @Get('camera')
   @ApiOperation({ summary: 'Lấy cache camera images' })
-  getCamera() {
-    const data = this.mqttService.getLatestCamera();
-    console.log('📤 Client requested latest camera image:', data);
-    return data;
+  async getCamera() {
+    return await this.mqttService.getLatestCamera();
   }
 
   @Delete('camera')
   @ApiOperation({ summary: 'Xóa cache camera' })
-  clearCamera() {
-    this.mqttService.clearLatestCamera();
-    return { status: 'cleared camera' };
+  async clearCamera() {
+    return await this.mqttService.clearLatestCamera();
   }
 
   @Get('errors')
   @ApiOperation({ summary: 'Lấy lỗi gần nhất từ ESP32' })
-  getError() {
-    return this.mqttService.getLatestError();
+  async getError() {
+    return await this.mqttService.getLatestError();
   }
 
   @Delete('errors')
   @ApiOperation({ summary: 'Xóa lỗi đã lưu từ ESP32' })
-  clearError() {
-    this.mqttService.clearLatestError();
-    return { status: 'cleared error' };
+  async clearError() {
+    return await this.mqttService.clearLatestError();
   }
 }

@@ -6,16 +6,11 @@ import { DeviceService } from './v1/device.service';
 import { DeviceConfigEntity } from './entities/device-config.entity';
 import { DeviceErrorEntity } from './entities/device-error.entity';
 import { DeviceController } from './v1/device.controller';
-import { DeviceScheduleEntity } from '../schedule/entities/device-schedule.entity';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    TypeOrmModule.forFeature([
-      DeviceConfigEntity,
-      DeviceErrorEntity,
-      DeviceScheduleEntity,
-    ]),
+    TypeOrmModule.forFeature([DeviceConfigEntity, DeviceErrorEntity]),
   ],
   controllers: [DeviceController],
   providers: [DeviceService],

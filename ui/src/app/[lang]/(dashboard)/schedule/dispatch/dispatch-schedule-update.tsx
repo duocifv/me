@@ -2,13 +2,17 @@ import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { throttle } from "lodash";
 import { useRef } from "react";
-import { useUpdateDeviceScheduleMutation } from "@adapter/schedule/device.hook.";
+import { useUpdateDeviceScheduleMutation } from "@/module/schedule/device.hook";
 import { Button } from "@/components/ui/button";
 import { FormSubmit } from "@adapter/share/type/form";
-import { DeviceScheduleDto } from "@adapter/schedule/dto/device-schedule.dto";
-export default function UpdateScheduleSubmit(
-  form: FormSubmit<DeviceScheduleDto>
-) {
+import { UpdateScheduleDto } from "@/module/schedule/dto/update-schedule.dto";
+
+type Props = {
+  id: string;
+  form: FormSubmit<UpdateScheduleDto>;
+};
+
+export default function UpdateScheduleSubmit({ id, form }: Props) {
   const { mutate, isPending } = useUpdateDeviceScheduleMutation();
 
   const throttledSubmit = useRef(
@@ -18,7 +22,7 @@ export default function UpdateScheduleSubmit(
         form.handleSubmit((dto) => {
           mutate(
             {
-              id: dto.id as number,
+              id,
               dto,
             },
             {

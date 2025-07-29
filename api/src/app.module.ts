@@ -30,6 +30,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { HydroponicsModule } from './hydroponics/hydroponics.module';
 import { DeviceModule } from './device/device.module';
 import { MqttModule } from './mqtt/mqtt.module';
+import { ScheduleTaskModule } from './schedule/schedule.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { MqttModule } from './mqtt/mqtt.module';
     MailModule,
     HydroponicsModule,
     DeviceModule,
+    ScheduleTaskModule,
     // SettingsModule,
     // DashboardModule,
     // NotificationModule,

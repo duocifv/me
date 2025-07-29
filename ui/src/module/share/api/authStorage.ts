@@ -1,3 +1,4 @@
+"use client";
 /*
  * loginState.ts
  * Utility methods for persisting the user's login status in localStorage

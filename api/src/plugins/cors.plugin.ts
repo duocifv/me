@@ -17,7 +17,7 @@ export const corsConfig: FastifyCorsOptions = {
       cb(new Error('Not allowed by CORS'), false);
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: [
     'Authorization',
     'Content-Type',
