@@ -70,7 +70,7 @@ export class MqttService implements OnModuleInit {
     );
   }
 
-  private async processMessage(topic: string, msg: string) {
+  private processMessage(topic: string, msg: string) {
     this.logger.debug(`Received [${topic}]: ${msg}`);
     let obj: any;
     try {
@@ -85,8 +85,8 @@ export class MqttService implements OnModuleInit {
       'esp32/camera': () => this.handleCamera(obj, msg),
     };
 
-    const handler = handlerMap[topic];
-    if (handler) return handler();
+    const handler = handlerMap[topic] as () => void | Promise<void>;
+    if (handler) return handler(); // topic hợp lệ
     this.logger.warn(`Unknown topic: ${topic}`);
   }
 
