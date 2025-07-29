@@ -1,9 +1,5 @@
 "use client";
 import { FormWrapper } from "@adapter/share/components/FormWrapper";
-import {
-  DeviceScheduleDto,
-  DeviceScheduleSchema,
-} from "@adapter/schedule/dto/device-schedule.dto";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +14,10 @@ import {
 } from "@/components/ui/dialog";
 import { useDeviceScheduleStore } from "@adapter/schedule/device.store";
 import UpdateScheduleSubmit from "../dispatch/dispatch-schedule-update";
+import {
+  UpdateScheduleDto,
+  UpdateScheduleSchema,
+} from "@/module/schedule/dto/update-schedule.dto";
 
 const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
@@ -33,8 +33,8 @@ export function ScheduleUpdate() {
         </DialogHeader>
 
         {item && (
-          <FormWrapper<DeviceScheduleDto>
-            schema={DeviceScheduleSchema}
+          <FormWrapper<UpdateScheduleDto>
+            schema={UpdateScheduleSchema}
             defaultValues={item}
           >
             {(form) => {
@@ -47,56 +47,56 @@ export function ScheduleUpdate() {
                 form.setValue("repeatOn", next);
               };
 
+              const times = form.watch("times") ?? [];
+
+              const addTime = () => {
+                form.setValue("times", [...times, { start: "", end: "" }]);
+              };
+
+              const removeTime = (index: number) => {
+                const updated = [...times];
+                updated.splice(index, 1);
+                form.setValue("times", updated);
+              };
+
               return (
                 <div className="space-y-4">
                   {/* Thời gian */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="mb-1 block text-sm font-medium">
-                        Tên thiết bị
+                      <Label className="mb-1 block text-2xl font-black">
+                        {item.device}
                       </Label>
-                      <Input type="text" {...form.register("deviceId")} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Label className="flex items-center gap-2 text-sm">
-                      <Switch
-                        checked={form.watch("pumpOn")}
-                        onCheckedChange={(v) => form.setValue("pumpOn", v)}
-                      />
-                      Bơm
-                    </Label>
-
-                    <Label className="flex items-center gap-2 text-sm">
-                      <Switch
-                        checked={form.watch("fanOn")}
-                        onCheckedChange={(v) => form.setValue("fanOn", v)}
-                      />
-                      Quạt
-                    </Label>
-
-                    <Label className="flex items-center gap-2 text-sm">
-                      <Switch
-                        checked={form.watch("ledOn")}
-                        onCheckedChange={(v) => form.setValue("ledOn", v)}
-                      />
-                      Đèn
-                    </Label>
-                  </div>
-                  {/* Thời gian */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="mb-1 block text-sm font-medium">
-                        Giờ bắt đầu
-                      </Label>
-                      <Input type="time" {...form.register("startTime")} />
-                    </div>
-                    <div>
-                      <Label className="mb-1 block text-sm font-medium">
-                        Giờ kết thúc
-                      </Label>
-                      <Input type="time" {...form.register("endTime")} />
-                    </div>
+                  <div>
+                    {times.map((time, i) => (
+                      <div key={i} className="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <Label className="mb-1 block text-sm font-medium">
+                            Giờ bắt đầu
+                          </Label>
+                          <Input
+                            type="time"
+                            {...form.register(`times.${i}.start`)}
+                            placeholder="Start"
+                          />
+                        </div>
+                        <div>
+                          <Label className="mb-1 block text-sm font-medium">
+                            Giờ kết thúc
+                          </Label>
+                          <Input
+                            type="time"
+                            {...form.register(`times.${i}.end`)}
+                          />
+                        </div>
+                        <button onClick={() => removeTime(i)}>X</button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={addTime}>
+                      + Add Time
+                    </button>
                   </div>
 
                   {/* Ngày lặp lại */}
@@ -142,7 +142,7 @@ export function ScheduleUpdate() {
                     <DialogClose asChild>
                       <Button variant="outline">Huỷ</Button>
                     </DialogClose>
-                    <UpdateScheduleSubmit {...form} />
+                    <UpdateScheduleSubmit id={item.id} form={form} />
                   </DialogFooter>
                 </div>
               );

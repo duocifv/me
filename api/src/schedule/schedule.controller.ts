@@ -5,8 +5,8 @@ import {
   Param,
   Post,
   Query,
-  Put,
   Delete,
+  Patch,
 } from '@nestjs/common';
 import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import {
@@ -16,6 +16,10 @@ import {
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { ScheduleService } from './schedule.service';
 import { CronTaskSchedule } from './schedule.task';
+import {
+  UpdateScheduleDto,
+  UpdateScheduleSchema,
+} from './dto/update-schedule.dto';
 
 @ApiTags('Schedule')
 @Controller('schedule')
@@ -67,7 +71,7 @@ export class ScheduleController {
     return await this.scheduleService.getScheduleById(deviceId, id);
   }
 
-  @Put(':deviceId/:id')
+  @Patch(':deviceId/:id')
   @ApiParam({
     name: 'deviceId',
     example: 'device-001',
@@ -75,9 +79,23 @@ export class ScheduleController {
   async updateSchedule(
     @Param('deviceId') deviceId: string,
     @Param('id') id: string,
-    @BodySchema(DeviceScheduleSchema) dto: DeviceScheduleDto,
+    @BodySchema(UpdateScheduleSchema) dto: UpdateScheduleDto,
   ) {
     await this.scheduleService.updateSchedule(deviceId, id, dto);
+    return { success: true };
+  }
+
+  @Patch(':deviceId/device/:device')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
+  async updateScheduleByDevice(
+    @Param('deviceId') deviceId: string,
+    @Param('device') device: string,
+    @BodySchema(UpdateScheduleSchema) dto: UpdateScheduleDto,
+  ) {
+    await this.scheduleService.updateScheduleByDevice(deviceId, device, dto);
     return { success: true };
   }
 

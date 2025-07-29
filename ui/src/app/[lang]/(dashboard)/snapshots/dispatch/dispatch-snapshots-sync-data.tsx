@@ -1,31 +1,42 @@
 "use client";
 import { useEffect } from "react";
 import isEqual from "lodash/isEqual";
-import { useSnapshotsQuery } from "@adapter/hydroponics/hydroponics.hook.";
+import {
+  useCameraQuery,
+  useSensorsQuery,
+} from "@adapter/hydroponics/hydroponics.hook.";
 import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
 
 export default function SnapshotsSyncData() {
-  const { page, limit } = useHydroponicsStore((s) => s.filters);
-  const {
-    isLoading,
-    error,
-    isSuccess,
-    data: snapshots,
-  } = useSnapshotsQuery(page, limit);
+  const cameraData = useCameraQuery();
+  const sensorData = useSensorsQuery();
+
   useEffect(() => {
-    if (isSuccess && snapshots) {
-      const storeData = useHydroponicsStore.getState().snapshots;
-      if (!isEqual(storeData, snapshots)) {
-        useHydroponicsStore.setState({ snapshots });
+    if (cameraData.isSuccess && cameraData) {
+      const storeCamera = useHydroponicsStore.getState().camera;
+      if (!isEqual(storeCamera, cameraData.data)) {
+        useHydroponicsStore.setState({ camera: cameraData.data });
       }
     }
-  }, [snapshots, isSuccess]);
+    if (sensorData.isSuccess && sensorData) {
+      const storeSensors = useHydroponicsStore.getState().sensors;
+      if (!isEqual(storeSensors, sensorData.data)) {
+        useHydroponicsStore.setState({ sensors: sensorData.data });
+      }
+    }
+  }, [cameraData, sensorData]);
 
-  if (isLoading) {
-    return <>Loading…</>;
+  if (cameraData.isLoading) {
+    return <>Camera Loading…</>;
   }
-  if (error) {
-    return <>Error… {error.message}</>;
+  if (sensorData.isLoading) {
+    return <>Sensor Loading…</>;
+  }
+  if (cameraData.error) {
+    return <>Error… {cameraData.error.message}</>;
+  }
+  if (sensorData.error) {
+    return <>Error… {sensorData.error.message}</>;
   }
 
   return null;

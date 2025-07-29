@@ -1,22 +1,22 @@
 import { api } from "../share/api/apiClient";
-import { CreateDeviceConfigDto } from "./dto/create-device-config.dto";
-import { DeviceErrorEntity } from "./dto/report-device-error.dto";
+import { DeviceControlDto } from "./dto/device-control.dto";
+import { LatestConfig, SensorMessage } from "./dto/latest-config.type";
 
 class DeviceConfigService {
-  private device = api.group("device");
+  private device = api.group("");
 
-  async getByConfig(deviceId = "device-001"): Promise<CreateDeviceConfigDto> {
-    return this.device.get<CreateDeviceConfigDto>(`config/${deviceId}`);
+
+  async getByConfig(): Promise<LatestConfig> {
+    return this.device.get<LatestConfig>(`schedule/latest-config`);
   }
 
-  async createByConfig(
-    dto: CreateDeviceConfigDto
-  ): Promise<CreateDeviceConfigDto> {
-    return this.device.post<CreateDeviceConfigDto>("config", dto);
+  
+  async createByConfig(dto: DeviceControlDto): Promise<DeviceControlDto> {
+    return this.device.post<DeviceControlDto>("config", dto);
   }
 
-  async getError(deviceId = "device-001"): Promise<DeviceErrorEntity[]> {
-    return this.device.get<DeviceErrorEntity[]>(`error/${deviceId}`);
+  async getError(): Promise<SensorMessage> {
+    return this.device.get<SensorMessage>(`mqtt/errors`);
   }
 }
 

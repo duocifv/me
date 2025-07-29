@@ -18,6 +18,32 @@ export function useCropInstancesQuery() {
   });
 }
 
+export function useCameraQuery() {
+  const setCamera = useHydroponicsStore((s) => s.setCamera);
+
+  return useQuery({
+    queryKey: ["camera", "device-001"],
+    queryFn: async () => {
+      const data = await hydroponicsService.getCamera();
+      setCamera(data);
+      return data;
+    },
+  });
+}
+
+export function useSensorsQuery() {
+  const setSensors = useHydroponicsStore((s) => s.setSensors);
+
+  return useQuery({
+    queryKey: ["sensors", "device-001"],
+    queryFn: async () => {
+      const data = await hydroponicsService.getSensors();
+      setSensors(data);
+      return data;
+    },
+  });
+}
+
 export function useSnapshotsQuery(page = 1, limit = 10) {
   const setSnapshots = useHydroponicsStore((s) => s.setSnapshots);
 

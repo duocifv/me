@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { deviceScheduleService } from "./device.service";
-import { DeviceScheduleDto } from "./dto/device-schedule.dto";
+import { UpdateScheduleDto } from "./dto/update-schedule.type";
+import { ScheduleItemDto } from "./dto/device-schedule.dto";
 
 // Lấy toàn bộ lịch
 export function useDeviceScheduleQuery() {
@@ -13,7 +14,7 @@ export function useDeviceScheduleQuery() {
 }
 
 // Lấy 1 lịch theo ID
-export function useDeviceScheduleDetailQuery(id: number) {
+export function useDeviceScheduleDetailQuery(id: string) {
   return useQuery({
     queryKey: ["deviceSchedule", id],
     queryFn: () => deviceScheduleService.getSchedule(id),
@@ -25,7 +26,7 @@ export function useDeviceScheduleDetailQuery(id: number) {
 export function useCreateDeviceScheduleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dto: DeviceScheduleDto) =>
+    mutationFn: (dto: ScheduleItemDto) =>
       deviceScheduleService.createSchedule(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deviceSchedule"] });
@@ -37,7 +38,7 @@ export function useCreateDeviceScheduleMutation() {
 export function useUpdateDeviceScheduleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, dto }: { id: number; dto: DeviceScheduleDto }) =>
+    mutationFn: ({ id, dto }: { id: string; dto: UpdateScheduleDto }) =>
       deviceScheduleService.updateSchedule(id, dto),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["deviceSchedule"] });
@@ -52,7 +53,7 @@ export function useUpdateDeviceScheduleMutation() {
 export function useDeleteDeviceScheduleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deviceScheduleService.deleteSchedule(id),
+    mutationFn: (id: string) => deviceScheduleService.deleteSchedule(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deviceSchedule"] });
     },

@@ -4,11 +4,11 @@ import { FormSubmit } from "@adapter/share/type/form";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { throttle } from "lodash";
-import { DeviceScheduleDto } from "@adapter/schedule/dto/device-schedule.dto";
-import { useCreateDeviceScheduleMutation } from "@adapter/schedule/device.hook.";
+import { useCreateDeviceScheduleMutation } from "@/module/schedule/device.hook";
+import { ScheduleItemDto } from "@/module/schedule/dto/device-schedule.dto";
 
 export default function CreateScheduleSubmit(
-  form: FormSubmit<DeviceScheduleDto>
+  form: FormSubmit<ScheduleItemDto>
 ) {
   const { mutate, isPending } = useCreateDeviceScheduleMutation();
 

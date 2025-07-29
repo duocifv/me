@@ -1,11 +1,13 @@
-// src/device/device.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DateTime } from 'luxon';
-import {
-  DeviceConfigState,
-  DeviceScheduleDto,
-} from './dto/device-schedule.dto';
+import { DeviceScheduleDto } from './dto/device-schedule.dto';
 import { RedisService } from 'src/redis/redis.service';
+import { UpdateScheduleDto } from './dto/update-schedule.dto';
+
+type DeviceConfigState = Record<
+  'pump' | 'fan' | 'led' | 'sensor' | 'camera',
+  boolean
+>;
 
 @Injectable()
 export class ScheduleService {
@@ -30,28 +32,18 @@ export class ScheduleService {
 
   async saveSchedule(deviceId: string, dto: DeviceScheduleDto): Promise<void> {
     const schedules = await this.getDeviceSchedules(deviceId);
-    schedules.push({
-      ...dto,
-      id: String(Date.now()),
-      createdAt: new Date(),
-    });
+    schedules.push({ ...dto, id: String(Date.now()) });
     await this.saveDeviceSchedules(deviceId, schedules);
   }
 
   async getSchedules(): Promise<Record<string, DeviceScheduleDto[]>> {
     const result: Record<string, DeviceScheduleDto[]> = {};
-
-    // Lấy danh sách key theo pattern
-    const keys = await this.redis.keys('schedule:*'); // ví dụ: schedule:device1, schedule:device2
-
+    const keys = await this.redis.keys('schedule:*');
     for (const key of keys) {
       const deviceId = key.replace('schedule:', '');
       const schedule = await this.redis.get<DeviceScheduleDto[]>(key);
-      if (schedule) {
-        result[deviceId] = schedule;
-      }
+      if (schedule) result[deviceId] = schedule;
     }
-
     return result;
   }
 
@@ -64,16 +56,27 @@ export class ScheduleService {
     id: string,
   ): Promise<DeviceScheduleDto> {
     const schedules = await this.getDeviceSchedules(deviceId);
-    console.log('schedules', schedules, id);
     const found = schedules.find((s) => String(s.id) === String(id));
     if (!found) throw new NotFoundException('Schedule not found');
     return found;
   }
 
+  async updateScheduleByDevice(
+    deviceId: string,
+    device: string,
+    dto: UpdateScheduleDto,
+  ): Promise<void> {
+    const schedules = await this.getDeviceSchedules(deviceId);
+    const index = schedules.findIndex((s) => s.device === device);
+    if (index === -1) throw new NotFoundException('Schedule device not found');
+    schedules[index] = { ...schedules[index], ...dto };
+    await this.saveDeviceSchedules(deviceId, schedules);
+  }
+
   async updateSchedule(
     deviceId: string,
     id: string,
-    dto: DeviceScheduleDto,
+    dto: UpdateScheduleDto,
   ): Promise<void> {
     const schedules = await this.getDeviceSchedules(deviceId);
     const index = schedules.findIndex((s) => String(s.id) === String(id));
@@ -91,61 +94,57 @@ export class ScheduleService {
   async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
     const nowVN = DateTime.now().setZone('Asia/Ho_Chi_Minh');
     const nowMin = nowVN.hour * 60 + nowVN.minute;
-
-    // Chuyển về từ 0 (Chủ Nhật) đến 6 (Thứ Bảy)
     const today = nowVN.weekday % 7;
 
     const schedules = await this.getDeviceSchedules(deviceId);
     if (!schedules.length) {
-      console.warn(`[WARN] Không có lịch nào cho thiết bị ${deviceId}`);
+      console.warn(`[WARN] No schedules for ${deviceId}`);
       return;
     }
 
-    const state: DeviceConfigState = {
-      pumpOn: false,
-      fanOn: false,
-      ledOn: false,
+    const activeStates: DeviceConfigState = {
+      pump: false,
+      fan: false,
+      led: false,
       sensor: false,
       camera: false,
     };
 
-    for (const s of schedules) {
-      if (!s.isEnabled) continue;
+    for (const schedule of schedules) {
+      if (!schedule.isEnabled) continue;
+      if (!schedule.repeatOn.includes(today)) continue;
 
-      const days = Array.isArray(s.repeatOn) ? s.repeatOn.map(Number) : [];
+      for (const time of schedule.times) {
+        const [sh, sm] = time.start.split(':').map(Number);
+        const [eh, em] = time.end.split(':').map(Number);
+        const start = sh * 60 + sm;
+        const end = eh * 60 + em;
 
-      if (!days.includes(today)) continue;
-      if (!s.startTime || !s.endTime) continue;
+        const isActive =
+          start <= end
+            ? nowMin >= start && nowMin < end
+            : nowMin >= start || nowMin < end;
 
-      const [sh, sm] = s.startTime.split(':').map(Number);
-      const [eh, em] = s.endTime.split(':').map(Number);
-      const start = sh * 60 + sm;
-      const end = eh * 60 + em;
-
-      const isActive =
-        start <= end
-          ? nowMin >= start && nowMin < end
-          : nowMin >= start || nowMin < end;
-
-      if (isActive) {
-        state.pumpOn ||= s.pumpOn;
-        state.fanOn ||= s.fanOn;
-        state.ledOn ||= s.ledOn;
-        state.sensor ||= s.sensor;
-        state.camera ||= s.camera;
+        if (isActive) {
+          activeStates[schedule.device] = true;
+          break; // Không cần kiểm tra thêm times của cùng device
+        }
       }
     }
 
-    const allOff = Object.values(state).every((v) => !v);
+    const allOff = Object.values(activeStates).every((v) => !v);
     if (allOff) {
       console.log(
-        `[SKIP] ${deviceId} - ${nowVN.toFormat('HH:mm')} không có thiết bị nào bật`,
+        `[SKIP] ${deviceId} - ${nowVN.toFormat('HH:mm')} no devices ON`,
       );
       return;
     }
 
-    this.latestConfig[deviceId] = state;
-    console.log(`[UPDATE] ${deviceId} - ${nowVN.toFormat('HH:mm')} →`, state);
+    this.latestConfig[deviceId] = activeStates;
+    console.log(
+      `[UPDATE] ${deviceId} - ${nowVN.toFormat('HH:mm')} →`,
+      activeStates,
+    );
   }
 
   getCurrentConfig(deviceId: string): DeviceConfigState | null {

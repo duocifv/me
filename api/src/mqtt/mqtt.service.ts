@@ -8,6 +8,8 @@ import { AddCameraChunkDto, ChunkCache } from './dto/add-camera-chunk.dto';
 import { Esp32ErrorDto } from './dto/error.dto';
 import { AddImagesDto } from './dto/add-camera-image.dto';
 import { UpdateControlDto } from './dto/control.dto';
+import cloudinary from 'src/plugins/media/cloudinary.provider';
+import { UploadApiResponse } from 'cloudinary';
 
 interface ChunkCacheWithTimestamp extends ChunkCache {
   ts: number;
@@ -110,6 +112,38 @@ export class MqttService implements OnModuleInit {
     }
   }
 
+  private async uploadToCloudinary(buffer: Buffer): Promise<string> {
+    const result: UploadApiResponse = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: 'media',
+            resource_type: 'image',
+          },
+          (error, result) => {
+            if (error)
+              reject(new Error(error.message || 'Cloudinary upload failed'));
+            else resolve(result as UploadApiResponse);
+          },
+        )
+        .end(buffer);
+    });
+
+    return result.secure_url;
+  }
+
+  private async appendCameraImage(url: string, id: number): Promise<void> {
+    const prev = await this.redis.get<{
+      images: { id: number; url: string }[];
+    }>('mqtt:latestCamera');
+
+    const updated = {
+      images: [...(prev?.images || []), { id, url }],
+    };
+
+    await this.redis.set('mqtt:latestCamera', updated);
+  }
+
   private isValidChunk(o: any): o is AddCameraChunkDto {
     return (
       typeof o === 'object' &&
@@ -146,11 +180,13 @@ export class MqttService implements OnModuleInit {
     if (cache.receivedCount === total) {
       await this.redis.del(cacheKey);
       const full = cache.received.join('');
-      await this.redis.set('mqtt:latestCamera', {
-        snapshotId: id,
-        images: [full],
-      });
-      return { status: 'image_complete', id };
+      const buffer = Buffer.from(full, 'base64');
+      const url = await this.uploadToCloudinary(buffer);
+
+      await this.appendCameraImage(url, id);
+      this.logger.log(`📷 Full image received and uploaded: ${url}`);
+
+      return { status: 'image_complete', id, url };
     } else {
       // ngược lại lưu lại cache mới
       await this.redis.set(cacheKey, cache);
