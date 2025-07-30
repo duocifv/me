@@ -1,21 +1,29 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { DeviceScheduleDto } from './dto/device-schedule.dto';
 import { RedisService } from 'src/redis/redis.service';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { MqttService } from 'src/mqtt/mqtt.service';
-
-type DeviceConfigState = Record<
-  'pumpOn' | 'ledOn' | 'fanOn' | 'sensor' | 'camera',
-  boolean
->;
+import { UpdateControlDto } from 'src/mqtt/dto/control.dto';
 
 @Injectable()
 export class ScheduleService {
-  private latestConfig: Record<string, DeviceConfigState> = {};
+  private latestConfig: UpdateControlDto = {
+    pumpOn: false,
+    ledOn: false,
+    fanOn: false,
+    sensor: false,
+    camera: false,
+  };
 
   constructor(
     private readonly redis: RedisService,
+    @Inject(forwardRef(() => MqttService))
     private readonly mqtt: MqttService,
   ) {}
 
@@ -51,7 +59,7 @@ export class ScheduleService {
     return result;
   }
 
-  getLatestConfig(): Record<string, DeviceConfigState> {
+  getLatestConfig(): UpdateControlDto {
     return this.latestConfig;
   }
 
@@ -144,17 +152,23 @@ export class ScheduleService {
       return;
     }
 
-    this.latestConfig[deviceId] = activeStates;
+    const prev = this.latestConfig;
+    const isChanged =
+      !prev ||
+      Object.keys(activeStates).some((key) => activeStates[key] !== prev[key]);
+
+    if (!isChanged) {
+      console.log(`[SKIP] ${deviceId} - ${nowVN.toFormat('HH:mm')} unchanged`);
+      return;
+    }
+
+    this.latestConfig = activeStates;
     console.log(
       `[UPDATE] ${deviceId} - ${nowVN.toFormat('HH:mm')} →`,
       activeStates,
     );
 
     await this.mqtt.handleControlCommand(activeStates);
-  }
-
-  getCurrentConfig(deviceId: string): DeviceConfigState | null {
-    return this.latestConfig[deviceId] ?? null;
   }
 
   async getScheduleByDevice(deviceId: string): Promise<DeviceScheduleDto[]> {

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { $t } from "@/app/lang";
 
 // Khai báo type
-type DeviceName = "pump" | "fan" | "led" | "sensor" | "camera";
+type DeviceName = "pumpOn" | "fanOn" | "ledOn" | "sensor" | "camera";
 
 type DeviceState = {
   [key in DeviceName]: boolean;
@@ -26,9 +26,9 @@ import {
 import { useDeviceScheduleQuery } from "@/module/schedule/device.hook";
 
 const labelMap: Record<DeviceName, string> = {
-  pump: $t`Bơm`,
-  fan: $t`Quạt`,
-  led: $t`Đèn LED`,
+  pumpOn: $t`Bơm`,
+  fanOn: $t`Quạt`,
+  ledOn: $t`Đèn LED`,
   sensor: $t`Cảm biến`,
   camera: $t`Camera`,
 };
@@ -38,9 +38,9 @@ export default function SettingsPage() {
   if (!isSuccess || !data) return;
   const response: DeviceConfigMap = {
     "device-001": {
-      pump: true,
-      fan: true,
-      led: false,
+      pumpOn: true,
+      fanOn: true,
+      ledOn: false,
       sensor: true,
       camera: false,
     },

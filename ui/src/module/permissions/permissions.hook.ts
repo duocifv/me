@@ -21,7 +21,13 @@ export function usePermissions(user_role: Permissions[]) {
     if (result.isSuccess && shouldFetch) {
       setPermissions(result?.data);
     }
-  }, [result.data, result.isSuccess, permissions]);
+  }, [
+    result?.data,
+    result.isSuccess,
+    permissions,
+    shouldFetch,
+    setPermissions,
+  ]);
 
   const permissionsList = initPermissionMap(result.data ?? [], user_role);
 

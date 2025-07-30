@@ -8,7 +8,7 @@ export const TimeRangeSchema = z.object({
 });
 
 export const DeviceScheduleSchema = z.object({
-  device: z.enum(['pump', 'fan', 'led', 'sensor', 'camera']),
+  device: z.enum(['pumpOn', 'fanOn', 'ledOn', 'sensor', 'camera']),
   times: z.array(TimeRangeSchema).min(1),
   repeatOn: z.array(z.number().min(0).max(6)).min(1),
   isEnabled: z.boolean().default(true),

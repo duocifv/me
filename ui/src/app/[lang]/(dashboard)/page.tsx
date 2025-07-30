@@ -3,16 +3,13 @@
 import { SiteHeader } from "@/components/site-header";
 import HydroponicsSyncData from "./snapshots/dispatch/dispatch-snapshots-sync-data";
 import PlantTypeSyncData from "./plant-type/dispatch/dispatch-plant-type-sync-data";
-import CropInstancesSyncData from "./hydroponics/dispatch/dispatch-crop-instances-sync-data";
 import dynamic from "next/dynamic";
 import AppLoading from "./components/app-loading";
+import SnapshotsSyncData from "./snapshots/dispatch/dispatch-snapshots-sync-data";
 
-const SectionCards = dynamic(
-  () => import("./snapshots/components/section-cards"),
-  {
-    loading: () => <AppLoading />,
-  }
-);
+const SectionCards = dynamic(() => import("./components/section-cards"), {
+  loading: () => <AppLoading />,
+});
 
 const SnapsortCarousel = dynamic(
   () => import("./snapshots/components/snapshots-carousel"),
@@ -45,7 +42,8 @@ const DashboardDecision = dynamic(
 export default function Page() {
   return (
     <div>
-      <CropInstancesSyncData />
+      <SnapshotsSyncData />
+      {/* <CropInstancesSyncData /> */}
       <HydroponicsSyncData />
       <PlantTypeSyncData />
       <SiteHeader value="Dashboard" />

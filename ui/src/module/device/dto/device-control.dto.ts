@@ -1,9 +1,9 @@
 import { z } from "zod";
 export const DeviceControlSchema = z.object({
   deviceId: z.string(),
-  pump: z.boolean().optional(),
-  fan: z.boolean().optional(),
-  led: z.boolean().optional(),
+  pumpOn: z.boolean().optional(),
+  fanOn: z.boolean().optional(),
+  ledOn: z.boolean().optional(),
   sensor: z.boolean().optional(),
   camera: z.boolean().optional(),
 });

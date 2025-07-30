@@ -8,7 +8,8 @@ export type LatestConfig = {
   [deviceId: string]: DeviceState;
 };
 
-export type SensorMessage = {
-  message: string;
-  timestamp: number;
+export type ErrorsDto = {
+  message: string | undefined;
+  time: string;
+  deviceId?: string;
 };

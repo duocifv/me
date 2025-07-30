@@ -9,7 +9,9 @@ import { ErrorDto } from './dto/error.dto';
 import { AddImagesDto } from './dto/add-camera-image.dto';
 import { UpdateControlDto } from './dto/control.dto';
 import cloudinary from 'src/plugins/media/cloudinary.provider';
-import { UploadApiResponse } from 'cloudinary';
+import { ScheduleService } from 'src/schedule/schedule.service';
+import { nanoid } from 'nanoid';
+import { timeNowISO } from 'src/shared/utils/time';
 
 interface ChunkCacheWithTimestamp extends ChunkCache {
   ts: number;
@@ -24,6 +26,7 @@ export class MqttService implements OnModuleInit {
   constructor(
     private readonly config: ConfigService,
     private readonly redis: RedisService,
+    private readonly scheduleService: ScheduleService,
   ) {}
 
   onModuleInit() {
@@ -47,6 +50,7 @@ export class MqttService implements OnModuleInit {
       this.logger.log(`MQTT connected to ${url}`);
       const topics = [
         'esp32/errors',
+        'esp32/health',
         'esp32/control',
         'esp32/sensors',
         'esp32/camera',
@@ -80,6 +84,7 @@ export class MqttService implements OnModuleInit {
     }
 
     const handlerMap = {
+      'esp32/health': () => this.handleHealth(obj),
       'esp32/errors': () => this.setLatestError(obj),
       'esp32/sensors': () => this.setLatestSensor(obj),
       'esp32/camera': () => this.handleCamera(obj, msg),
@@ -88,6 +93,12 @@ export class MqttService implements OnModuleInit {
     const handler = handlerMap[topic] as () => void | Promise<void>;
     if (handler) return handler(); // topic hợp lệ
     this.logger.warn(`Unknown topic: ${topic}`);
+  }
+
+  async handleHealth(obj: any) {
+    const dto = this.scheduleService.getLatestConfig();
+    console.log('obj handleHealth', obj, dto);
+    await this.handleControlCommand(dto);
   }
 
   private async handleCamera(obj: any, msg: string) {
@@ -100,33 +111,41 @@ export class MqttService implements OnModuleInit {
     }
   }
 
-  private async uploadToCloudinary(buffer: Buffer): Promise<string> {
-    const result: UploadApiResponse = await new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          {
-            folder: 'media',
-            resource_type: 'image',
-          },
-          (error, result) => {
-            if (error)
-              reject(new Error(error.message || 'Cloudinary upload failed'));
-            else resolve(result as UploadApiResponse);
-          },
-        )
-        .end(buffer);
-    });
+  private async uploadToCloudinary(buffer: Buffer): Promise<string | null> {
+    return new Promise((resolve) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'media',
+          resource_type: 'image',
+        },
+        (error, result) => {
+          if (error) {
+            console.error('[Cloudinary] Upload error:', error.message);
+            resolve(null); // Không throw, chỉ trả về null
+          } else {
+            resolve(result?.secure_url || null);
+          }
+        },
+      );
 
-    return result.secure_url;
+      uploadStream.end(buffer);
+    });
   }
 
-  private async appendCameraImage(url: string, id: number): Promise<void> {
+  private async appendCameraImage(url: string): Promise<void> {
     const prev = await this.redis.get<{
-      images: { id: number; url: string }[];
+      images: { id: number; url: string; time: string }[];
     }>('mqtt:latestCamera');
 
     const updated = {
-      images: [...(prev?.images || []), { id, url }],
+      images: [
+        ...(prev?.images || []),
+        {
+          id: nanoid(8),
+          url,
+          time: timeNowISO(),
+        },
+      ],
     };
 
     await this.redis.set('mqtt:latestCamera', updated);
@@ -147,6 +166,7 @@ export class MqttService implements OnModuleInit {
 
     let cache = this.chunkCache.get(id);
 
+    // Nếu không có cache hoặc cache quá cũ (hơn 2 phút), tạo mới
     if (!cache || Date.now() - cache.ts > 120_000) {
       cache = {
         total,
@@ -156,30 +176,43 @@ export class MqttService implements OnModuleInit {
       };
     }
 
+    // Nếu chunk tại vị trí index chưa được nhận thì cập nhật
     if (!cache.received[index]) {
       cache.received[index] = data;
       cache.receivedCount++;
       cache.ts = Date.now();
     }
 
-    // Đã nhận xong toàn bộ
+    // Đã nhận đủ toàn bộ chunks
     if (cache.receivedCount === total) {
       this.chunkCache.delete(id);
-      const full = cache.received.join('');
-      const buffer = Buffer.from(full, 'base64');
+      const fullBase64 = cache.received.join('');
+      const buffer = Buffer.from(fullBase64, 'base64');
+
       const url = await this.uploadToCloudinary(buffer);
-      await this.appendCameraImage(url, id);
+      if (url) {
+        await this.appendCameraImage(url);
+      } else {
+        this.logger.error(`❌ Upload failed, cannot append image: ${id}`);
+        return { status: 'upload_failed', id };
+      }
       this.logger.log(`📷 Full image received and uploaded: ${url}`);
-      return { status: 'image_complete', id, url };
-    } else {
-      this.chunkCache.set(id, cache);
+
       return {
-        status: 'chunk_received',
+        status: 'image_complete',
         id,
-        index,
-        progress: `${cache.receivedCount}/${total}`,
+        url,
       };
     }
+
+    // Chưa nhận đủ, lưu lại cache tạm thời
+    this.chunkCache.set(id, cache);
+    return {
+      status: 'chunk_received',
+      id,
+      index,
+      progress: `${cache.receivedCount}/${total}`,
+    };
   }
 
   publish(topic: string, message: string | object) {
@@ -199,8 +232,15 @@ export class MqttService implements OnModuleInit {
   }
 
   async setLatestSensor(dto: CreateSnapshotDto) {
-    await this.redis.set('mqtt:latestSensor', dto);
-    this.logger.log(`Sensor snapshot saved to Redis: ${JSON.stringify(dto)}`);
+    const dataWithTime = {
+      ...dto,
+      time: timeNowISO(),
+    };
+
+    await this.redis.set('mqtt:latestSensor', dataWithTime);
+    this.logger.log(
+      `Sensor snapshot saved to Redis: ${JSON.stringify(dataWithTime)}`,
+    );
   }
 
   async clearLatestSensor() {
@@ -217,13 +257,24 @@ export class MqttService implements OnModuleInit {
     return { success: true };
   }
 
-  async getLatestError(): Promise<ErrorDto | null> {
-    return this.redis.get<ErrorDto>('mqtt:latestError');
+  async getLatestError(): Promise<ErrorDto[]> {
+    return (await this.redis.get<ErrorDto[]>('mqtt:latestError')) ?? [];
   }
 
   async setLatestError(dto: ErrorDto) {
-    await this.redis.set('mqtt:latestError', dto);
-    this.logger.error(`ESP32 error saved to Redis: ${JSON.stringify(dto)}`);
+    const prev = await this.redis.get<ErrorDto[]>('mqtt:latestError');
+    const history = Array.isArray(prev) ? prev : [];
+
+    const updatedDto = {
+      ...dto,
+      time: timeNowISO(),
+    };
+
+    const updated = [updatedDto, ...history];
+    const limited = updated.slice(0, 10);
+
+    await this.redis.set('mqtt:latestError', limited);
+    this.logger.error(`ESP32 error saved to Redis: ${JSON.stringify(limited)}`);
   }
 
   async clearLatestError() {

@@ -1,6 +1,7 @@
 export interface CameraImage {
-  id: string | number;
+  id: string;
   url: string;
+  time: string; // ISO 8601
 }
 
 export interface CameraSnapshot {
@@ -11,4 +12,5 @@ export interface SensorSnapshot {
   waterTemperature: number;
   ambientTemperature: number;
   humidity: number;
+  time: string;
 }

@@ -1,5 +1,5 @@
 export class ErrorDto {
   message: string;
-  timestamp: number;
+  time?: string;
   deviceId?: string;
 }

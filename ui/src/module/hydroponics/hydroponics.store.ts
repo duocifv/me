@@ -10,7 +10,7 @@ import { CameraSnapshot, SensorSnapshot } from "./dto/snap.dto";
 export interface HydroponicsState {
   cropInstances: CropInstance[];
   snapshots: SnapshotResponse;
-  sensors: SensorSnapshot | null;
+  sensors: SensorSnapshot;
   camera: CameraSnapshot | null;
   selectedSnapshot: Snapshot | null;
   selectedCropInstanceId: number | null;
@@ -32,7 +32,12 @@ export const useHydroponicsStore = create<HydroponicsState>()(
   devtools(
     immer((set, get) => ({
       cropInstances: [],
-      sensors: null,
+      sensors: {
+        waterTemperature: 0,
+        ambientTemperature: 0,
+        humidity: 0,
+        time: "",
+      },
       camera: null,
       filters: {
         page: 1,

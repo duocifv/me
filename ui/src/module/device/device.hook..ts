@@ -21,7 +21,6 @@ export function useUpdateConfigScheduleMutation() {
       deviceScheduleService.updateSchedule(id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deviceConfig"] });
-     
     },
   });
 }
@@ -30,6 +29,13 @@ export function useDeviceErrorQuery() {
   return useQuery({
     queryKey: ["deviceError"],
     queryFn: () => deviceConfigService.getError(),
+  });
+}
+
+export function useSensorsQuery() {
+  return useQuery({
+    queryKey: ["sensors"],
+    queryFn: () => deviceConfigService.getSensors(),
   });
 }
 
