@@ -24,7 +24,7 @@
 
 class CameraModule {
 public:
-  bool begin(framesize_t size = FRAMESIZE_QVGA) {
+  bool begin(framesize_t size = FRAMESIZE_VGA) {
     camera_config_t config;
     config.ledc_channel = LEDC_CHANNEL_0;
     config.ledc_timer   = LEDC_TIMER_0;
@@ -49,7 +49,7 @@ public:
 
     if(psramFound()) {
       config.frame_size = size;
-      config.jpeg_quality = 15;
+      config.jpeg_quality = 12;
       config.fb_count = 2;
     } else {
       config.frame_size = FRAMESIZE_QQVGA;
@@ -65,8 +65,13 @@ public:
 
     sensor_t *s = esp_camera_sensor_get();
     s->set_vflip(s, 1);  // Lật dọc (nếu ảnh bị ngược)
-    s->set_brightness(s, 1); // Tăng độ sáng
-    s->set_contrast(s, 1);   // Tăng độ tương phản
+    s->set_brightness(s, 2); // Tăng độ sáng
+    s->set_contrast(s, 2);   // Tăng độ tương phản
+    s->set_whitebal(s, 1);     // Bật Auto White Balance
+    s->set_saturation(s, 1);   // Tăng độ bão hòa màu
+    s->set_gain_ctrl(s, 1);    // Bật Auto Gain Control
+    s->set_exposure_ctrl(s, 1); // Bật Auto Exposure
+    s->set_colorbar(s, 0);     // Tắt chế độ test màu (nếu bật)
 
     Serial.println("✅ Camera initialized");
     return true;

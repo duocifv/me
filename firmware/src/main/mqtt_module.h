@@ -45,11 +45,11 @@ public:
             client.loop();
 
             // Tự động gửi ping mỗi pingInterval ms
-            if (now - lastPingTime > pingInterval)
-            {
-                lastPingTime = now;
-                publishPing();
-            }
+            // if (now - lastPingTime > pingInterval)
+            // {
+            //     lastPingTime = now;
+            //     publishPing();
+            // }
         }
     }
 
@@ -109,13 +109,15 @@ public:
         unsigned long imageId = millis();
 
         char chunkBuf[chunkSize + 1];
-        char jsonBuf[256];
-        StaticJsonDocument<512> doc;
+        char jsonBuf[300];
+        StaticJsonDocument<400> doc;
 
         for (size_t i = 0; i < totalChunks; ++i)
         {
             size_t start = i * chunkSize;
             size_t len = min(chunkSize, totalLen - start);
+            
+           
             memcpy(chunkBuf, base64Image + start, len);
             chunkBuf[len] = '\0';
 
@@ -125,12 +127,13 @@ public:
             doc["total"] = totalChunks;
             doc["data"] = chunkBuf;
 
+
             size_t n = serializeJson(doc, jsonBuf);
             if (!client.publish("esp32/camera", jsonBuf, n))
             {
                 return false;
             }
-            delay(200);
+            delay(100);
         }
         return true;
     }

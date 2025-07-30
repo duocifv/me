@@ -162,12 +162,8 @@ void sendCameraImage() {
   }
   b64_buf[b64_len] = '\0';  // null-terminate
 
-  // 3. Gửi payload dạng data URI (nếu cần)
-  String payload = "data:image/jpeg;base64,";
-  payload += b64_buf;
+  mqtt.publishCameraImageBase64(b64_buf);
 
-  // Gửi cả ảnh Base64, kết quả đã được log bên trong method
-  mqtt.publishCameraImageBase64(payload.c_str());
   Serial.println("✅ Camera image (Base64) published");
 
 
