@@ -1,63 +1,67 @@
-// src/redis/redis.service.ts
-import { Injectable, Inject } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Injectable } from '@nestjs/common';
+import { promises as fs } from 'fs';
+import * as path from 'path';
+
+const CACHE_DIR = path.join(process.cwd(), 'cache');
+
+function getPath(key: string): string {
+  return path.join(CACHE_DIR, encodeURIComponent(key) + '.json');
+}
 
 @Injectable()
 export class RedisService {
-  constructor(
-    @Inject(CACHE_MANAGER)
-    private readonly cacheManager: Cache,
-  ) {}
+  private isInitialized = false;
 
-  /**
-   * Lưu giá trị vào cache.
-   * Nếu value là object/array thì sẽ stringify.
-   * Sử dụng TTL mặc định (đã cấu hình trong RedisModule).
-   */
+  private async ensureCacheDir() {
+    if (!this.isInitialized) {
+      await fs.mkdir(CACHE_DIR, { recursive: true });
+      this.isInitialized = true;
+    }
+  }
+
   async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
+    await this.ensureCacheDir();
     const payload = typeof value === 'string' ? value : JSON.stringify(value);
-    if (ttlSeconds !== undefined) {
-      await this.cacheManager.set(key, payload, ttlSeconds);
-    } else {
-      await this.cacheManager.set(key, payload);
-    }
+    const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1000 : null;
+    const content = JSON.stringify({ value: payload, expiresAt });
+    await fs.writeFile(getPath(key), content, 'utf8');
   }
 
-  /**
-   * Lấy giá trị từ cache.
-   * Trả về null nếu không tồn tại.
-   */
   async get<T = unknown>(key: string): Promise<T | null> {
-    const val = await this.cacheManager.get<string>(key);
-    if (!val) return null;
+    await this.ensureCacheDir();
     try {
-      return JSON.parse(val) as T;
+      const raw = await fs.readFile(getPath(key), 'utf8');
+      const { value, expiresAt } = JSON.parse(raw);
+      if (expiresAt && Date.now() > expiresAt) {
+        await fs.unlink(getPath(key));
+        return null;
+      }
+      try {
+        return JSON.parse(value) as T;
+      } catch {
+        return value as unknown as T;
+      }
     } catch {
-      // Nếu không parse được JSON thì trả thẳng string
-      return val as unknown as T;
+      return null;
     }
   }
 
-  /**
-   * Xoá một key khỏi cache.
-   */
   async del(key: string): Promise<void> {
-    await this.cacheManager.del(key);
+    await this.ensureCacheDir();
+    try {
+      await fs.unlink(getPath(key));
+    } catch {
+      // ignore error if file does not exist
+    }
   }
 
-  /**
-   * Trả về danh sách key matching pattern.
-   * Với in-memory store, ta đọc từ private keyCache.
-   */
-  keys(pattern = '*'): Promise<string[]> {
-    // @ts-expect-error cần truy cập đến keyCache private
-    const store: any = this.cacheManager.store;
-    if (store && store.keyCache) {
-      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-      const keys = Object.keys(store.keyCache).filter((k) => regex.test(k));
-      return Promise.resolve(keys);
-    }
-    return Promise.resolve([]);
+  async keys(pattern = '*'): Promise<string[]> {
+    await this.ensureCacheDir();
+    const files = await fs.readdir(CACHE_DIR);
+    const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+    return files
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => decodeURIComponent(f.replace(/\.json$/, '')))
+      .filter((k) => regex.test(k));
   }
 }
