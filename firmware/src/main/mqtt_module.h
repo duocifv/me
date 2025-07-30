@@ -30,18 +30,26 @@ public:
 
     void loop()
     {
+        unsigned long now = millis();
+
         if (!client.connected())
         {
-            unsigned long now = millis();
             if (now - lastReconnectAttempt > reconnectInterval)
             {
                 lastReconnectAttempt = now;
-                reconnect(); // không chặn
+                reconnect();
             }
         }
         else
         {
             client.loop();
+
+            // Tự động gửi ping mỗi pingInterval ms
+            if (now - lastPingTime > pingInterval)
+            {
+                lastPingTime = now;
+                publishPing();
+            }
         }
     }
 
@@ -136,6 +144,11 @@ public:
         publish("esp32/errors", buf, len);
     }
 
+    void publishPing()
+    {
+        publish("esp32/ping", "1");
+    }
+
 private:
     WiFiClientSecure secureClient;
     PubSubClient client;
@@ -143,6 +156,9 @@ private:
 
     unsigned long lastReconnectAttempt = 0;
     const unsigned long reconnectInterval = 5000;
+
+    unsigned long lastPingTime = 0;
+    const unsigned long pingInterval = 10000; // Gửi ping mỗi 10 giây
 
     void reconnect()
     {

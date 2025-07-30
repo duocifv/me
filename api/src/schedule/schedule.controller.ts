@@ -29,6 +29,14 @@ export class ScheduleController {
     private readonly cronTask: CronTaskSchedule,
   ) {}
 
+  @Get('health')
+  @ApiParam({
+    name: 'deviceId',
+    example: 'device-001',
+  })
+  getHealth(@Param('deviceId') deviceId: string) {
+    return this.scheduleService.getHealth(deviceId);
+  }
   @Get()
   async getSchedules() {
     return await this.scheduleService.getSchedules();

@@ -13,6 +13,7 @@ import { UpdateControlDto } from 'src/mqtt/dto/control.dto';
 
 @Injectable()
 export class ScheduleService {
+  public health: boolean = false;
   private latestConfig: UpdateControlDto = {
     pumpOn: false,
     ledOn: false,
@@ -59,6 +60,12 @@ export class ScheduleService {
     return result;
   }
 
+  getHealth(deviceId?: string) {
+    return {
+      device: deviceId,
+      on: this.health,
+    };
+  }
   getLatestConfig(): UpdateControlDto {
     return this.latestConfig;
   }
@@ -107,6 +114,7 @@ export class ScheduleService {
     const nowVN = DateTime.now().setZone('Asia/Ho_Chi_Minh');
     const nowMin = nowVN.hour * 60 + nowVN.minute;
     const today = nowVN.weekday % 7;
+    this.health = false;
 
     const schedules = await this.getDeviceSchedules(deviceId);
     if (!schedules.length) {

@@ -19,6 +19,7 @@ interface ChunkCacheWithTimestamp extends ChunkCache {
 
 @Injectable()
 export class MqttService implements OnModuleInit {
+  private lastPing: number = Date.now();
   private readonly logger = new Logger(MqttService.name);
   private client: mqtt.MqttClient;
   private chunkCache = new Map<number, ChunkCacheWithTimestamp>();
@@ -54,6 +55,7 @@ export class MqttService implements OnModuleInit {
         'esp32/control',
         'esp32/sensors',
         'esp32/camera',
+        'esp32/ping',
       ];
       this.client.subscribe(topics, (err, granted = []) => {
         if (err) this.logger.error('Subscribe error', err.message);
@@ -88,6 +90,7 @@ export class MqttService implements OnModuleInit {
       'esp32/errors': () => this.setLatestError(obj),
       'esp32/sensors': () => this.setLatestSensor(obj),
       'esp32/camera': () => this.handleCamera(obj, msg),
+      'esp32/ping': () => this.handlePing(),
     };
 
     const handler = handlerMap[topic] as () => void | Promise<void>;
@@ -97,8 +100,18 @@ export class MqttService implements OnModuleInit {
 
   async handleHealth(obj: any) {
     const dto = this.scheduleService.getLatestConfig();
+    this.scheduleService.health = true;
     console.log('obj handleHealth', obj, dto);
     await this.handleControlCommand(dto);
+  }
+
+  handlePing() {
+    this.lastPing = Date.now();
+
+    if (!this.scheduleService.health) {
+      this.logger.log('✅ ESP32 đã kết nối trở lại!');
+      this.scheduleService.health = true;
+    }
   }
 
   private async handleCamera(obj: any, msg: string) {
