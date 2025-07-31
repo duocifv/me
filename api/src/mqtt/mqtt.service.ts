@@ -6,12 +6,13 @@ import { RedisService } from 'src/redis/redis.service';
 import { CreateSnapshotDto } from './dto/create-snapshot.dto';
 import { AddCameraChunkDto, ChunkCache } from './dto/add-camera-chunk.dto';
 import { ErrorDto } from './dto/error.dto';
-import { AddImagesDto } from './dto/add-camera-image.dto';
-import { UpdateControlDto } from './dto/control.dto';
 import cloudinary from 'src/plugins/media/cloudinary.provider';
 import { ScheduleService } from 'src/schedule/schedule.service';
-import { nanoid } from 'nanoid';
-import { timeNowISO } from 'src/shared/utils/time';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { LiteCamera } from 'src/sqlite/lite-camera.entity';
+import { LiteErrors } from '../sqlite/lite-errors.entity';
+import { LiteSensors } from '../sqlite/lite-sensors.entity';
 
 interface ChunkCacheWithTimestamp extends ChunkCache {
   ts: number;
@@ -28,6 +29,15 @@ export class MqttService implements OnModuleInit {
     private readonly config: ConfigService,
     private readonly redis: RedisService,
     private readonly scheduleService: ScheduleService,
+
+    @InjectRepository(LiteCamera, 'sqlite')
+    private readonly cameraRepo: Repository<LiteCamera>,
+
+    @InjectRepository(LiteErrors, 'sqlite')
+    private readonly errorsRepo: Repository<LiteErrors>,
+
+    @InjectRepository(LiteSensors, 'sqlite')
+    private readonly sensorsRepo: Repository<LiteSensors>,
   ) {}
 
   onModuleInit() {
@@ -86,9 +96,9 @@ export class MqttService implements OnModuleInit {
     }
 
     const handlerMap = {
-      'esp32/health': () => this.handleHealth(obj),
-      'esp32/errors': () => this.setLatestError(obj),
-      'esp32/sensors': () => this.setLatestSensor(obj),
+      'esp32/health': () => this.handleHealth(),
+      'esp32/errors': () => this.createError(obj),
+      'esp32/sensors': () => this.createSensor(obj),
       'esp32/camera': () => this.handleCamera(obj, msg),
       'esp32/ping': () => this.handlePing(),
     };
@@ -98,11 +108,9 @@ export class MqttService implements OnModuleInit {
     this.logger.warn(`Unknown topic: ${topic}`);
   }
 
-  async handleHealth(obj: any) {
-    const dto = this.scheduleService.getLatestConfig();
+  handleHealth() {
     this.scheduleService.health = true;
-    console.log('obj handleHealth', obj, dto);
-    await this.handleControlCommand(dto);
+    this.updateControl();
   }
 
   handlePing() {
@@ -145,23 +153,8 @@ export class MqttService implements OnModuleInit {
     });
   }
 
-  private async appendCameraImage(url: string): Promise<void> {
-    const prev = await this.redis.get<{
-      images: { id: number; url: string; time: string }[];
-    }>('mqtt:latestCamera');
-
-    const updated = {
-      images: [
-        ...(prev?.images || []),
-        {
-          id: nanoid(8),
-          url,
-          time: timeNowISO(),
-        },
-      ],
-    };
-
-    await this.redis.set('mqtt:latestCamera', updated);
+  private async createCamera(url: string): Promise<LiteCamera> {
+    return await this.cameraRepo.save({ url });
   }
 
   private isValidChunk(o: any): o is AddCameraChunkDto {
@@ -169,6 +162,7 @@ export class MqttService implements OnModuleInit {
       typeof o === 'object' &&
       typeof o.id === 'number' &&
       typeof o.index === 'number' &&
+      typeof o.total === 'number' &&
       typeof o.total === 'number' &&
       typeof o.data === 'string'
     );
@@ -204,7 +198,7 @@ export class MqttService implements OnModuleInit {
 
       const url = await this.uploadToCloudinary(buffer);
       if (url) {
-        await this.appendCameraImage(url);
+        await this.createCamera(url);
       } else {
         this.logger.error(`❌ Upload failed, cannot append image: ${id}`);
         return { status: 'upload_failed', id };
@@ -239,72 +233,56 @@ export class MqttService implements OnModuleInit {
     this.logger.log(`Published to ${topic}: ${payload}`);
   }
 
-  // --- Redis-backed getters & clear ---
-  async getLatestSensor(): Promise<CreateSnapshotDto | null> {
-    return await this.redis.get<CreateSnapshotDto>('mqtt:latestSensor');
+  async findAllSensor(): Promise<LiteSensors[]> {
+    return await this.sensorsRepo.find();
   }
 
-  async setLatestSensor(dto: CreateSnapshotDto) {
-    const dataWithTime = {
-      ...dto,
-      time: timeNowISO(),
-    };
-
-    await this.redis.set('mqtt:latestSensor', dataWithTime);
-    this.logger.log(
-      `Sensor snapshot saved to Redis: ${JSON.stringify(dataWithTime)}`,
-    );
+  async findLastSensor(): Promise<LiteSensors> {
+    const last = await this.sensorsRepo.findOne({
+      where: {},
+      order: { id: 'DESC' },
+    });
+    if (!last) throw new Error('No sensor data found');
+    return last;
   }
 
-  async clearLatestSensor() {
-    await this.redis.del('mqtt:latestSensor');
+  async createSensor(dto: CreateSnapshotDto): Promise<LiteSensors> {
+    return await this.sensorsRepo.save(dto);
+  }
+
+  async deleteSensor() {
+    await this.sensorsRepo.clear();
     return { success: true };
   }
 
-  async getLatestCamera(): Promise<AddImagesDto | null> {
-    return this.redis.get('mqtt:latestCamera');
+  async findAllCamera(): Promise<LiteCamera[]> {
+    return await this.cameraRepo.find();
   }
 
-  async clearLatestCamera() {
-    await this.redis.del('mqtt:latestCamera');
+  async deleteCamera() {
+    await this.cameraRepo.clear();
     return { success: true };
   }
 
-  async getLatestError(): Promise<ErrorDto[]> {
-    return (await this.redis.get<ErrorDto[]>('mqtt:latestError')) ?? [];
+  async findAllError(): Promise<LiteErrors[]> {
+    return await this.errorsRepo.find();
   }
 
-  async setLatestError(dto: ErrorDto) {
-    const prev = await this.redis.get<ErrorDto[]>('mqtt:latestError');
-    const history = Array.isArray(prev) ? prev : [];
-
-    const updatedDto = {
-      ...dto,
-      time: timeNowISO(),
-    };
-
-    const updated = [updatedDto, ...history];
-    const limited = updated.slice(0, 10);
-
-    await this.redis.set('mqtt:latestError', limited);
-    this.logger.error(`ESP32 error saved to Redis: ${JSON.stringify(limited)}`);
+  async createError(dto: ErrorDto): Promise<LiteErrors> {
+    return await this.errorsRepo.save(dto);
   }
 
-  async clearLatestError() {
-    await this.redis.del('mqtt:latestError');
+  async deleteError() {
+    await this.errorsRepo.clear();
     return { success: true };
   }
 
-  async handleControlCommand(dto: UpdateControlDto): Promise<void> {
-    await this.redis.set('mqtt:latestControl', dto);
-    this.publish('esp32/control', dto);
+  updateControl() {
+    const config = this.scheduleService.getLatestConfig();
+    this.publish('esp32/control', config);
   }
 
-  async getLatestControl(): Promise<UpdateControlDto | null> {
-    return await this.redis.get<UpdateControlDto>('mqtt:latestControl');
-  }
-
-  async clearLatestControl(): Promise<void> {
-    await this.redis.del('mqtt:latestControl');
+  findOneControl() {
+    return this.scheduleService.getLatestConfig();
   }
 }

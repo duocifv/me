@@ -12,6 +12,7 @@ import { BodySchema } from 'src/shared/decorators/body-schema.decorator';
 import {
   DeviceScheduleDto,
   DeviceScheduleSchema,
+  DeviceType,
 } from './dto/device-schedule.dto';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { ScheduleService } from './schedule.service';
@@ -74,7 +75,7 @@ export class ScheduleController {
   })
   async getScheduleById(
     @Param('deviceId') deviceId: string,
-    @Param('id') id: string,
+    @Param('id') id: number,
   ): Promise<DeviceScheduleDto> {
     return await this.scheduleService.getScheduleById(deviceId, id);
   }
@@ -86,7 +87,7 @@ export class ScheduleController {
   })
   async updateSchedule(
     @Param('deviceId') deviceId: string,
-    @Param('id') id: string,
+    @Param('id') id: number,
     @BodySchema(UpdateScheduleSchema) dto: UpdateScheduleDto,
   ) {
     await this.scheduleService.updateSchedule(deviceId, id, dto);
@@ -100,7 +101,7 @@ export class ScheduleController {
   })
   async updateScheduleByDevice(
     @Param('deviceId') deviceId: string,
-    @Param('device') device: string,
+    @Param('device') device: DeviceType,
     @BodySchema(UpdateScheduleSchema) dto: UpdateScheduleDto,
   ) {
     await this.scheduleService.updateScheduleByDevice(deviceId, device, dto);

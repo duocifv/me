@@ -5,11 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DateTime } from 'luxon';
-import { DeviceScheduleDto } from './dto/device-schedule.dto';
-import { RedisService } from 'src/redis/redis.service';
+import { DeviceScheduleDto, DeviceType } from './dto/device-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { MqttService } from 'src/mqtt/mqtt.service';
 import { UpdateControlDto } from 'src/mqtt/dto/control.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { LiteSchedule } from '../sqlite/lite-schedule.entity';
 
 @Injectable()
 export class ScheduleService {
@@ -23,41 +25,14 @@ export class ScheduleService {
   };
 
   constructor(
-    private readonly redis: RedisService,
     @Inject(forwardRef(() => MqttService))
     private readonly mqtt: MqttService,
+    @InjectRepository(LiteSchedule, 'sqlite')
+    private readonly scheduleRepo: Repository<LiteSchedule>,
   ) {}
 
-  private async getDeviceSchedules(
-    deviceId: string,
-  ): Promise<DeviceScheduleDto[]> {
-    return (
-      (await this.redis.get<DeviceScheduleDto[]>(`schedule:${deviceId}`)) ?? []
-    );
-  }
-
-  private async saveDeviceSchedules(
-    deviceId: string,
-    schedules: DeviceScheduleDto[],
-  ): Promise<void> {
-    await this.redis.set(`schedule:${deviceId}`, schedules);
-  }
-
-  async saveSchedule(deviceId: string, dto: DeviceScheduleDto): Promise<void> {
-    const schedules = await this.getDeviceSchedules(deviceId);
-    schedules.push({ ...dto, id: String(Date.now()) });
-    await this.saveDeviceSchedules(deviceId, schedules);
-  }
-
-  async getSchedules(): Promise<Record<string, DeviceScheduleDto[]>> {
-    const result: Record<string, DeviceScheduleDto[]> = {};
-    const keys = await this.redis.keys('schedule:*');
-    for (const key of keys) {
-      const deviceId = key.replace('schedule:', '');
-      const schedule = await this.redis.get<DeviceScheduleDto[]>(key);
-      if (schedule) result[deviceId] = schedule;
-    }
-    return result;
+  async getSchedules(): Promise<LiteSchedule[]> {
+    return await this.scheduleRepo.find();
   }
 
   getHealth(deviceId?: string) {
@@ -66,48 +41,61 @@ export class ScheduleService {
       on: this.health,
     };
   }
+
   getLatestConfig(): UpdateControlDto {
     return this.latestConfig;
   }
 
+  async saveSchedule(deviceId: string, dto: DeviceScheduleDto): Promise<void> {
+    const schedule = this.scheduleRepo.create({
+      ...dto,
+      deviceId,
+    });
+
+    await this.scheduleRepo.save(schedule);
+  }
+
   async getScheduleById(
     deviceId: string,
-    id: string,
+    id: number,
   ): Promise<DeviceScheduleDto> {
-    const schedules = await this.getDeviceSchedules(deviceId);
-    const found = schedules.find((s) => String(s.id) === String(id));
+    const found = await this.scheduleRepo.findOne({
+      where: { id, deviceId },
+    });
     if (!found) throw new NotFoundException('Schedule not found');
     return found;
   }
 
   async updateScheduleByDevice(
     deviceId: string,
-    device: string,
+    device: DeviceType,
     dto: UpdateScheduleDto,
   ): Promise<void> {
-    const schedules = await this.getDeviceSchedules(deviceId);
-    const index = schedules.findIndex((s) => s.device === device);
-    if (index === -1) throw new NotFoundException('Schedule device not found');
-    schedules[index] = { ...schedules[index], ...dto };
-    await this.saveDeviceSchedules(deviceId, schedules);
+    const schedule = await this.scheduleRepo.findOne({
+      where: { deviceId, device },
+    });
+    if (!schedule) throw new NotFoundException('Schedule device not found');
+    await this.scheduleRepo.update(schedule.id, dto);
   }
 
   async updateSchedule(
     deviceId: string,
-    id: string,
+    id: number,
     dto: UpdateScheduleDto,
   ): Promise<void> {
-    const schedules = await this.getDeviceSchedules(deviceId);
-    const index = schedules.findIndex((s) => String(s.id) === String(id));
-    if (index === -1) throw new NotFoundException('Schedule not found');
-    schedules[index] = { ...schedules[index], ...dto };
-    await this.saveDeviceSchedules(deviceId, schedules);
+    const schedule = await this.scheduleRepo.findOne({
+      where: { id, deviceId },
+    });
+    if (!schedule) throw new NotFoundException('Schedule not found');
+    await this.scheduleRepo.update(id, dto);
   }
 
   async deleteSchedule(deviceId: string, id: number): Promise<void> {
-    const schedules = await this.getDeviceSchedules(deviceId);
-    const filtered = schedules.filter((s) => String(s.id) !== String(id));
-    await this.saveDeviceSchedules(deviceId, filtered);
+    const found = await this.scheduleRepo.findOne({
+      where: { id, deviceId },
+    });
+    if (!found) throw new NotFoundException('Schedule not found');
+    await this.scheduleRepo.delete(id);
   }
 
   async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
@@ -116,7 +104,9 @@ export class ScheduleService {
     const today = nowVN.weekday % 7;
     this.health = false;
 
-    const schedules = await this.getDeviceSchedules(deviceId);
+    const schedules = await this.scheduleRepo.find({
+      where: { deviceId },
+    });
     if (!schedules.length) {
       console.warn(`[WARN] No schedules for ${deviceId}`);
       return;
@@ -160,26 +150,30 @@ export class ScheduleService {
       return;
     }
 
-    // const prev = this.latestConfig;
-    // const isChanged =
-    //   !prev ||
-    //   Object.keys(activeStates).some((key) => activeStates[key] !== prev[key]);
-
-    // if (!isChanged) {
-    //   console.log(`[SKIP] ${deviceId} - ${nowVN.toFormat('HH:mm')} unchanged`);
-    //   return;
-    // }
-
     this.latestConfig = activeStates;
     console.log(
       `[UPDATE] ${deviceId} - ${nowVN.toFormat('HH:mm')} →`,
       activeStates,
     );
 
-    await this.mqtt.handleControlCommand(activeStates);
+    const prev = this.latestConfig;
+    const isChanged =
+      !prev ||
+      Object.keys(activeStates).some((key) => activeStates[key] !== prev[key]);
+
+    if (!isChanged) {
+      console.log(`[SKIP] ${deviceId} - ${nowVN.toFormat('HH:mm')} unchanged`);
+      return;
+    }
+
+    if (nowVN.hour >= 4 && nowVN.hour < 22) {
+      this.mqtt.updateControl();
+    }
   }
 
-  async getScheduleByDevice(deviceId: string): Promise<DeviceScheduleDto[]> {
-    return await this.getDeviceSchedules(deviceId);
+  async getScheduleByDevice(deviceId: string): Promise<LiteSchedule[]> {
+    return this.scheduleRepo.find({
+      where: { deviceId },
+    });
   }
 }

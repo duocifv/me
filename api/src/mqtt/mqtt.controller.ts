@@ -21,44 +21,42 @@ export class MqttController {
   }
 
   @Post('control')
-  @ApiOperation({ summary: 'Thiết bị gửi trạng thái control (relay)' })
+  @ApiOperation({ summary: 'Refresh control (relay)' })
   @ApiBody({ type: UpdateControlDto })
-  async controlState(@Body() dto: UpdateControlDto) {
-    await this.mqttService.handleControlCommand(dto);
+  controlState() {
+    this.mqttService.updateControl();
     return { status: 'received' };
   }
 
   @Get('control')
-  @ApiOperation({ summary: 'Lấy trạng thái control từ cache' })
-  async getControl() {
-    return await this.mqttService.getLatestControl();
-  }
-
-  @Delete('control')
-  @ApiOperation({ summary: 'Xóa trạng thái control' })
-  async clearControl() {
-    await this.mqttService.clearLatestControl();
-    return { status: 'cleared' };
+  @ApiOperation({ summary: 'Lấy trạng thái control' })
+  getControl() {
+    return this.mqttService.findOneControl();
   }
 
   @Post('sensors')
   @ApiOperation({ summary: 'Thiết bị gửi sensor snapshots' })
   @ApiBody({ type: CreateSnapshotDto })
   sensorSnapshot(@Body() dto: CreateSnapshotDto) {
-    this.mqttService['latestSensor'] = dto;
-    return { status: 'received' };
+    return this.mqttService.createSensor(dto);
   }
 
   @Get('sensors')
-  @ApiOperation({ summary: 'Lấy cache sensor snapshot' })
+  @ApiOperation({ summary: 'Lấy tất cả sensor snapshot' })
   async getSensor() {
-    return await this.mqttService.getLatestSensor();
+    return await this.mqttService.findLastSensor();
+  }
+
+  @Get('sensors-list')
+  @ApiOperation({ summary: 'Lấy tất cả sensor snapshot' })
+  async getSensorList() {
+    return await this.mqttService.findAllSensor();
   }
 
   @Delete('sensors')
-  @ApiOperation({ summary: 'Xóa cache sensor' })
+  @ApiOperation({ summary: 'Xóa tất cả sensor' })
   async clearSensor() {
-    await this.mqttService.clearLatestSensor();
+    await this.mqttService.deleteSensor();
     return { status: 'cleared sensor' };
   }
 
@@ -70,26 +68,26 @@ export class MqttController {
   }
 
   @Get('camera')
-  @ApiOperation({ summary: 'Lấy cache camera images' })
+  @ApiOperation({ summary: 'Danh sách camera' })
   async getCamera() {
-    return await this.mqttService.getLatestCamera();
+    return await this.mqttService.findAllCamera();
   }
 
   @Delete('camera')
-  @ApiOperation({ summary: 'Xóa cache camera' })
+  @ApiOperation({ summary: 'Xóa tắt cả camera' })
   async clearCamera() {
-    return await this.mqttService.clearLatestCamera();
+    return await this.mqttService.deleteCamera();
   }
 
   @Get('errors')
-  @ApiOperation({ summary: 'Lấy lỗi gần nhất từ ESP32' })
+  @ApiOperation({ summary: 'Lấy tất cả lỗi từ ESP32' })
   async getError() {
-    return await this.mqttService.getLatestError();
+    return await this.mqttService.findAllError();
   }
 
   @Delete('errors')
-  @ApiOperation({ summary: 'Xóa lỗi đã lưu từ ESP32' })
+  @ApiOperation({ summary: 'Xóa tất lỗi từ ESP32' })
   async clearError() {
-    return await this.mqttService.clearLatestError();
+    return await this.mqttService.deleteError();
   }
 }

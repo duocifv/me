@@ -34,6 +34,8 @@
     "typeorm.config.ts",
     "src/shared/keys/*.pem",
     "src/mail/templates/**/*.hbs",
+    "src/sqlite/entities",
+    "src/sqlite/lite-schedule.entity.ts",
     // "../packages/libs/src/**/*.ts",
     // "../packages/libs/src/**/*.tsx",
   ],

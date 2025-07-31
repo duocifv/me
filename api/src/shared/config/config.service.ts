@@ -5,6 +5,7 @@ import { JwtModuleOptions } from '@nestjs/jwt';
 import * as fs from 'fs';
 import * as path from 'path';
 import { TokenOption } from '../@types/token';
+
 // import { RedisModuleOptions } from 'nestjs-redis';
 // import { ClientOptions } from '@elastic/elasticsearch';
 
@@ -15,6 +16,18 @@ export class AppConfigService {
   // Cổng HTTP
   get port(): number {
     return this.config.get<number>('PORT', 3000);
+  }
+
+  get sqliteConfig(): TypeOrmModuleOptions {
+    return {
+      type: 'sqlite',
+      database: 'db.sqlite',
+      entities: [
+        path.join(__dirname, '..', 'src', 'sqlite', '*.entity.{js,ts}'),
+      ],
+      synchronize: true,
+      autoLoadEntities: true,
+    };
   }
 
   get typeOrmConfig(): TypeOrmModuleOptions {

@@ -43,6 +43,12 @@ import { ScheduleTaskModule } from './schedule/schedule.module';
       inject: [AppConfigService],
       useFactory: (cfg: AppConfigService) => cfg.typeOrmConfig,
     }),
+    TypeOrmModule.forRootAsync({
+      imports: [CoreModule],
+      inject: [AppConfigService],
+      useFactory: (cfg: AppConfigService) => cfg.sqliteConfig,
+      name: 'sqlite',
+    }),
     ThrottlerModule.forRoot({
       throttlers: [
         {
