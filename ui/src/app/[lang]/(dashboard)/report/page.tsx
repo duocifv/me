@@ -22,7 +22,6 @@ export default function DeviceErrorPage() {
   if (isLoading) {
     return <div className="text-center py-8 text-sm">Đang tải...</div>;
   }
-
   if (!isSuccess) {
     toast.error("Mất kết nối", {
       duration: 5000,
