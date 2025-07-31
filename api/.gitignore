@@ -6,3 +6,4 @@ tmp/
 temp/
 dist/
 cache/
+db.sqlite

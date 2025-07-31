@@ -29,7 +29,7 @@ export class ScheduleService {
     private readonly mqtt: MqttService,
     @InjectRepository(LiteSchedule, 'sqlite')
     private readonly scheduleRepo: Repository<LiteSchedule>,
-  ) {}
+  ) { }
 
   async getSchedules(): Promise<LiteSchedule[]> {
     return await this.scheduleRepo.find();
@@ -101,17 +101,15 @@ export class ScheduleService {
   async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
     const nowVN = DateTime.now().setZone('Asia/Ho_Chi_Minh');
     const nowMin = nowVN.hour * 60 + nowVN.minute;
-    const today = nowVN.weekday % 7;
+    const today = nowVN.weekday % 7; 
     this.health = false;
 
-    const schedules = await this.scheduleRepo.find({
-      where: { deviceId },
-    });
+    const schedules = await this.scheduleRepo.find({ where: { deviceId } });
     if (!schedules.length) {
       console.warn(`[WARN] No schedules for ${deviceId}`);
       return;
     }
-
+    console.log("schedules===>:", schedules)
     const activeStates = {
       pumpOn: false,
       ledOn: false,
@@ -122,11 +120,22 @@ export class ScheduleService {
 
     for (const schedule of schedules) {
       if (!schedule.isEnabled) continue;
-      if (!schedule.repeatOn.includes(today)) continue;
+      const repeatDays: number[] = (schedule.repeatOn as unknown as (string | number)[]).map(Number);
+  if (!repeatDays.includes(today)) continue;
 
       for (const time of schedule.times) {
         const [sh, sm] = time.start.split(':').map(Number);
         const [eh, em] = time.end.split(':').map(Number);
+
+        if (
+          [sh, sm, eh, em].some((n) => Number.isNaN(n)) ||
+          sh < 0 || sh > 23 || sm < 0 || sm > 59 ||
+          eh < 0 || eh > 23 || em < 0 || em > 59
+        ) {
+          console.warn(`[WARN] Invalid time format in schedule ID ${schedule.id}`);
+          continue;
+        }
+
         const start = sh * 60 + sm;
         const end = eh * 60 + em;
 
@@ -137,35 +146,32 @@ export class ScheduleService {
 
         if (isActive) {
           activeStates[schedule.device] = true;
-          break; // Không cần kiểm tra thêm times của cùng device
+          break; // Đã tìm thấy 1 khoảng thời gian hợp lệ → không cần kiểm tra tiếp
         }
       }
     }
 
     const allOff = Object.values(activeStates).every((v) => !v);
+    const currentTime = nowVN.toFormat('HH:mm');
+
     if (allOff) {
-      console.log(
-        `[SKIP] ${deviceId} - ${nowVN.toFormat('HH:mm')} no devices ON`,
-      );
+      console.log(`[SKIP] ${deviceId} - ${currentTime} → no devices ON`);
       return;
     }
+
+    // const prev = this.latestConfig;
+    // const isChanged = !prev || Object.keys(activeStates).some((key) => activeStates[key] !== prev[key]);
+
+    // if (!isChanged) {
+    //   console.log(`[SKIP] ${deviceId} - ${currentTime} → unchanged config`);
+    //   return;
+    // }
 
     this.latestConfig = activeStates;
-    console.log(
-      `[UPDATE] ${deviceId} - ${nowVN.toFormat('HH:mm')} →`,
-      activeStates,
-    );
 
-    const prev = this.latestConfig;
-    const isChanged =
-      !prev ||
-      Object.keys(activeStates).some((key) => activeStates[key] !== prev[key]);
+    console.log(`[UPDATE] ${deviceId} - ${currentTime} →`, activeStates);
 
-    if (!isChanged) {
-      console.log(`[SKIP] ${deviceId} - ${nowVN.toFormat('HH:mm')} unchanged`);
-      return;
-    }
-
+    // Gửi lệnh điều khiển chỉ trong khung giờ hợp lệ
     if (nowVN.hour >= 4 && nowVN.hour < 22) {
       this.mqtt.updateControl();
     }
