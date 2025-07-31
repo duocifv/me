@@ -7,6 +7,8 @@ export const corsConfig: FastifyCorsOptions = {
     const allowedOrigins = [
       'https://vegetable-container.onrender.com',
       'https://duoc2.vercel.app',
+      'https://www.duocnv.top',
+      'https://duocnv.top',
       'http://localhost:5000',
       'http://localhost:3000',
     ];
