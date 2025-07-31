@@ -36,7 +36,7 @@ export const useHydroponicsStore = create<HydroponicsState>()(
         waterTemperature: 0,
         ambientTemperature: 0,
         humidity: 0,
-        time: "",
+        createdAt: "",
       },
       camera: null,
       filters: {

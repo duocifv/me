@@ -15,19 +15,18 @@ import { $t } from "@/app/lang";
 
 export default function SnapsortCarousel() {
   const camera = useHydroponicsStore((s) => s.camera);
+
   return (
     <div className="px-4">
       <h3 className="mb-4 px-2 text-lg">{$t`Hình ảnh thu được`}</h3>
       <Carousel className="w-ful">
         <CarouselContent>
-          {Array.from({ length: 5 }).map((_, idx) => camera?.images[idx].url && (
+          {(camera?.images?.slice(0, 5) ?? []).map((img, idx) => (
             <CarouselItem key={idx} className="md:basis-1/2 lg:basis-1/3">
-              <div className="p-1 ">
+              <div className="p-1">
                 <Card>
                   <CardContent className="flex aspect-square items-center justify-center p-6">
-                    <span className="text-4xl font-semibold">
-                      <Picture src={camera?.images[idx].url} className="h-96" />
-                    </span>
+                    <Picture src={img.url} className="h-96" />
                   </CardContent>
                 </Card>
               </div>

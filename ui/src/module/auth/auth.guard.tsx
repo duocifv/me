@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "./auth.store";
 import { errorHandler } from "../share/api/errorHandler";
-import { loggedIn, logout, useAuthProfileQuery } from "./auth.hook";
+import { logout, useAuthProfileQuery } from "./auth.hook";
 import AppLoading from "@/app/[lang]/(dashboard)/components/app-loading";
 
 export function AuthGuard({
@@ -13,17 +13,27 @@ export function AuthGuard({
   children: React.ReactNode;
   fallback: React.ReactNode;
 }) {
-  const stogareLoggedIn = loggedIn();
-  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  const isLoggedInState = useAuthStore((s) => s.isLoggedIn);
+  const user = useAuthStore((s) => s.user);
   const setLogin = useAuthStore((s) => s.setLogin);
   const setLogout = useAuthStore((s) => s.setLogout);
-
+  console.log("| đã đăng nhập");
   useEffect(() => {
-    if (!stogareLoggedIn) {
-      return setLogout();
+    try {
+      const login = localStorage.getItem("IS_LOGGED_IN") !== null;
+      setIsLoggedIn(login);
+      if (login) {
+        setLogin();
+      } else {
+        setLogout();
+      }
+    } catch {
+      setIsLoggedIn(false);
+      setLogout();
     }
-    return setLogin();
-  }, [stogareLoggedIn, setLogin, setLogout, isLoggedIn]);
+  }, [setLogin, setLogout, isLoggedInState]);
 
   useEffect(() => {
     const unsub = errorHandler.register((err) => {
@@ -36,24 +46,37 @@ export function AuthGuard({
     return () => unsub();
   }, [setLogout]);
 
-  if (!isLoggedIn) {
-    if (stogareLoggedIn) {
-      return <AppLoading />;
-    }
-    return <>{fallback} </>;
+  if (isLoggedIn === null) return <AppLoading />; // Đợi xác định trạng thái đăng nhập
+
+  if (isLoggedIn && user === null) {
+    return <AuthenticatedApp>{children}</AuthenticatedApp>;
   }
-  if (isLoggedIn) return <AuthenticatedApp>{children}</AuthenticatedApp>;
+
+  if (!isLoggedIn) {
+    return <>{fallback}</>;
+  }
+
+  return children;
 }
 
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   const { data, isSuccess, isError } = useAuthProfileQuery();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  if (isError) {
-    logout();
-    setUser(null);
-  }
-  if (isSuccess && data) setUser(data);
-  if (!isSuccess) return <AppLoading />;
-  return user && children;
+
+  useEffect(() => {
+    if (isSuccess && data) {
+      setUser(data);
+    }
+  }, [isSuccess, data, setUser]);
+
+  useEffect(() => {
+    if (isError) {
+      logout();
+      setUser(null);
+    }
+  }, [isError, setUser]);
+
+  if (!isSuccess || !user) return <AppLoading />;
+  return children;
 }

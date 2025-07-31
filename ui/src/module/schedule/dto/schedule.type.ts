@@ -4,7 +4,7 @@ export interface TimeRange {
 }
 
 export interface ScheduleItem {
-  device: "fan" | "pump" | "led" | "sensor" | "camera"; // hoặc string nếu có thêm
+  device: "fanOn" | "pumpOn" | "ledOn" | "sensor" | "camera"; // hoặc string nếu có thêm
   times: TimeRange[];
   repeatOn: number[]; // 0 = Chủ nhật, 6 = Thứ 7
   isEnabled: boolean;

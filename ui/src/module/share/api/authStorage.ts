@@ -17,8 +17,8 @@ export const loginState = {
    * Checks if the user is currently marked as logged in.
    * @returns `true` if logged in, otherwise `false`.
    */
-  isLoggedIn(): boolean {
-    if (typeof window === "undefined") return false;
+  isLoggedIn() {
+    if (typeof window === "undefined") return;
     try {
       return localStorage.getItem(LOGIN_STATE_KEY) !== null;
     } catch {

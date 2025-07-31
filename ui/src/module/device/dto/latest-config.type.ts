@@ -9,7 +9,7 @@ export type LatestConfig = {
 };
 
 export type ErrorsDto = {
+  id: number;
   message: string | undefined;
-  time: string;
-  deviceId?: string;
+  createdAt: string;
 };
