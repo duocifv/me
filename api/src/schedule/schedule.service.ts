@@ -160,15 +160,15 @@ export class ScheduleService {
       return;
     }
 
-    const prev = this.latestConfig;
-    const isChanged =
-      !prev ||
-      Object.keys(activeStates).some((key) => activeStates[key] !== prev[key]);
+    // const prev = this.latestConfig;
+    // const isChanged =
+    //   !prev ||
+    //   Object.keys(activeStates).some((key) => activeStates[key] !== prev[key]);
 
-    if (!isChanged) {
-      console.log(`[SKIP] ${deviceId} - ${nowVN.toFormat('HH:mm')} unchanged`);
-      return;
-    }
+    // if (!isChanged) {
+    //   console.log(`[SKIP] ${deviceId} - ${nowVN.toFormat('HH:mm')} unchanged`);
+    //   return;
+    // }
 
     this.latestConfig = activeStates;
     console.log(
