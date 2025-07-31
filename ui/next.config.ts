@@ -1,9 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   output: "export",
   trailingSlash: true,
+  redirects: async () => [
+    {
+      source: "/",
+      destination: "/vi",
+      permanent: true,
+    },
+  ],
   images: {
     unoptimized: true,
     remotePatterns: [

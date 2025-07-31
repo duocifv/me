@@ -7,7 +7,8 @@ import { api } from "../share/api/apiClient";
 import { ResetPasswordTokenDto } from "./dto/reset-password";
 import { RegisterDto } from "./dto/register.dto";
 
-export const loggedIn = () => api.storage.token();
+export const loggedIn = () => api.storage.is();
+export const logout = () => api.storage.logout();
 
 export function useAuthProfileQuery() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);

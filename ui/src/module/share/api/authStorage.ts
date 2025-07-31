@@ -34,6 +34,8 @@ export const loginState = {
    * Marks the user as logged in.
    */
   getToken() {
+    if (typeof window === "undefined") return null;
+
     try {
       return localStorage.getItem(LOGIN_STATE_KEY);
     } catch (error) {
@@ -41,6 +43,7 @@ export const loginState = {
         "LoginState.setLoggedIn(): unable to access localStorage",
         error
       );
+      return null;
     }
   },
   /**
@@ -48,6 +51,7 @@ export const loginState = {
    */
   setLoggedIn(token: string): void {
     console.log("token token", token);
+    if (typeof window === "undefined") return;
     try {
       localStorage.setItem(LOGIN_STATE_KEY, token);
     } catch (error) {
@@ -62,6 +66,7 @@ export const loginState = {
    * Clears the login status, marking the user as logged out.
    */
   clear(): void {
+    if (typeof window === "undefined") return;
     try {
       localStorage.removeItem(LOGIN_STATE_KEY);
     } catch (error) {
