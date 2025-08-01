@@ -10,16 +10,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle, Trash } from "lucide-react";
+import { CheckCircle, Loader2, Trash } from "lucide-react";
 import { useDeleteDeviceScheduleMutation } from "@/module/schedule/device.hook";
 
 // 💥 Nút xóa có xác nhận
-export function ScheduleButtonDelete({ id }: { id: string }) {
+export function ScheduleButtonDelete({ id }: { id: number }) {
   const [open, setOpen] = useState(false);
-  const deleteSchedule = useDeleteDeviceScheduleMutation();
+  const { mutate, isPending } = useDeleteDeviceScheduleMutation();
 
   const confirmDelete = () => {
-    deleteSchedule.mutate(id, {
+    mutate(id, {
       onSuccess: () => {
         toast.success("Đã xóa lịch thành công", {
           duration: 5000,
@@ -55,8 +55,17 @@ export function ScheduleButtonDelete({ id }: { id: string }) {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Hủy
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Xác nhận xóa
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={isPending}
+              className="w-[116px]"
+            >
+              {isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                "Xác nhận xóa"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

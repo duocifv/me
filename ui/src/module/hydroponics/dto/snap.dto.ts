@@ -4,9 +4,7 @@ export interface CameraImage {
   createdAt: string; // ISO 8601
 }
 
-export interface CameraSnapshot {
-  images: CameraImage[];
-}
+
 
 export interface SensorSnapshot {
   waterTemperature: number;

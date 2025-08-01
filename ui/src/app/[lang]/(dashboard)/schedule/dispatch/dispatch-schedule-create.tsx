@@ -19,7 +19,7 @@ export default function CreateScheduleSubmit(
         form.handleSubmit((value) => {
           mutate(value, {
             onSuccess: () => {
-              toast.success("Tạo tài khoản thành công", {
+              toast.success("Đã thêm lịch cho thiết bị", {
                 duration: 5000,
                 icon: <CheckCircle className="h-5 w-5 text-green-500" />,
               });

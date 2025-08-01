@@ -38,7 +38,7 @@ export function useCreateDeviceScheduleMutation() {
 export function useUpdateDeviceScheduleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, dto }: { id: string; dto: UpdateScheduleDto }) =>
+    mutationFn: ({ id, dto }: { id: number; dto: UpdateScheduleDto }) =>
       deviceScheduleService.updateSchedule(id, dto),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["deviceSchedule"] });
@@ -53,7 +53,7 @@ export function useUpdateDeviceScheduleMutation() {
 export function useDeleteDeviceScheduleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deviceScheduleService.deleteSchedule(id),
+    mutationFn: (id: number) => deviceScheduleService.deleteSchedule(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deviceSchedule"] });
     },

@@ -20,13 +20,13 @@ class DeviceScheduleService {
   }
 
   async updateSchedule(
-    ids: string,
+    id: number,
     dto: UpdateScheduleDto
   ): Promise<UpdateScheduleDto> {
-    return this.device.patch<UpdateScheduleDto>(`device-001/${ids}`, dto);
+    return this.device.patch<UpdateScheduleDto>(`device-001/${id}`, dto);
   }
 
-  async deleteSchedule(id: string): Promise<void> {
+  async deleteSchedule(id: number): Promise<void> {
     return this.device.delete<void>(`device-001/${id}`);
   }
 }

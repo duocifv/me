@@ -11,11 +11,14 @@ export const TimeRangeSchema = z.object({
 
 export const ScheduleItemSchema = z.object({
   device: z
-    .enum(["pump", "fan", "led", "sensor", "camera"])
-    .refine((val) => ["pump", "fan", "led", "sensor", "camera"].includes(val), {
-      message:
-        "Thiết bị phải là một trong các giá trị: pump, fan, led, sensor, camera",
-    }),
+    .enum(["pumpOn", "fanOn", "ledOn", "sensor", "camera"])
+    .refine(
+      (val) => ["pumpOn", "fanOn", "ledOn", "sensor", "camera"].includes(val),
+      {
+        message:
+          "Thiết bị phải là một trong các giá trị: pump, fan, led, sensor, camera",
+      }
+    ),
   times: z
     .array(TimeRangeSchema)
     .min(1, { message: "Cần ít nhất 1 khoảng thời gian" }),

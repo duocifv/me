@@ -6,9 +6,9 @@ export interface TimeRange {
 export interface ScheduleItem {
   device: "fanOn" | "pumpOn" | "ledOn" | "sensor" | "camera"; // hoặc string nếu có thêm
   times: TimeRange[];
-  repeatOn: number[]; // 0 = Chủ nhật, 6 = Thứ 7
+  repeatOn: string[]; // 0 = Chủ nhật, 6 = Thứ 7
   isEnabled: boolean;
-  id: string; // hoặc có thể là number nếu không cần chuỗi
+  id: number; // hoặc có thể là number nếu không cần chuỗi
 }
 
 // Kiểu cho toàn bộ danh sách schedules

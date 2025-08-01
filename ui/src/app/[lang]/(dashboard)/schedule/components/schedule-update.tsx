@@ -18,6 +18,7 @@ import {
   UpdateScheduleDto,
   UpdateScheduleSchema,
 } from "@/module/schedule/dto/update-schedule.dto";
+import { DEVICE_LABELS } from "./schedule-labels";
 
 const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
@@ -35,7 +36,10 @@ export function ScheduleUpdate() {
         {item && (
           <FormWrapper<UpdateScheduleDto>
             schema={UpdateScheduleSchema}
-            defaultValues={item}
+            defaultValues={{
+              ...item,
+              repeatOn: item.repeatOn?.map(Number),
+            }}
           >
             {(form) => {
               const repeatOnRaw = form.watch("repeatOn") ?? [];
@@ -65,7 +69,7 @@ export function ScheduleUpdate() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="mb-1 block text-2xl font-black">
-                        {item.device}
+                        {DEVICE_LABELS[item.device] || item.device}
                       </Label>
                     </div>
                   </div>

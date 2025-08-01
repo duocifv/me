@@ -4,7 +4,6 @@ import * as React from "react";
 import { useHydroponicsStore } from "@adapter/hydroponics/hydroponics.store";
 import { Picture } from "@/components/share/picture/ui-picture";
 import { $t } from "@/app/lang";
-import { SnapshotPagination } from "./snapshot-pagination";
 
 export default function SnapshotsListGallery() {
   const camera = useHydroponicsStore((s) => s.camera);
@@ -16,8 +15,8 @@ export default function SnapshotsListGallery() {
       </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {Array.isArray(camera?.images) &&
-          camera.images.map((image, idx) => (
+        {Array.isArray(camera) &&
+          camera?.map((image, idx) => (
             <div
               key={idx}
               className="group relative cursor-pointer overflow-hidden rounded-xl border-2 border-[#293d84] bg-[#fffeec] shadow hover:shadow-lg transition"
@@ -32,9 +31,9 @@ export default function SnapshotsListGallery() {
           ))}
       </div>
 
-      <div className="mt-6 flex justify-center">
+      {/* <div className="mt-6 flex justify-center">
         <SnapshotPagination />
-      </div>
+      </div> */}
     </div>
   );
 }

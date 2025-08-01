@@ -2,13 +2,13 @@ import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { throttle } from "lodash";
 import { useRef } from "react";
-import { useUpdateDeviceScheduleMutation } from "@/module/schedule/device.hook";
 import { Button } from "@/components/ui/button";
 import { FormSubmit } from "@adapter/share/type/form";
 import { UpdateScheduleDto } from "@/module/schedule/dto/update-schedule.dto";
+import { useUpdateDeviceScheduleMutation } from "@/module/schedule/device.hook";
 
 type Props = {
-  id: string;
+  id: number;
   form: FormSubmit<UpdateScheduleDto>;
 };
 

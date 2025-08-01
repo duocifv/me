@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { useDeviceScheduleStore } from "@adapter/schedule/device.store";
 import { ScheduleButtonDelete } from "./schedule-delete";
+import { DEVICE_LABELS } from "./schedule-labels";
 
 const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
@@ -41,7 +42,7 @@ export default function ScheduleTable() {
               className="hover:bg-accent/10 transition-colors"
             >
               <TableCell className="font-medium uppercase">
-                {s.device}
+                {DEVICE_LABELS[s.device] || s.device}
               </TableCell>
 
               <TableCell className="text-sm">
@@ -56,7 +57,7 @@ export default function ScheduleTable() {
                 {s.repeatOn.length > 0 ? (
                   s.repeatOn.map((d) => (
                     <Badge key={d} variant="outline" className="mr-1 text-xs">
-                      {weekdays[d]}
+                      {weekdays[Number(d)]}
                     </Badge>
                   ))
                 ) : (

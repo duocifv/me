@@ -21,17 +21,18 @@ export default function SnapsortCarousel() {
       <h3 className="mb-4 px-2 text-lg">{$t`Hình ảnh thu được`}</h3>
       <Carousel className="w-ful">
         <CarouselContent>
-          {(camera?.images?.slice(0, 5) ?? []).map((img, idx) => (
-            <CarouselItem key={idx} className="md:basis-1/2 lg:basis-1/3">
-              <div className="p-1">
-                <Card>
-                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                    <Picture src={img.url} className="h-96" />
-                  </CardContent>
-                </Card>
-              </div>
-            </CarouselItem>
-          ))}
+          {Array.isArray(camera) &&
+            (camera?.slice(0, 5) ?? []).map((img, idx) => (
+              <CarouselItem key={idx} className="md:basis-1/2 lg:basis-1/3">
+                <div className="p-1">
+                  <Card>
+                    <CardContent className="flex aspect-square items-center justify-center p-6">
+                      <Picture src={img.url} className="h-96" />
+                    </CardContent>
+                  </Card>
+                </div>
+              </CarouselItem>
+            ))}
         </CarouselContent>
         <CarouselPrevious />
         <CarouselNext />

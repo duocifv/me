@@ -77,7 +77,17 @@ export default function ScheduleAdd() {
                     <Label className="mb-1 block text-sm font-medium">
                       Tên thiết bị
                     </Label>
-                    <Input type="text" {...form.register("device")} />
+                    <select
+                      {...form.register("device")}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">-- Chọn thiết bị --</option>
+                      <option value="pumpOn">Máy bơm</option>
+                      <option value="fanOn">Quạt</option>
+                      <option value="ledOn">Đèn LED</option>
+                      <option value="sensor">Cảm biến</option>
+                      <option value="camera">Camera</option>
+                    </select>
                     {form.formState.errors && (
                       <p className="text-red-500 text-sm">
                         {form.formState.errors.device?.message}

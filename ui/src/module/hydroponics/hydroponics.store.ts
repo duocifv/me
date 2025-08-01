@@ -5,13 +5,13 @@ import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { CropInstance } from "./dto_/crop-instance.dto";
 import { Snapshot, SnapshotResponse } from "./dto/snapshot.dto";
-import { CameraSnapshot, SensorSnapshot } from "./dto/snap.dto";
+import { CameraImage, SensorSnapshot } from "./dto/snap.dto";
 
 export interface HydroponicsState {
   cropInstances: CropInstance[];
   snapshots: SnapshotResponse;
   sensors: SensorSnapshot;
-  camera: CameraSnapshot | null;
+  camera: CameraImage[] | null;
   selectedSnapshot: Snapshot | null;
   selectedCropInstanceId: number | null;
   filters: {
@@ -22,7 +22,7 @@ export interface HydroponicsState {
   setCropInstances: (data: CropInstance[]) => void;
   setSnapshots: (data: SnapshotResponse) => void;
   setSensors: (sensors: SensorSnapshot) => void;
-  setCamera: (camera: CameraSnapshot) => void;
+  setCamera: (camera: CameraImage[] | null) => void;
   setSelectedCropInstanceId: (id: number | null) => void;
   setSelectedSnapshotById: (id: number | null) => void;
   removeSnapshot: (id: number) => void;
