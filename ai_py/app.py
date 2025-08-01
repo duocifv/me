@@ -1,28 +1,49 @@
-from fastapi import FastAPI, Body
-from pydantic import BaseModel
+from fastapi import FastAPI
+from pydantic import BaseModel, HttpUrl
+from typing import Optional
+from datetime import datetime
 
 app = FastAPI()
 
-# Kiểu dữ liệu đầu vào
-class Item(BaseModel):
+# Dữ liệu cảm biến
+class SensorData(BaseModel):
     id: int
-    name: str
-    description: str = None
+    waterTemperature: float
+    ambientTemperature: float
+    humidity: float
+    createdAt: datetime
 
-# GET /
+# Dữ liệu đầu vào tổng hợp
+class ScheduleInput(BaseModel):
+    image: HttpUrl  # hoặc đổi thành base64 string nếu cần
+    sensors: SensorData
+    history: Optional[str] = None
+
+# Route test đơn giản
 @app.get("/")
-def root():
-    return {"Hello": "Worl121212 --- 1212 --- 121 ÁDSAUDWQN423d!121122143444442233555555"}
+def read_root():
+    return {"status": "ready"}
 
-# POST /items
-@app.post("/items")
-def create_item(item: Item):
-    return {"message": "Item created", "item": item}
+# Route chính xử lý AI gợi ý lịch hoạt động
+@app.post("/suggest")
+def suggest_schedule(data: ScheduleInput):
+    # Gỉa lập xử lý với AI / rule
+    temp = data.sensors.ambientTemperature
+    humidity = data.sensors.humidity
 
-# PUT /items/{item_id}
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
+    suggestions = []
+
+    if temp > 30:
+        suggestions.append("Bật quạt lúc 9h sáng")
+    if data.sensors.waterTemperature > 27:
+        suggestions.append("Chạy bơm lúc 7h30")
+    if humidity > 65:
+        suggestions.append("Không cần tưới thêm")
+
+    # Kết quả mẫu
     return {
-        "message": f"Item {item_id} updated",
-        "item": item
+        "image_used": data.image,
+        "analysis_time": data.sensors.createdAt,
+        "suggestions": suggestions,
+        "note": "Đề xuất dựa trên ảnh và cảm biến, có thể tinh chỉnh bằng GPT sau."
     }
