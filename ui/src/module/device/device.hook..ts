@@ -17,7 +17,7 @@ export function useDeviceConfigQuery() {
 export function useUpdateConfigScheduleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, dto }: { id: string; dto: UpdateScheduleDto }) =>
+    mutationFn: ({ id, dto }: { id: number; dto: UpdateScheduleDto }) =>
       deviceScheduleService.updateSchedule(id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deviceConfig"] });

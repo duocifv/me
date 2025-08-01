@@ -24,9 +24,9 @@ export function useCameraQuery() {
   return useQuery({
     queryKey: ["camera", "device-001"],
     queryFn: async () => {
-      const data = await hydroponicsService.getCamera();
-      setCamera(data);
-      return data;
+      const camera = await hydroponicsService.getCamera();
+      setCamera(camera);
+      return camera;
     },
   });
 }

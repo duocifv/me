@@ -2,7 +2,7 @@
 import { api } from "../share/api/apiClient";
 import { CropInstance } from "./dto_/crop-instance.dto";
 import { Snapshot, SnapshotResponse } from "./dto/snapshot.dto";
-import { CameraSnapshot, SensorSnapshot } from "./dto/snap.dto";
+import { CameraImage, SensorSnapshot } from "./dto/snap.dto";
 
 class HydroponicsService {
   private hydroponics = api.group("");
@@ -15,8 +15,8 @@ class HydroponicsService {
     return this.hydroponics.get<SensorSnapshot>("mqtt/sensors");
   }
 
-  async getCamera(): Promise<CameraSnapshot> {
-    return this.hydroponics.get<CameraSnapshot>("mqtt/camera");
+  async getCamera(): Promise<CameraImage[]> {
+    return this.hydroponics.get<CameraImage[]>("mqtt/camera");
   }
 
   async getSnapshots(page = 1, limit = 30): Promise<SnapshotResponse> {
