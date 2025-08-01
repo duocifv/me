@@ -1,5 +1,6 @@
 import { api } from "../share/api/apiClient";
 import { DeviceControlDto } from "./dto/device-control.dto";
+import { DeviceGemini } from "./dto/device-gemini.dto";
 import { ErrorsDto, LatestConfig } from "./dto/latest-config.type";
 import { SensorSnapshot } from "./dto/sensor.type";
 
@@ -20,6 +21,10 @@ class DeviceConfigService {
 
   async getSensors(): Promise<SensorSnapshot> {
     return this.device.get<SensorSnapshot>(`mqtt/sensors`);
+  }
+
+  async getGemini(): Promise<DeviceGemini> {
+    return this.device.get<DeviceGemini>(`gemini`);
   }
 }
 

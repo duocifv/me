@@ -32,6 +32,13 @@ export function useDeviceErrorQuery() {
   });
 }
 
+export function useDeviceGeminiQuery() {
+  return useQuery({
+    queryKey: ["deviceGemini"],
+    queryFn: () => deviceConfigService.getGemini(),
+  });
+}
+
 export function useSensorsQuery() {
   return useQuery({
     queryKey: ["sensors"],

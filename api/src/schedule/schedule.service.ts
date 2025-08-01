@@ -29,7 +29,7 @@ export class ScheduleService {
     private readonly mqtt: MqttService,
     @InjectRepository(LiteSchedule, 'sqlite')
     private readonly scheduleRepo: Repository<LiteSchedule>,
-  ) { }
+  ) {}
 
   async getSchedules(): Promise<LiteSchedule[]> {
     return await this.scheduleRepo.find();
@@ -101,7 +101,7 @@ export class ScheduleService {
   async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
     const nowVN = DateTime.now().setZone('Asia/Ho_Chi_Minh');
     const nowMin = nowVN.hour * 60 + nowVN.minute;
-    const today = nowVN.weekday % 7; 
+    const today = nowVN.weekday % 7;
     this.health = false;
 
     const schedules = await this.scheduleRepo.find({ where: { deviceId } });
@@ -109,7 +109,7 @@ export class ScheduleService {
       console.warn(`[WARN] No schedules for ${deviceId}`);
       return;
     }
-    console.log("schedules===>:", schedules)
+    console.log('schedules===>:', schedules);
     const activeStates = {
       pumpOn: false,
       ledOn: false,
@@ -120,8 +120,10 @@ export class ScheduleService {
 
     for (const schedule of schedules) {
       if (!schedule.isEnabled) continue;
-      const repeatDays: number[] = (schedule.repeatOn as unknown as (string | number)[]).map(Number);
-  if (!repeatDays.includes(today)) continue;
+      const repeatDays: number[] = (
+        schedule.repeatOn as unknown as (string | number)[]
+      ).map(Number);
+      if (!repeatDays.includes(today)) continue;
 
       for (const time of schedule.times) {
         const [sh, sm] = time.start.split(':').map(Number);
@@ -129,10 +131,18 @@ export class ScheduleService {
 
         if (
           [sh, sm, eh, em].some((n) => Number.isNaN(n)) ||
-          sh < 0 || sh > 23 || sm < 0 || sm > 59 ||
-          eh < 0 || eh > 23 || em < 0 || em > 59
+          sh < 0 ||
+          sh > 23 ||
+          sm < 0 ||
+          sm > 59 ||
+          eh < 0 ||
+          eh > 23 ||
+          em < 0 ||
+          em > 59
         ) {
-          console.warn(`[WARN] Invalid time format in schedule ID ${schedule.id}`);
+          console.warn(
+            `[WARN] Invalid time format in schedule ID ${schedule.id}`,
+          );
           continue;
         }
 

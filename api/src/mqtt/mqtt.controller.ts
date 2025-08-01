@@ -1,7 +1,6 @@
 import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { MqttService } from './mqtt.service';
-import { SendMqttDto } from './dto/send-mqtt.dto';
 import { CreateSnapshotDto } from './dto/create-snapshot.dto';
 import { AddCameraChunkDto } from './dto/add-camera-chunk.dto';
 import { UpdateControlDto } from './dto/control.dto';
@@ -10,15 +9,6 @@ import { UpdateControlDto } from './dto/control.dto';
 @Controller('mqtt')
 export class MqttController {
   constructor(private readonly mqttService: MqttService) {}
-
-  @Post('send')
-  @ApiOperation({ summary: 'Gửi message đến MQTT' })
-  @ApiBody({ type: SendMqttDto })
-  @ApiResponse({ status: 200, description: 'OK' })
-  send(@Body() dto: SendMqttDto) {
-    this.mqttService.publish(dto.topic, dto.message);
-    return { status: 'ok', topic: dto.topic, sent: dto.message };
-  }
 
   @Post('control')
   @ApiOperation({ summary: 'Refresh control (relay)' })
