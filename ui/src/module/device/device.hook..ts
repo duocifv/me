@@ -28,6 +28,7 @@ export function useUpdateConfigScheduleMutation() {
 export function useDeviceErrorQuery() {
   return useQuery({
     queryKey: ["deviceError"],
+
     queryFn: () => deviceConfigService.getError(),
   });
 }
@@ -56,3 +57,15 @@ export function useCreateDeviceConfigMutation() {
     },
   });
 }
+
+export function useCreateGeminiMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      deviceConfigService.setGemini(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["deviceSchedule"] });
+    },
+  });
+}
+

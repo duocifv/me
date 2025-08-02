@@ -26,6 +26,10 @@ class DeviceConfigService {
   async getGemini(): Promise<DeviceGemini> {
     return this.device.get<DeviceGemini>(`gemini`);
   }
+  async setGemini() {
+    await this.device.post<DeviceGemini>(`gemini/apply`);
+    return true
+  }
 }
 
 export const deviceConfigService = new DeviceConfigService();

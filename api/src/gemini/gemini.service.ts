@@ -27,6 +27,7 @@ export class GeminiService {
         return {
           device,
           ...rest,
+          deviceId: "device-001",
         };
       },
     );
