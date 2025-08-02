@@ -7,7 +7,7 @@ export default function CreateGeminiSubmit() {
   const { mutate, isPending } = useCreateGeminiMutation()
   return (
     <Button
-      onClick={mutate}
+      onClick={()=>mutate()}
       className="w-32"
       disabled={isPending}
     >
