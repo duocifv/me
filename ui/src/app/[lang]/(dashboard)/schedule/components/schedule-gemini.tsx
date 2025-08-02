@@ -33,8 +33,9 @@ export function ScheduleGemini() {
               <Button variant="outline" className="bg-orange-200">
                 Hiển thị lịch thiết bị
               </Button>
-              <CreateGeminiSubmit />
+              
             </DialogTrigger>
+            <CreateGeminiSubmit />
 
             <DialogContent className="max-w-lg">
               <DialogHeader>
