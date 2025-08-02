@@ -26,6 +26,9 @@ bool sensorEnabled = false, cameraEnabled = false;
 
 float ambientTemp = 1, humidity = 1, waterTemp = 1;
 
+unsigned long lastCameraTrigger = 0;             // Thời điểm chụp ảnh gần nhất
+const uint32_t CAMERA_COOLDOWN = 5 * 60 * 1000;  // 10 phút (tính bằng ms)
+
 
 bool initRelays() {
   if (!ExpanderRelay::beginBus()) {
@@ -98,9 +101,18 @@ void onMqttMessage(char *topic, byte *payload, unsigned int length) {
       Serial.println(sensorEnabled ? "ENABLED" : "DISABLED");
     }
     if (doc.containsKey("camera")) {
-      cameraEnabled = doc["camera"];
-      Serial.print("🔧 Image publish: ");
-      Serial.println(cameraEnabled ? "ENABLED" : "DISABLED");
+      bool cameraTrigger = doc["camera"];
+
+      if (cameraTrigger) {
+        unsigned long now = millis();
+        if (now - lastCameraTrigger >= CAMERA_COOLDOWN || lastCameraTrigger == 0) {
+          Serial.println("📸 Camera trigger received ✅");
+          sendCameraImage();        // 👉 Chụp ảnh ngay lập tức
+          lastCameraTrigger = now;  // Ghi lại thời điểm chụp
+        } else {
+          Serial.println("⏱️ Camera trigger IGNORED ❌ (chưa đủ 10 phút)");
+        }
+      }
     }
   }
   Serial.println("✅ Relays updated from MQTT");
@@ -194,14 +206,14 @@ void setup() {
     delay(1000);
     ESP.restart();
   }
-   Serial.println("✓ Connected");
+  Serial.println("✓ Connected");
 
   if (!initRelays()) reportError("PCF8574:no init");
   if (!initSensors()) reportError("DS18B20:no data");
   if (!initCamera()) reportError("Camera:init fail");
 
   mqtt.begin(onMqttMessage);
-   mqtt.subscribe("esp32/control");
+  mqtt.subscribe("esp32/control");
   Serial.print("Setup ok !!");
 }
 
@@ -217,11 +229,6 @@ void loop() {
   if (sensorEnabled && (millis() - lastSensor > SENSOR_INTERVAL)) {
     lastSensor = millis();
     sendSensorData();
-  }
-
-  if (cameraEnabled && (millis() - lastCamera > CAMERA_INTERVAL)) {
-    lastCamera = millis();
-    sendCameraImage();
   }
 
   delay(50);

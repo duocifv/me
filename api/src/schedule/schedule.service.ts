@@ -10,7 +10,7 @@ import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { MqttService } from 'src/mqtt/mqtt.service';
 import { UpdateControlDto } from 'src/mqtt/dto/control.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { LiteSchedule } from '../sqlite/lite-schedule.entity';
 
 @Injectable()
@@ -90,6 +90,12 @@ export class ScheduleService {
     await this.scheduleRepo.update(id, dto);
   }
 
+  async deleteAllSchedules(): Promise<void> {
+  await this.scheduleRepo.delete({
+    device: In(['fanOn', 'ledOn', 'pumpOn']),
+  });
+}
+ 
   async deleteSchedule(deviceId: string, id: number): Promise<void> {
     const found = await this.scheduleRepo.findOne({
       where: { id, deviceId },

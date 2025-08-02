@@ -4,6 +4,7 @@ import axios from 'axios';
 import { MqttService } from 'src/mqtt/mqtt.service';
 import { GeminiResponse } from './dto/gemini.dto';
 import { ScheduleService } from 'src/schedule/schedule.service';
+import { DeviceType } from 'src/sqlite/lite-schedule.entity';
 
 @Injectable()
 export class GeminiService {
@@ -30,9 +31,11 @@ export class GeminiService {
       },
     );
 
+    await this.scheduleService.deleteAllSchedules();
+
     for (const item of scheduleItems) {
       await this.scheduleService.saveSchedule(item.deviceId, {
-        device: item.device.
+        device: item.device as DeviceType,
         times: item.times,
         repeatOn: [
           1, 2, 3, 4, 5, 6, 0
