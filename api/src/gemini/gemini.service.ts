@@ -1,52 +1,53 @@
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { MqttService } from 'src/mqtt/mqtt.service';
-import { GeminiResponse } from './dto/gemini.dto';
+import { ScheduleGeminiDto, ScheduleGeminiSchema } from './dto/gemini.dto';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { DeviceType } from 'src/sqlite/lite-schedule.entity';
 
 @Injectable()
 export class GeminiService {
-  private schedule: GeminiResponse | null = null;
+  private schedule: ScheduleGeminiDto | null = null;
   constructor(
     private readonly cfg: ConfigService,
     private readonly mqttService: MqttService,
     private readonly scheduleService: ScheduleService,
   ) { }
 
-  async applyFinalSchedule(): Promise<{ updated: number } | null> {
-    // Kiểm tra this.schedule hợp lệ trước khi destructure
+  async applyFinalSchedule(): Promise<{ updated: number | string } | null> {
+    // Bỏ qua nếu schedule chưa được generate
     if (!this.schedule || !this.schedule.schedule) {
       return null;
     }
 
-    const scheduleItems = Object.entries(this.schedule.schedule).map(
-      ([device, data]) => {
-        const { device: _omit, ...rest } = data; // bỏ key `device` trong data
-        return {
-          device,
-          ...rest,
-          deviceId: "device-001",
-        };
-      },
-    );
+    const parse = this.schedule;
 
+    // validate:
+    const result = ScheduleGeminiSchema.safeParse(parse);
+    if (!result.success) {
+      console.warn('[Gemini] ❌ Invalid schedule format:', result.error.format());
+      throw new UnauthorizedException("Invalid schedule format")
+    }
+    // Debug trước khi lưu
+    console.log('[Gemini] New schedule items:', result);
+    const items = result.data.schedule;
+    // Xóa toàn bộ lịch cũ
     await this.scheduleService.deleteAllSchedules();
 
-    for (const item of scheduleItems) {
+    // Lưu từng lịch mới
+    for (const item of items) {
       await this.scheduleService.saveSchedule(item.deviceId, {
-        device: item.device as DeviceType,
+        device: item.device as DeviceType, // đã đúng định dạng
         times: item.times,
-        repeatOn: [
-          1, 2, 3, 4, 5, 6, 0
-        ],
+        repeatOn: [0, 1, 2, 3, 4, 5, 6],    // Cả tuần
         isEnabled: true,
       });
     }
 
-    return { updated: scheduleItems.length };
+    return { updated: items.length };
   }
+
 
 
   async generateFinalSchedule() {
@@ -73,7 +74,7 @@ export class GeminiService {
     //   ambientTemperature: sensor?.ambientTemperature ?? 0,
     //   humidity: sensor?.humidity ?? 0,
     // });
-    const result = await this.generateSchedule({
+    const generateSchedule = await this.generateSchedule({
       scheduleOld: scheduleOldText,
       imageUrl: camera?.url || '',
       waterTemperature: 29,
@@ -81,32 +82,14 @@ export class GeminiService {
       humidity: 60, // và độ ẩm ổn định
     });
 
-    const schedule = result.schedule || {};
-    const note = result.note || '';
-
-    const convert = (dev?: { times?: any[] }) =>
-      dev?.times?.map(({ start, end }) => ({ start, end })) || [];
-
-    return {
-      note,
-      schedule: [
-        {
-          device: 'pumpOn',
-          deviceId: 'device-001',
-          times: convert(schedule.pump),
-        },
-        {
-          device: 'fanOn',
-          deviceId: 'device-001',
-          times: convert(schedule.fan),
-        },
-        {
-          device: 'ledOn',
-          deviceId: 'device-001',
-          times: convert(schedule.led),
-        },
-      ],
-    };
+    // validate:
+    const result = ScheduleGeminiSchema.safeParse(generateSchedule);
+    if (!result.success) {
+      console.warn('[Gemini] ❌ Invalid schedule format:', result.error.format());
+      return null;
+    }
+    
+   return result.data
   }
 
   async generateSchedule(input: {
@@ -115,7 +98,7 @@ export class GeminiService {
     waterTemperature: number;
     ambientTemperature: number;
     humidity: number;
-  }): Promise<GeminiResponse> {
+  }): Promise<ScheduleGeminiDto> {
     const prompt = `
 📌 Bạn là chuyên gia AI trồng rau muống thủy canh kiểu ebb & flow.
 
@@ -193,12 +176,34 @@ Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi tr�
 ### ⏬ Trả về đúng định dạng JSON:
 {
   "note": "… giải thích logic AI tạo lịch …",
-  "schedule": {
-    "pump": { "times": [ ... ] },
-    "fan": { "times": [ ... ] },
-    "led": { "times": [ ... ] }
-  }
+  "schedule": [
+    {
+      "device": "pumpOn",
+      "deviceId": "device-001",
+      "times": [
+        { "start": "06:00", "end": "06:10" },
+        ...
+      ]
+    },
+    {
+      "device": "fanOn",
+      "deviceId": "device-001",
+      "times": [
+        { "start": "06:00", "end": "07:30" },
+        ...
+      ]
+    },
+    {
+      "device": "ledOn",
+      "deviceId": "device-001",
+      "times": [
+        { "start": "06:00", "end": "07:30" },
+        ...
+      ]
+    }
+  ]
 }
+
 `;
 
     const headers = {
@@ -228,13 +233,13 @@ Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi tr�
     }
   }
 
-  private extractJson(text: string): GeminiResponse {
+  private extractJson(text: string): ScheduleGeminiDto {
     const cleaned = text.replace(/```json|```/g, '').trim();
     try {
       const start = cleaned.indexOf('{');
       const end = cleaned.lastIndexOf('}');
       const jsonStr = cleaned.slice(start, end + 1);
-      return JSON.parse(jsonStr) as GeminiResponse;
+      return JSON.parse(jsonStr) as ScheduleGeminiDto;
     } catch (err) {
       throw new Error('Không thể parse JSON: ' + err.message);
     }

@@ -29,7 +29,7 @@ export class ScheduleService {
     private readonly mqtt: MqttService,
     @InjectRepository(LiteSchedule, 'sqlite')
     private readonly scheduleRepo: Repository<LiteSchedule>,
-  ) {}
+  ) { }
 
   async getSchedules(): Promise<LiteSchedule[]> {
     return await this.scheduleRepo.find();
@@ -51,7 +51,7 @@ export class ScheduleService {
       ...dto,
       deviceId,
     });
-
+    console.log("save schedule", schedule)
     await this.scheduleRepo.save(schedule);
   }
 
@@ -91,11 +91,11 @@ export class ScheduleService {
   }
 
   async deleteAllSchedules(): Promise<void> {
-  await this.scheduleRepo.delete({
-    device: In(['fanOn', 'ledOn', 'pumpOn']),
-  });
-}
- 
+    await this.scheduleRepo.delete({
+      device: In(['fanOn', 'ledOn', 'pumpOn', 'led', 'fan', 'pump']),
+    });
+  }
+
   async deleteSchedule(deviceId: string, id: number): Promise<void> {
     const found = await this.scheduleRepo.findOne({
       where: { id, deviceId },
@@ -104,7 +104,7 @@ export class ScheduleService {
     await this.scheduleRepo.delete(id);
   }
 
-    async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
+  async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
     const nowVN = DateTime.now().setZone('Asia/Ho_Chi_Minh');
     const nowMin = nowVN.hour * 60 + nowVN.minute;
     const today = nowVN.weekday % 7;
@@ -113,17 +113,6 @@ export class ScheduleService {
     this.health = false;
 
     const schedules = await this.scheduleRepo.find({ where: { deviceId } });
-    if (!schedules.length) {
-      console.warn(`[WARN] No schedules for ${deviceId}`);
-      this.latestConfig = {
-        pumpOn: false,
-        fanOn: false,
-        ledOn: false,
-        sensor: false,
-        camera: false,
-      };
-      return;
-    }
 
     const activeStates: Record<DeviceType, boolean> = {
       pumpOn: false,
@@ -136,12 +125,7 @@ export class ScheduleService {
     const isTimeInRange = (start: string, end: string): boolean => {
       const [sh, sm] = start.split(':').map(Number);
       const [eh, em] = end.split(':').map(Number);
-
-      if (
-        [sh, sm, eh, em].some(Number.isNaN) ||
-        sh < 0 || sh > 23 || sm < 0 || sm > 59 ||
-        eh < 0 || eh > 23 || em < 0 || em > 59
-      ) return false;
+      if ([sh, sm, eh, em].some(Number.isNaN)) return false;
 
       const s = sh * 60 + sm;
       const e = eh * 60 + em;
@@ -152,7 +136,12 @@ export class ScheduleService {
     for (const schedule of schedules) {
       if (!schedule.isEnabled) continue;
 
-      const repeatDays: number[] = (schedule.repeatOn as unknown as (string | number)[]).map(Number);
+      const repeatDays = (schedule.repeatOn as (string | number)[]).map(Number);
+      const key = schedule.device as DeviceType;
+      if (!(key in activeStates)) {
+        console.warn(`[WARN] Invalid device type in schedule ID ${schedule.id}: ${schedule.device}`);
+        continue;
+      }
 
       for (const time of schedule.times) {
         const [sh, sm] = time.start.split(':').map(Number);
@@ -160,30 +149,23 @@ export class ScheduleService {
         const start = sh * 60 + sm;
         const end = eh * 60 + em;
 
-        let validDay = false;
-        if (start <= end) {
-          validDay = repeatDays.includes(today);
-        } else {
-          validDay = repeatDays.includes(today) || (nowMin < end && repeatDays.includes(yesterday));
-        }
+        const validDay = start <= end
+          ? repeatDays.includes(today)
+          : repeatDays.includes(today) || (nowMin < end && repeatDays.includes(yesterday));
 
         if (!validDay) continue;
 
         if (isTimeInRange(time.start, time.end)) {
-          if (schedule.device in activeStates) {
-            activeStates[schedule.device as DeviceType] = true;
-          } else {
-            console.warn(`[WARN] Invalid device type in schedule ID ${schedule.id}: ${schedule.device}`);
-          }
-          break; // chỉ cần một khoảng hợp lệ
+          activeStates[key] = true;
+          break;
         }
       }
     }
 
+    this.latestConfig = activeStates;
+
     const currentTime = nowVN.toFormat('HH:mm');
     const allOff = Object.values(activeStates).every((v) => !v);
-
-    this.latestConfig = activeStates;
 
     if (allOff) {
       console.log(`[SKIP] ${deviceId} - ${currentTime} → no devices ON`);
@@ -191,11 +173,11 @@ export class ScheduleService {
       console.log(`[UPDATE] ${deviceId} - ${currentTime} →`, activeStates);
     }
 
-    // ✅ luôn gọi dù có thay đổi hay không
     if (nowVN.hour >= 4 && nowVN.hour < 22) {
       this.mqtt.updateControl();
     }
   }
+
   async getScheduleByDevice(deviceId: string): Promise<LiteSchedule[]> {
     return this.scheduleRepo.find({
       where: { deviceId },
