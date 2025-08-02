@@ -98,95 +98,98 @@ export class ScheduleService {
     await this.scheduleRepo.delete(id);
   }
 
-  async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
+    async applyScheduleAndUpdateConfig(deviceId: string): Promise<void> {
     const nowVN = DateTime.now().setZone('Asia/Ho_Chi_Minh');
     const nowMin = nowVN.hour * 60 + nowVN.minute;
     const today = nowVN.weekday % 7;
+    const yesterday = (today + 6) % 7;
+
     this.health = false;
 
     const schedules = await this.scheduleRepo.find({ where: { deviceId } });
     if (!schedules.length) {
       console.warn(`[WARN] No schedules for ${deviceId}`);
+      this.latestConfig = {
+        pumpOn: false,
+        fanOn: false,
+        ledOn: false,
+        sensor: false,
+        camera: false,
+      };
       return;
     }
-    console.log('schedules===>:', schedules);
-    const activeStates = {
+
+    const activeStates: Record<DeviceType, boolean> = {
       pumpOn: false,
-      ledOn: false,
       fanOn: false,
+      ledOn: false,
       sensor: false,
       camera: false,
     };
 
+    const isTimeInRange = (start: string, end: string): boolean => {
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+
+      if (
+        [sh, sm, eh, em].some(Number.isNaN) ||
+        sh < 0 || sh > 23 || sm < 0 || sm > 59 ||
+        eh < 0 || eh > 23 || em < 0 || em > 59
+      ) return false;
+
+      const s = sh * 60 + sm;
+      const e = eh * 60 + em;
+
+      return s <= e ? nowMin >= s && nowMin < e : nowMin >= s || nowMin < e;
+    };
+
     for (const schedule of schedules) {
       if (!schedule.isEnabled) continue;
-      const repeatDays: number[] = (
-        schedule.repeatOn as unknown as (string | number)[]
-      ).map(Number);
-      if (!repeatDays.includes(today)) continue;
+
+      const repeatDays: number[] = (schedule.repeatOn as unknown as (string | number)[]).map(Number);
 
       for (const time of schedule.times) {
         const [sh, sm] = time.start.split(':').map(Number);
         const [eh, em] = time.end.split(':').map(Number);
-
-        if (
-          [sh, sm, eh, em].some((n) => Number.isNaN(n)) ||
-          sh < 0 ||
-          sh > 23 ||
-          sm < 0 ||
-          sm > 59 ||
-          eh < 0 ||
-          eh > 23 ||
-          em < 0 ||
-          em > 59
-        ) {
-          console.warn(
-            `[WARN] Invalid time format in schedule ID ${schedule.id}`,
-          );
-          continue;
-        }
-
         const start = sh * 60 + sm;
         const end = eh * 60 + em;
 
-        const isActive =
-          start <= end
-            ? nowMin >= start && nowMin < end
-            : nowMin >= start || nowMin < end;
+        let validDay = false;
+        if (start <= end) {
+          validDay = repeatDays.includes(today);
+        } else {
+          validDay = repeatDays.includes(today) || (nowMin < end && repeatDays.includes(yesterday));
+        }
 
-        if (isActive) {
-          activeStates[schedule.device] = true;
-          break; // Đã tìm thấy 1 khoảng thời gian hợp lệ → không cần kiểm tra tiếp
+        if (!validDay) continue;
+
+        if (isTimeInRange(time.start, time.end)) {
+          if (schedule.device in activeStates) {
+            activeStates[schedule.device as DeviceType] = true;
+          } else {
+            console.warn(`[WARN] Invalid device type in schedule ID ${schedule.id}: ${schedule.device}`);
+          }
+          break; // chỉ cần một khoảng hợp lệ
         }
       }
     }
 
-    const allOff = Object.values(activeStates).every((v) => !v);
     const currentTime = nowVN.toFormat('HH:mm');
-
-    if (allOff) {
-      console.log(`[SKIP] ${deviceId} - ${currentTime} → no devices ON`);
-      return;
-    }
-
-    // const prev = this.latestConfig;
-    // const isChanged = !prev || Object.keys(activeStates).some((key) => activeStates[key] !== prev[key]);
-
-    // if (!isChanged) {
-    //   console.log(`[SKIP] ${deviceId} - ${currentTime} → unchanged config`);
-    //   return;
-    // }
+    const allOff = Object.values(activeStates).every((v) => !v);
 
     this.latestConfig = activeStates;
 
-    console.log(`[UPDATE] ${deviceId} - ${currentTime} →`, activeStates);
+    if (allOff) {
+      console.log(`[SKIP] ${deviceId} - ${currentTime} → no devices ON`);
+    } else {
+      console.log(`[UPDATE] ${deviceId} - ${currentTime} →`, activeStates);
+    }
 
-    // Gửi lệnh điều khiển chỉ trong khung giờ hợp lệ
+    // ✅ luôn gọi dù có thay đổi hay không
     if (nowVN.hour >= 4 && nowVN.hour < 22) {
       this.mqtt.updateControl();
     }
   }
-
   async getScheduleByDevice(deviceId: string): Promise<LiteSchedule[]> {
     return this.scheduleRepo.find({
       where: { deviceId },

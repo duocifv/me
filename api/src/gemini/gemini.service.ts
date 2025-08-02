@@ -7,11 +7,43 @@ import { ScheduleService } from 'src/schedule/schedule.service';
 
 @Injectable()
 export class GeminiService {
+  private schedule: GeminiResponse | null = null;
   constructor(
     private readonly cfg: ConfigService,
     private readonly mqttService: MqttService,
     private readonly scheduleService: ScheduleService,
-  ) {}
+  ) { }
+
+  async applyFinalSchedule(): Promise<{ updated: number } | null> {
+    // Kiểm tra this.schedule hợp lệ trước khi destructure
+    if (!this.schedule || !this.schedule.schedule) {
+      return null;
+    }
+
+    const scheduleItems = Object.entries(this.schedule.schedule).map(
+      ([device, data]) => {
+        const { device: _omit, ...rest } = data; // bỏ key `device` trong data
+        return {
+          device,
+          ...rest,
+        };
+      },
+    );
+
+    for (const item of scheduleItems) {
+      await this.scheduleService.saveSchedule(item.deviceId, {
+        device: item.device.
+        times: item.times,
+        repeatOn: [
+          1, 2, 3, 4, 5, 6, 0
+        ],
+        isEnabled: true,
+      });
+    }
+
+    return { updated: scheduleItems.length };
+  }
+
 
   async generateFinalSchedule() {
     const [camera] = await this.mqttService.findAllCamera();
@@ -182,7 +214,11 @@ Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi tr�
       );
 
       const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-      return this.extractJson(text);
+      const data = this.extractJson(text);
+      this.schedule = data;
+
+      return data
+
     } catch (err) {
       throw new HttpException('Gemini API Error: ' + err.message, 500);
     }
