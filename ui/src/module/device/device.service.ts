@@ -24,11 +24,11 @@ class DeviceConfigService {
   }
 
   async getGemini(): Promise<DeviceGemini> {
-    return this.device.get<DeviceGemini>(`gemini`);
+    return this.device.get<DeviceGemini>(`ai`);
   }
   async setGemini() {
-    await this.device.post<DeviceGemini>(`gemini/apply`);
-    return true
+    await this.device.post<DeviceGemini>(`ai/apply`);
+    return true;
   }
 }
 

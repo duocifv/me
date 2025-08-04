@@ -21,7 +21,11 @@ export default function GeminiSyncData() {
   }, [data, isSuccess]);
 
   if (isLoading) {
-    return <>Loading…</>;
+    return (
+      <>
+        <Loader2 className="w-4 h-4 animate-spin" /> Đang tạo...
+      </>
+    );
   }
   if (error) {
     return <>Error… {error.message}</>;
@@ -35,7 +39,6 @@ export default function GeminiSyncData() {
         onClick={() => setTrigger(true)}
         className="bg-orange-200 flex items-center gap-2"
       >
-        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
         {isLoading ? "Đang tạo..." : "Tạo lịch tưới AI"}
       </Button>
     )
