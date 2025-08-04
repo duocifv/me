@@ -15,11 +15,7 @@ import {
 } from 'src/sqlite/lite-ai-schedule-log.entity';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import JSON5 from 'json5';
-import {
-  ScheduleAIDataDto,
-  ScheduleAIDataSchema,
-  ScheduleAIDto,
-} from './dto/ai.dto';
+import { ScheduleAIDataDto, ScheduleAIDataSchema } from './dto/ai.dto';
 
 @Injectable()
 export class AIService {
@@ -72,12 +68,12 @@ export class AIService {
 
   async applyFinalSchedule(): Promise<{ updated: number | string } | null> {
     // Bỏ qua nếu schedule chưa được generate
-    if (!this.schedule || this.schedule?.schedule?.length < 1) {
+    if (!this.schedule) {
       return null;
     }
 
     const parse = this.schedule;
-
+    console.log('parse', parse);
     // validate:
     const result = ScheduleAIDataSchema.safeParse(parse);
     if (!result.success) {
@@ -198,6 +194,8 @@ ${JSON.stringify(log.schedule, null, 2)}`;
       humidity: 60, // và độ ẩm ổn định
     });
 
+    console.log('Ádadasd generateSchedule', generateSchedule);
+
     // validate:
     const result = ScheduleAIDataSchema.safeParse(generateSchedule);
     if (!result.success) {
@@ -232,6 +230,7 @@ ${JSON.stringify(log.schedule, null, 2)}`;
       this.getTopRatedLogsText(3),
       this.buildAiScheduleFeedbackPrompt(5),
     ]);
+
     const prompt = `
 📌 Bạn là chuyên gia AI trồng rau muống thủy canh kiểu ebb & flow.
 
@@ -276,15 +275,9 @@ ${input.scheduleOld}
 
 --- 
 
-### 🏆 Top 3 lịch tốt nhất trước đây (được người thật đánh giá cao):
-${topSection}
-
----
-
 ### 📚 Các lịch AI trước đây đã được đánh giá
 ${feedbackSection}
 
-Top 3 lịch tốt nhất trước đây (được người thật đánh giá cao):
 
 🎯 Nhiệm vụ của bạn:
 Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi trường**, **giai đoạn sinh trưởng**, và **hiệu suất năng lượng**, đồng thời **tránh gây sốc nhiệt/thừa sáng/thừa gió**. Lịch mới có thể **giữ nguyên một phần** nếu thấy hợp lý.
@@ -316,7 +309,9 @@ Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi tr�
 ### 🔁 Gợi ý phản hồi:
 - Hãy đề xuất **lịch chi tiết** cho từng thiết bị, giải thích rõ lý do theo giai đoạn và điều kiện môi trường.  
 - Nếu giữ lại một số khung cũ, hãy chỉ ra và giải thích.
-
+- Trả về JSON với đủ 3 thiết bị: pumpOn, fanOn, ledOn.
+- JSON phải hợp lệ, không bị cắt cụt.
+- Không thêm text bên ngoài JSON.
 ---
 
 ### ⏬ Trả về đúng định dạng JSON:
@@ -357,12 +352,8 @@ Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi tr�
       messages: { role: 'user' | 'system' | 'assistant'; content: string }[];
       temperature: number;
     } = {
-      model: 'anthropic/claude-3-haiku',
+      model: 'mistralai/mistral-small-3.2-24b-instruct:free',
       messages: [
-        {
-          role: 'system',
-          content: 'Bạn là AI chuyên thiết kế lịch trồng rau muống thủy canh.',
-        },
         {
           role: 'user',
           content: prompt,
@@ -372,27 +363,42 @@ Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi tr�
     };
 
     const text = await this.chatWithOpenRouter(body);
+
     const data = this.extractJson(text);
     return data;
   }
 
   private extractJson(text: string): ScheduleAIDataDto {
-    const cleaned = text.replace(/```json|```/g, '').trim();
-    try {
-      const start = cleaned.indexOf('{');
-      const end = cleaned.lastIndexOf('}');
-      const jsonStr = cleaned.slice(start, end + 1);
+    console.log('texttexttext', text);
 
-      // Xử lý dấu xuống dòng không hợp lệ (nếu JSON.parse lỗi thì dùng JSON5 làm fallback)
+    // Loại bỏ code block ```json ``` nếu có
+    const cleaned = text.replace(/```json|```/g, '').trim();
+
+    // Tìm đoạn JSON chính xác có field "note" và "schedule"
+    const jsonMatch = cleaned.match(
+      /\{\s*"note"\s*:\s*"(?:[^"\\]|\\.|[\n\r])*?",\s*"schedule"\s*:\s*\[[\s\S]*?\]\s*\}/,
+    );
+
+    if (!jsonMatch) {
+      console.error('⛔️ Claude trả về:\n', cleaned);
+      throw new Error(
+        'Không tìm thấy JSON hợp lệ trong nội dung Claude trả về.',
+      );
+    }
+
+    const jsonStr = jsonMatch[0];
+    try {
+      return JSON.parse(jsonStr) as ScheduleAIDataDto;
+    } catch {
       try {
-        return JSON.parse(jsonStr) as ScheduleAIDto;
-      } catch {
         return JSON5.parse(jsonStr);
+      } catch (err) {
+        console.error('⛔️ JSON lỗi:', jsonStr);
+        throw new Error('Không thể parse JSON (JSON5): ' + err.message);
       }
-    } catch (err) {
-      throw new Error('Không thể parse JSON: ' + err.message);
     }
   }
+
   async chatWithOpenRouter({
     model,
     messages,
@@ -423,9 +429,11 @@ Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi tr�
       const res = await axios.post(
         'https://openrouter.ai/api/v1/chat/completions',
         body,
-        { headers },
+        {
+          headers,
+        },
       );
-
+      console.log('res-------------->', res);
       const text: string = res.data?.choices?.[0]?.message?.content ?? '';
       return text;
     } catch (err) {
