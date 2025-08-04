@@ -156,10 +156,12 @@ ${JSON.stringify(log.schedule, null, 2)}`;
   }
 
   async generateFinalSchedule() {
-    // const analysis =
-    //   await this.openRouterAnalysisService.analyzeHydroponicSystem();
+    const analysis =
+      await this.openRouterAnalysisService.analyzeHydroponicSystem();
+    console.log('analysisText', analysis);
+
     const generateSchedule =
-      await this.geminiService.convertGeminiToSchedule('analysis');
+      await this.geminiService.convertGeminiToSchedule(analysis);
 
     // validate:
     const result = ScheduleAIDataSchema.safeParse(generateSchedule);

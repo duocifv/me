@@ -20,18 +20,7 @@ export class GeminiService {
     };
 
     const body = {
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 1,
-        topP: 1,
-        maxOutputTokens: 1024,
-      },
+      contents: [{ parts: [{ text: prompt }] }],
     };
 
     try {
@@ -40,15 +29,13 @@ export class GeminiService {
         body,
         { headers },
       );
+
       const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
       const data = this.extractJson(text);
+
       return data;
     } catch (err) {
-      throw new HttpException(
-        'Gemini API Error: ' +
-          (err.response?.data?.error?.message || err.message),
-        500,
-      );
+      throw new HttpException('Gemini API Error: ' + err.message, 500);
     }
   }
 
@@ -57,6 +44,7 @@ export class GeminiService {
   ): Promise<ScheduleAIDataDto> {
     const apiKey = this.config.get<string>('GEMINI_API_KEY');
     if (!apiKey) throw new Error('⚠️ Thiếu GEMINI_API_KEY');
+
     // console.log('analysisText', analysisText);
     const prompt = `
 📌 Bạn là AI chuyên gia thủy canh ebb & flow.
@@ -67,7 +55,7 @@ Dựa vào phần phân tích sau (về giai đoạn sinh trưởng và khuyến
 - Tuân thủ ràng buộc kỹ thuật: không bật cùng lúc pump với thiết bị khác, fan và LED có thể bật cùng.
 
 ### Phân tích:
-
+${analysisText}
 
 ### Ràng buộc bắt buộc:
 - pump: 4–6 lần/ngày, mỗi lần 8–12 phút.
@@ -83,7 +71,7 @@ Dựa vào phần phân tích sau (về giai đoạn sinh trưởng và khuyến
 
 ### Định dạng JSON cần trả về:
 {
-  "note": "Giải thích ngắn gọn lý do tạo lịch như vậy...",
+  "note": "${analysisText} -- Giải thích ngắn gọn lý do tạo lịch như vậy...",
   "schedule": [
     {
       "deviceId": "device-001",
@@ -107,41 +95,7 @@ Dựa vào phần phân tích sau (về giai đoạn sinh trưởng và khuyến
 }
 ⛔️ Không ghi chú, không markdown, chỉ trả về JSON đúng cấu trúc trên.
 `;
-    const body = {
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 1,
-        topP: 1,
-        maxOutputTokens: 2048,
-      },
-    };
-
-    const res = await axios.post(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro:generateContent',
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-goog-api-key': apiKey,
-        },
-      },
-    );
-
-    const raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    try {
-      const start = raw.indexOf('{');
-      const end = raw.lastIndexOf('}');
-      const jsonStr = raw.slice(start, end + 1);
-      return JSON.parse(jsonStr) as ScheduleAIDataDto;
-    } catch (err) {
-      throw new HttpException('❌ Lỗi parse JSON: ' + err.message, 500);
-    }
+    return await this.chatWithGeminiApi(prompt);
   }
 
   private extractJson(text: string): ScheduleAIDataDto {
