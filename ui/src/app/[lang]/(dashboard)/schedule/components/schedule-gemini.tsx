@@ -19,7 +19,7 @@ import GeminiSyncData from "../dispatch/dispatch-schedule-sync-gemini";
 export function ScheduleGemini() {
   const gemini = useDeviceConfigStore((s) => s.gemini);
 
-  if (!gemini) return null;
+  if (!gemini) return <GeminiSyncData />;
 
   return (
     <div className="space-y-4 p-4 min-w-full">
