@@ -71,7 +71,7 @@ ${analysisText}
 
 ### Định dạng JSON cần trả về:
 {
-  "note": "${analysisText} -- Giải thích ngắn gọn lý do tạo lịch như vậy...",
+  "note": " -Giải thích ngắn gọn lý do tạo lịch như vậy...",
   "schedule": [
     {
       "deviceId": "device-001",

@@ -172,8 +172,11 @@ ${JSON.stringify(log.schedule, null, 2)}`;
       );
       return null;
     }
-
-    this.schedule = result.data;
+    const rep = {
+      ...result.data,
+      note: result.data.note + analysis,
+    };
+    this.schedule = rep;
     await this.saveAiGeneratedSchedule({
       inputEnv: {
         waterTemperature: 29,
@@ -184,6 +187,6 @@ ${JSON.stringify(log.schedule, null, 2)}`;
       schedule: result.data.schedule,
     });
 
-    return result.data;
+    return rep;
   }
 }
