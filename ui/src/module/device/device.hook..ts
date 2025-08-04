@@ -33,10 +33,11 @@ export function useDeviceErrorQuery() {
   });
 }
 
-export function useDeviceGeminiQuery() {
+export function useDeviceGeminiQuery(enabled: boolean = false) {
   return useQuery({
     queryKey: ["deviceGemini"],
     queryFn: () => deviceConfigService.getGemini(),
+    enabled,
   });
 }
 
@@ -61,11 +62,9 @@ export function useCreateDeviceConfigMutation() {
 export function useCreateGeminiMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () =>
-      deviceConfigService.setGemini(),
+    mutationFn: () => deviceConfigService.setGemini(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deviceSchedule"] });
     },
   });
 }
-

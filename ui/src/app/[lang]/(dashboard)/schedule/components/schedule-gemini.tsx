@@ -14,6 +14,7 @@ import { useDeviceConfigStore } from "@/module/device/device.store";
 import { DEVICE_LABELS } from "./schedule-labels";
 import { Card, CardContent } from "@/components/ui/card";
 import CreateGeminiSubmit from "../dispatch/dispatch-gemini-create";
+import GeminiSyncData from "../dispatch/dispatch-schedule-sync-gemini";
 
 export function ScheduleGemini() {
   const gemini = useDeviceConfigStore((s) => s.gemini);
@@ -29,13 +30,12 @@ export function ScheduleGemini() {
           </div>
 
           <Dialog>
+            <GeminiSyncData />
             <DialogTrigger asChild>
               <Button variant="outline" className="bg-orange-200">
                 Hiển thị lịch thiết bị
               </Button>
-              
             </DialogTrigger>
-            <CreateGeminiSubmit />
 
             <DialogContent className="max-w-lg">
               <DialogHeader>
@@ -74,6 +74,7 @@ export function ScheduleGemini() {
                   </div>
                 ))}
               </div>
+              <CreateGeminiSubmit />
             </DialogContent>
           </Dialog>
         </CardContent>

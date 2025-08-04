@@ -29,7 +29,7 @@ export class ScheduleService {
     private readonly mqtt: MqttService,
     @InjectRepository(LiteSchedule, 'sqlite')
     private readonly scheduleRepo: Repository<LiteSchedule>,
-  ) { }
+  ) {}
 
   async getSchedules(): Promise<LiteSchedule[]> {
     return await this.scheduleRepo.find();
@@ -51,7 +51,7 @@ export class ScheduleService {
       ...dto,
       deviceId,
     });
-    console.log("save schedule", schedule)
+    console.log('save schedule', schedule);
     await this.scheduleRepo.save(schedule);
   }
 
@@ -137,9 +137,11 @@ export class ScheduleService {
       if (!schedule.isEnabled) continue;
 
       const repeatDays = (schedule.repeatOn as (string | number)[]).map(Number);
-      const key = schedule.device as DeviceType;
+      const key = schedule.device;
       if (!(key in activeStates)) {
-        console.warn(`[WARN] Invalid device type in schedule ID ${schedule.id}: ${schedule.device}`);
+        console.warn(
+          `[WARN] Invalid device type in schedule ID ${schedule.id}: ${schedule.device}`,
+        );
         continue;
       }
 
@@ -149,9 +151,11 @@ export class ScheduleService {
         const start = sh * 60 + sm;
         const end = eh * 60 + em;
 
-        const validDay = start <= end
-          ? repeatDays.includes(today)
-          : repeatDays.includes(today) || (nowMin < end && repeatDays.includes(yesterday));
+        const validDay =
+          start <= end
+            ? repeatDays.includes(today)
+            : repeatDays.includes(today) ||
+              (nowMin < end && repeatDays.includes(yesterday));
 
         if (!validDay) continue;
 

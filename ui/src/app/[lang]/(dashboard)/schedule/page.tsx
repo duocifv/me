@@ -3,7 +3,6 @@ import { ScheduleGemini } from "./components/schedule-gemini";
 import ScheduleTable from "./components/schedule-table";
 import { ScheduleUpdate } from "./components/schedule-update";
 import ScheduleSyncData from "./dispatch/dispatch-schedule-sync-data";
-import GeminiSyncData from "./dispatch/dispatch-schedule-sync-gemini";
 
 export default function HydroponicsPage() {
   return (
@@ -13,7 +12,6 @@ export default function HydroponicsPage() {
         <ScheduleAdd />
       </div>
       <ScheduleSyncData />
-      <GeminiSyncData />
       <ScheduleTable />
       <ScheduleUpdate />
     </div>

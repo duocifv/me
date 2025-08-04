@@ -1,16 +1,22 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import isEqual from "lodash/isEqual";
 import { useDeviceConfigStore } from "@/module/device/device.store";
 import { useDeviceGeminiQuery } from "@/module/device/device.hook.";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 export default function GeminiSyncData() {
-  const { isLoading, error, isSuccess, data } = useDeviceGeminiQuery();
+  const [trigger, setTrigger] = useState<boolean>(false);
+
+  const { isLoading, error, isSuccess, data, isPending } =
+    useDeviceGeminiQuery(trigger);
   useEffect(() => {
     if (isSuccess && data) {
       const storeData = useDeviceConfigStore.getState().gemini;
       if (!isEqual(storeData, data)) {
         useDeviceConfigStore.setState({ gemini: data });
+        setTrigger(false);
       }
     }
   }, [data, isSuccess]);
@@ -22,5 +28,15 @@ export default function GeminiSyncData() {
     return <>Error… {error.message}</>;
   }
 
-  return null;
+  return (
+    <Button
+      disabled={isPending}
+      variant="outline"
+      onClick={() => setTrigger(true)}
+      className="bg-orange-200 flex items-center gap-2"
+    >
+      {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+      {isPending ? "Đang tạo..." : "Tạo lịch tưới AI"}
+    </Button>
+  );
 }

@@ -31,7 +31,7 @@ import { HydroponicsModule } from './hydroponics/hydroponics.module';
 import { DeviceModule } from './device/device.module';
 import { MqttModule } from './mqtt/mqtt.module';
 import { ScheduleTaskModule } from './schedule/schedule.module';
-import { GeminiModule } from './gemini/gemini.module';
+import { AIModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -65,7 +65,7 @@ import { GeminiModule } from './gemini/gemini.module';
     }),
     // TerminusModule,
     MqttModule,
-    GeminiModule,
+    AIModule,
     CoreModule,
     AuthModule,
     RolesModule,
