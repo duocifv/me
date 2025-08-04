@@ -9,8 +9,7 @@ import { Loader2 } from "lucide-react";
 export default function GeminiSyncData() {
   const [trigger, setTrigger] = useState<boolean>(false);
 
-  const { isLoading, error, isSuccess, data, isPending } =
-    useDeviceGeminiQuery(trigger);
+  const { isLoading, error, isSuccess, data } = useDeviceGeminiQuery(trigger);
   useEffect(() => {
     if (isSuccess && data) {
       const storeData = useDeviceConfigStore.getState().gemini;
@@ -29,14 +28,16 @@ export default function GeminiSyncData() {
   }
 
   return (
-    <Button
-      disabled={isPending}
-      variant="outline"
-      onClick={() => setTrigger(true)}
-      className="bg-orange-200 flex items-center gap-2"
-    >
-      {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-      {isPending ? "Đang tạo..." : "Tạo lịch tưới AI"}
-    </Button>
+    !trigger && (
+      <Button
+        disabled={isLoading}
+        variant="outline"
+        onClick={() => setTrigger(true)}
+        className="bg-orange-200 flex items-center gap-2"
+      >
+        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+        {isLoading ? "Đang tạo..." : "Tạo lịch tưới AI"}
+      </Button>
+    )
   );
 }

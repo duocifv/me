@@ -5,10 +5,9 @@ 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
 https://console.hivemq.cloud/clusters/c53388ae7eaf409088a2a30c9f69a351/access-management
 https://dashboard.uptimerobot.com/monitors/800997807
 https://console.upstash.com/redis/48e73c20-df3a-4961-8a16-5fe77e4dd86a/data-browser?teamid=0
+https://openrouter.ai/settings/keys
 
 https://www.udemy.com/course/easy-anatomy-and-physiology-platinum-edition/
-
-
 
 1. Kiến thức nền tảng về giải phẫu và sinh lý học (Anatomy & Physiology)
    Đây là môn cực kỳ quan trọng để hiểu cấu trúc và chức năng cơ thể người.
