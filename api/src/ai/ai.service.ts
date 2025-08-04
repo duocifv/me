@@ -14,12 +14,16 @@ import {
   LiteAiScheduleLog,
 } from 'src/sqlite/lite-ai-schedule-log.entity';
 import { MoreThanOrEqual, Repository } from 'typeorm';
-import { ScheduleAIDto, ScheduleAISchema } from './dto/ai.dto';
 import JSON5 from 'json5';
+import {
+  ScheduleAIDataDto,
+  ScheduleAIDataSchema,
+  ScheduleAIDto,
+} from './dto/ai.dto';
 
 @Injectable()
 export class AIService {
-  private schedule: ScheduleAIDto | null = null;
+  private schedule: ScheduleAIDataDto | null = null;
   constructor(
     private readonly cfg: ConfigService,
     private readonly mqttService: MqttService,
@@ -75,7 +79,7 @@ export class AIService {
     const parse = this.schedule;
 
     // validate:
-    const result = ScheduleAISchema.safeParse(parse);
+    const result = ScheduleAIDataSchema.safeParse(parse);
     if (!result.success) {
       console.warn(
         '[Gemini] ❌ Invalid schedule format:',
@@ -195,7 +199,7 @@ ${JSON.stringify(log.schedule, null, 2)}`;
     });
 
     // validate:
-    const result = ScheduleAISchema.safeParse(generateSchedule);
+    const result = ScheduleAIDataSchema.safeParse(generateSchedule);
     if (!result.success) {
       console.warn(
         '[Gemini] ❌ Invalid schedule format:',
@@ -223,7 +227,7 @@ ${JSON.stringify(log.schedule, null, 2)}`;
     waterTemperature: number;
     ambientTemperature: number;
     humidity: number;
-  }): Promise<ScheduleAIDto> {
+  }): Promise<ScheduleAIDataDto> {
     const [topSection, feedbackSection] = await Promise.all([
       this.getTopRatedLogsText(3),
       this.buildAiScheduleFeedbackPrompt(5),
@@ -372,7 +376,7 @@ Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi tr�
     return data;
   }
 
-  private extractJson(text: string): ScheduleAIDto {
+  private extractJson(text: string): ScheduleAIDataDto {
     const cleaned = text.replace(/```json|```/g, '').trim();
     try {
       const start = cleaned.indexOf('{');

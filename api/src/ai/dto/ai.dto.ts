@@ -48,9 +48,16 @@ export const ScheduleAISchema = z.object({
   evaluatedAt: z.string().nullable(),
 });
 
+// ✅ Schema đầy đủ 1 bản ghi lịch AI
+export const ScheduleAIDataSchema = z.object({
+  schedule: z.array(scheduleItemSchema),
+  note: z.string(),
+});
+
 // ✅ Nếu muốn check danh sách
 export const ScheduleAIListSchema = z.array(ScheduleAISchema);
 
 // 🔁 Type inference
 export type ScheduleAIDto = z.infer<typeof ScheduleAISchema>;
+export type ScheduleAIDataDto = z.infer<typeof ScheduleAIDataSchema>;
 export type ScheduleAIListDto = z.infer<typeof ScheduleAIListSchema>;
