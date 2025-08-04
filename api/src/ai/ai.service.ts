@@ -1,11 +1,4 @@
-import {
-  Injectable,
-  HttpException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { MqttService } from 'src/mqtt/mqtt.service';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { DeviceType } from 'src/sqlite/lite-schedule.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,15 +7,16 @@ import {
   LiteAiScheduleLog,
 } from 'src/sqlite/lite-ai-schedule-log.entity';
 import { MoreThanOrEqual, Repository } from 'typeorm';
-import JSON5 from 'json5';
 import { ScheduleAIDataDto, ScheduleAIDataSchema } from './dto/ai.dto';
+import { OpenRouterAnalysisService } from './ai-analysis.service';
+import { GeminiService } from './gemini-formatter.service';
 
 @Injectable()
 export class AIService {
   private schedule: ScheduleAIDataDto | null = null;
   constructor(
-    private readonly cfg: ConfigService,
-    private readonly mqttService: MqttService,
+    private readonly geminiService: GeminiService,
+    private readonly openRouterAnalysisService: OpenRouterAnalysisService,
     private readonly scheduleService: ScheduleService,
     @InjectRepository(LiteAiScheduleLog, 'sqlite')
     private readonly aiLogRepo: Repository<LiteAiScheduleLog>,
@@ -69,11 +63,10 @@ export class AIService {
   async applyFinalSchedule(): Promise<{ updated: number | string } | null> {
     // Bỏ qua nếu schedule chưa được generate
     if (!this.schedule) {
-      return null;
+      throw new UnauthorizedException('Invalid schedule no');
     }
 
     const parse = this.schedule;
-    console.log('parse', parse);
     // validate:
     const result = ScheduleAIDataSchema.safeParse(parse);
     if (!result.success) {
@@ -163,38 +156,10 @@ ${JSON.stringify(log.schedule, null, 2)}`;
   }
 
   async generateFinalSchedule() {
-    const [camera] = await this.mqttService.findAllCamera();
-    const sensor = await this.mqttService.findLastSensor();
-    const scheduleOld =
-      await this.scheduleService.getScheduleByDevice('device-001');
-    console.log('scheduleOld', scheduleOld);
-    const scheduleOldText = JSON.stringify(
-      scheduleOld.map((s) => ({
-        device: s.device,
-        times: s.times.map((t) => ({
-          start: t.start,
-          end: t.end,
-        })),
-      })),
-      null,
-      2, // đẹp mắt: indent 2 spaces
-    );
-    // const result = await this.generateSchedule({
-    //   scheduleOld: scheduleOldText,
-    //   imageUrl: camera?.url || '',
-    //   waterTemperature: sensor?.waterTemperature ?? 0,
-    //   ambientTemperature: sensor?.ambientTemperature ?? 0,
-    //   humidity: sensor?.humidity ?? 0,
-    // });
-    const generateSchedule = await this.generateSchedule({
-      scheduleOld: scheduleOldText,
-      imageUrl: camera?.url || '',
-      waterTemperature: 29,
-      ambientTemperature: 30, // thử lại với nhiệt độ trung bình
-      humidity: 60, // và độ ẩm ổn định
-    });
-
-    console.log('Ádadasd generateSchedule', generateSchedule);
+    // const analysis =
+    //   await this.openRouterAnalysisService.analyzeHydroponicSystem();
+    const generateSchedule =
+      await this.geminiService.convertGeminiToSchedule('analysis');
 
     // validate:
     const result = ScheduleAIDataSchema.safeParse(generateSchedule);
@@ -206,6 +171,7 @@ ${JSON.stringify(log.schedule, null, 2)}`;
       return null;
     }
 
+    this.schedule = result.data;
     await this.saveAiGeneratedSchedule({
       inputEnv: {
         waterTemperature: 29,
@@ -217,230 +183,5 @@ ${JSON.stringify(log.schedule, null, 2)}`;
     });
 
     return result.data;
-  }
-
-  async generateSchedule(input: {
-    scheduleOld: string;
-    imageUrl: string;
-    waterTemperature: number;
-    ambientTemperature: number;
-    humidity: number;
-  }): Promise<ScheduleAIDataDto> {
-    const [topSection, feedbackSection] = await Promise.all([
-      this.getTopRatedLogsText(3),
-      this.buildAiScheduleFeedbackPrompt(5),
-    ]);
-
-    const prompt = `
-📌 Bạn là chuyên gia AI trồng rau muống thủy canh kiểu ebb & flow.
-
-### Hệ thống hiện tại:
-- Thùng xốp chứa 8 cây, đậy kín chỉ mở vài lỗ thông gió.
-- Giá thể: sơ dừa, dung dịch thủy canh HYDRO OPTIMUM.
-- Đèn LED: 4 đỏ + 1 xanh, công suất 1W, điều khiển qua relay.
-- Quạt: 2 quạt 5V, **dùng chung 1 relay**, vừa **thông gió** vừa **tản nhiệt cho LED**.
-- Bơm: 1 bơm 5V điều khiển tự động.
-
----
-
-### Môi trường hiện tại:
-- Nhiệt độ không khí: ${input.ambientTemperature}°C  
-- Độ ẩm: ${input.humidity}%  
-- Nhiệt độ nước: ${input.waterTemperature}°C
-
----
-
-### Giai đoạn sinh trưởng & tham khảo thời lượng/ngày:
-- **Nảy mầm (0–5 ngày)**  
-  • LED: 12 h/ngày  
-  • Pump: 2 × 15 ph  
-  • Fan: 0–1 × 10 ph  
-- **Cây con (6–14 ngày)**  
-  • LED: 12–14 h/ngày  
-  • Pump: 3–4 × 10 ph  
-  • Fan: 1–2 × 10 ph  
-- **Sinh trưởng (15–40 ngày)**  
-  • LED: 12–14 h/ngày  
-  • Pump: 4–6 × 10 ph  
-  • Fan: 3–4 × 10 ph  
-- **Hoàn thiện/thu hoạch (41–45 ngày)**  
-  • LED: 10–12 h/ngày  
-  • Pump: 3–4 × 10 ph  
-  • Fan: 1–2 × 10 ph
-
----
-
-### Lịch thiết bị hiện tại:
-${input.scheduleOld}
-
---- 
-
-### 📚 Các lịch AI trước đây đã được đánh giá
-${feedbackSection}
-
-
-🎯 Nhiệm vụ của bạn:
-Hãy tối ưu lại lịch hoạt động **dựa trên điều kiện môi trường**, **giai đoạn sinh trưởng**, và **hiệu suất năng lượng**, đồng thời **tránh gây sốc nhiệt/thừa sáng/thừa gió**. Lịch mới có thể **giữ nguyên một phần** nếu thấy hợp lý.
-
-> **Quan trọng:**  
-> - Với giai đoạn cây con và sinh trưởng, ưu tiên LED 14 giờ, pump 4–6 lần, fan 3–4 lần/ngày.  
-> - Ở giai đoạn nảy mầm và hoàn thiện, có thể giảm nhẹ tùy điều kiện.
-> Với lịch có đánh giá thấp (reward < 0), tránh lặp lại cấu trúc cũ.
-> Với lịch có đánh giá cao (reward > 5), có thể lấy cảm hứng nếu điều kiện môi trường gần giống.
----
-
-### ✅ Ràng buộc (cập nhật)
-1. Pump: tối thiểu 4–6 lần/ngày, mỗi lần 8–12 ph, nghỉ 10–15 ph.  
-2. Fan: 6–8 lần/ngày, mỗi lần 5–8 ph, nghỉ 10–15 ph.  
-3. LED: tổng thời gian 12–14 giờ/ngày, chia thành **6–8 lần bật**, mỗi lần **90–120 phút**, **nghỉ ít nhất 30 phút giữa các lần**.  
-   ➤ Không bật LED liên tục quá 2 giờ liền.  
-   ➤ Ưu tiên chia đều trong ngày, **sáng (6h–9h), trưa (11h–13h), chiều (17h–19h)**.
-4. Các lần bật của cùng một thiết bị cách nhau ít nhất 10 phút.  
-5. **Không để hai thiết bị hoạt động đồng thời**, ngoại trừ **fan** và **LED** phải **chạy cùng lúc** để tản nhiệt.  
-6. Thời gian khung hoạt động:  
-   - pump: 06:00–09:00 hoặc 16:00–18:00  
-   - fan + LED (đồng bộ): 06:00–08:00 và 17:00–19:00  
-   - fan đơn lẻ (thông gió): 09:00–15:00  
-7. Chia đều các lần trong ngày, tránh dồn giờ; nếu khung giờ quá hẹp, AI có thể linh hoạt tăng/giảm 5 phút để đảm bảo yêu cầu.  
-
-
----
-
-### 🔁 Gợi ý phản hồi:
-- Hãy đề xuất **lịch chi tiết** cho từng thiết bị, giải thích rõ lý do theo giai đoạn và điều kiện môi trường.  
-- Nếu giữ lại một số khung cũ, hãy chỉ ra và giải thích.
-- Trả về JSON với đủ 3 thiết bị: pumpOn, fanOn, ledOn.
-- JSON phải hợp lệ, không bị cắt cụt.
-- Không thêm text bên ngoài JSON.
----
-
-### ⏬ Trả về đúng định dạng JSON:
-{
-  "note": "… giải thích logic AI tạo lịch …",
-  "schedule": [
-    {
-      "device": "pumpOn",
-      "deviceId": "device-001",
-      "times": [
-        { "start": "06:00", "end": "06:10" },
-        ...
-      ]
-    },
-    {
-      "device": "fanOn",
-      "deviceId": "device-001",
-      "times": [
-        { "start": "06:00", "end": "07:30" },
-        ...
-      ]
-    },
-    {
-      "device": "ledOn",
-      "deviceId": "device-001",
-      "times": [
-        { "start": "06:00", "end": "07:30" },
-        ...
-      ]
-    }
-  ]
-}
-
-`;
-
-    const body: {
-      model: string;
-      messages: { role: 'user' | 'system' | 'assistant'; content: string }[];
-      temperature: number;
-    } = {
-      model: 'mistralai/mistral-small-3.2-24b-instruct:free',
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-    };
-
-    const text = await this.chatWithOpenRouter(body);
-
-    const data = this.extractJson(text);
-    return data;
-  }
-
-  private extractJson(text: string): ScheduleAIDataDto {
-    console.log('texttexttext', text);
-
-    // Loại bỏ code block ```json ``` nếu có
-    const cleaned = text.replace(/```json|```/g, '').trim();
-
-    // Tìm đoạn JSON chính xác có field "note" và "schedule"
-    const jsonMatch = cleaned.match(
-      /\{\s*"note"\s*:\s*"(?:[^"\\]|\\.|[\n\r])*?",\s*"schedule"\s*:\s*\[[\s\S]*?\]\s*\}/,
-    );
-
-    if (!jsonMatch) {
-      console.error('⛔️ Claude trả về:\n', cleaned);
-      throw new Error(
-        'Không tìm thấy JSON hợp lệ trong nội dung Claude trả về.',
-      );
-    }
-
-    const jsonStr = jsonMatch[0];
-    try {
-      return JSON.parse(jsonStr) as ScheduleAIDataDto;
-    } catch {
-      try {
-        return JSON5.parse(jsonStr);
-      } catch (err) {
-        console.error('⛔️ JSON lỗi:', jsonStr);
-        throw new Error('Không thể parse JSON (JSON5): ' + err.message);
-      }
-    }
-  }
-
-  async chatWithOpenRouter({
-    model,
-    messages,
-    temperature = 0.7,
-  }: {
-    model: string;
-    messages: { role: 'user' | 'system' | 'assistant'; content: string }[];
-    temperature?: number;
-  }) {
-    const apiKey = this.cfg.get<string>('OPENROUTER_API_KEY');
-    if (!apiKey) {
-      throw new Error('⚠️ Thiếu OPENAI_API_KEY trong biến môi trường!');
-    }
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://duocnv.top', // 🔒 Bắt buộc! Dùng tên miền thật nếu deploy
-      'X-Title': 'hydro-schedule', // không bắt buộc
-    };
-
-    const body = {
-      model,
-      messages,
-      temperature,
-    };
-
-    try {
-      const res = await axios.post(
-        'https://openrouter.ai/api/v1/chat/completions',
-        body,
-        {
-          headers,
-        },
-      );
-      console.log('res-------------->', res);
-      const text: string = res.data?.choices?.[0]?.message?.content ?? '';
-      return text;
-    } catch (err) {
-      throw new HttpException(
-        'OpenRouter API Error: ' + (err.response?.data?.message || err.message),
-        500,
-      );
-    }
   }
 }

@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LiteAiScheduleLog } from 'src/sqlite/lite-ai-schedule-log.entity';
 import { AIController } from './ai.controller';
 import { AIService } from './ai.service';
+import { OpenRouterAnalysisService } from './ai-analysis.service';
+import { GeminiService } from './gemini-formatter.service';
 
 @Module({
   imports: [
@@ -14,7 +16,7 @@ import { AIService } from './ai.service';
     TypeOrmModule.forFeature([LiteAiScheduleLog], 'sqlite'),
   ],
   controllers: [AIController],
-  providers: [AIService],
+  providers: [AIService, GeminiService, OpenRouterAnalysisService],
   exports: [AIService],
 })
 export class AIModule {}
