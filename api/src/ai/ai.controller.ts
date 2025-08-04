@@ -9,14 +9,14 @@ import {
 } from '@nestjs/common';
 import { UpdateAiRewardDto } from './dto/update-ai-log.dto';
 import { AIService } from './ai.service';
-import { ScheduleAIDto } from './dto/ai.dto';
+import { ScheduleAIDataDto } from './dto/ai.dto';
 
 @Controller('ai')
 export class AIController {
   constructor(private readonly AIService: AIService) {}
 
   @Get()
-  async getIrrigationSchedule(): Promise<ScheduleAIDto> {
+  async getIrrigationSchedule(): Promise<ScheduleAIDataDto> {
     const data = await this.AIService.generateFinalSchedule();
     if (!data) {
       throw new NotFoundException('Chưa có lịch nào được tạo');
