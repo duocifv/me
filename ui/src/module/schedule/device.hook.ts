@@ -10,6 +10,8 @@ export function useDeviceScheduleQuery() {
   return useQuery({
     queryKey: ["deviceSchedule"],
     queryFn: () => deviceScheduleService.getSchedules(),
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true, 
   });
 }
 
