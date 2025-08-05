@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Circle, Pencil, Power } from "lucide-react";
+import { Pencil, Power } from "lucide-react";
 import { useDeviceScheduleStore } from "@adapter/schedule/device.store";
 import { ScheduleButtonDelete } from "./schedule-delete";
 import { DEVICE_LABELS } from "./schedule-labels";
