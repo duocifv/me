@@ -67,7 +67,6 @@ export class ApiClient {
             accessToken: string;
           }>("POST", "/auth/token", {
             credentials: "include",
-            timeout: 3000,
             headers: {
               "X-Device-Fingerprint": fingerprint,
             },
@@ -126,6 +125,7 @@ export class ApiClient {
 
     const { data, error, status } = await callApi<T>(method, url, {
       ...opts,
+      timeout: opts.timeout ?? 90000,
       headers: mergedHeaders,
     });
 

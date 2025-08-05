@@ -27,8 +27,7 @@ export default function ScheduleTable() {
       <Table>
         <TableHeader className="sticky top-0 z-10 bg-muted">
           <TableRow className="bg-gray-100">
-            <TableHead>Thiết bị</TableHead>
-            <TableHead>Thời gian hoạt động</TableHead>
+            <TableHead>Thiết bị & Thời gian</TableHead>
             <TableHead>Lặp lại</TableHead>
             <TableHead className="text-center">Trạng thái</TableHead>
             <TableHead className="text-right">Thao tác</TableHead>
@@ -41,18 +40,26 @@ export default function ScheduleTable() {
               key={s.id}
               className="hover:bg-accent/10 transition-colors"
             >
-              <TableCell className="font-medium uppercase">
-                {DEVICE_LABELS[s.device] || s.device}
-              </TableCell>
-
-              <TableCell className="text-sm">
-                {s.times.map((t, i) => (
-                  <div key={i}>
-                    {t.start} – {t.end}
+              {/* Thiết bị & Thời gian */}
+              <TableCell>
+                <div className="border rounded p-2 bg-gray-50">
+                  <div className="font-medium uppercase mb-1">
+                    {DEVICE_LABELS[s.device] || s.device}
                   </div>
-                ))}
+                  <div className="flex flex-wrap gap-2 text-xs text-gray-700">
+                    {s.times.map((t, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-white border rounded shadow-sm"
+                      >
+                        {t.start} – {t.end}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </TableCell>
 
+              {/* Lặp lại */}
               <TableCell>
                 {s.repeatOn.length > 0 ? (
                   s.repeatOn.map((d) => (
@@ -67,10 +74,12 @@ export default function ScheduleTable() {
                 )}
               </TableCell>
 
+              {/* Trạng thái */}
               <TableCell className="text-center">
                 <Switch checked={s.isEnabled} disabled />
               </TableCell>
 
+              {/* Thao tác */}
               <TableCell className="text-right space-x-2">
                 <Button
                   variant="outline"

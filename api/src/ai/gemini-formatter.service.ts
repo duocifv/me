@@ -47,53 +47,51 @@ export class GeminiService {
 
     // console.log('analysisText', analysisText);
     const prompt = `
-📌 Bạn là AI chuyên gia thủy canh ebb & flow.
+📌 Bạn là AI chuyên gia thủy canh ebb & flow, có nhiệm vụ **format kết quả phân tích** thành lịch JSON chuẩn.
 
-### Nhiệm vụ:
-Dựa vào phần phân tích sau (về giai đoạn sinh trưởng và khuyến nghị số lần bật thiết bị), hãy **tạo ra lịch mới**, đảm bảo:
-- Đúng định dạng JSON như mẫu bên dưới.
-- Tuân thủ ràng buộc kỹ thuật: không bật cùng lúc pump với thiết bị khác, fan và LED có thể bật cùng.
-
-### Phân tích:
+### Phân tích nhận được:
 ${analysisText}
 
-### Ràng buộc bắt buộc:
-- pump: 4–6 lần/ngày, mỗi lần 8–12 phút.
-- fan: 6–8 lần/ngày, mỗi lần 5–8 phút.
-- led: 6–8 lần/ngày, mỗi lần 90–120 phút.
-- nghỉ tối thiểu giữa các lần bật: 10 phút.
-- LED + Fan được phép chạy cùng lúc, các thiết bị khác thì không.
-- Khung giờ ưu tiên:
-  • pump: 06:00–09:00 và 16:00–18:00  
-  • fan + led: 06:00–08:00, 17:00–19:00  
-  • fan đơn: 09:00–15:00  
-- Nếu thiếu khung giờ, có thể dời ±5 phút.
+### Mục tiêu chính (tưới – pump):
+1. Pump phải cấp đủ lượng nước/ngày do Deepseek đề xuất.  
+2. Số lần: 4–6 lần/ngày, mỗi lần 8–12 phút.  
+3. Ngừng ít nhất 20 phút giữa các lần để ngăn ngập úng.  
+4. Khung giờ ưu tiên tưới: **05:30–08:30** và **16:00–19:00** (có thể dời ±5 phút nếu thiếu).  
 
-### Định dạng JSON cần trả về:
+### Lịch quạt (fan) & LED giữ nguyên:
+- Fan: 6–8 lần/ngày, mỗi lần 5–8 phút, khung giờ 06:00–08:00, 09:00–15:00, 17:00–19:00.  
+- LED: 6–8 lần/ngày, mỗi lần 90–120 phút, tổng 10–14 giờ/ngày, chạy cùng fan.
+
+### Quy tắc chung:
+- Pump không chạy cùng lúc với fan/LED  
+- Fan và LED có thể chạy đồng thời  
+- Nghỉ tối thiểu giữa mọi phiên bật (bất kể thiết bị): 10 phút  
+
+### Định dạng JSON trả về (chỉ mỗi JSON, không giải thích):
 {
-  "note": " -Giải thích ngắn gọn lý do tạo lịch như vậy...",
+  "note": "Tóm tắt kết quả phân tích từ Deepseek: [nơi ghi lại ngắn gọn giai đoạn sinh trưởng, lượng nước/ngày, số lần đề xuất]. Sau đó đưa lý do nổi bật cho lịch này...",
   "schedule": [
     {
       "deviceId": "device-001",
       "device": "pumpOn",
       "times": [
-        { "start": "06:00", "end": "06:10" },
-        ...
+        { "start": "HH:MM", "end": "HH:MM" },
+        …
       ]
     },
     {
       "deviceId": "device-002",
       "device": "fanOn",
-      "times": [ ... ]
+      "times": [ … ]
     },
     {
-      "deviceId": "device-002",
+      "deviceId": "device-003",
       "device": "ledOn",
-      "times": [ ... ]
+      "times": [ … ]
     }
   ]
 }
-⛔️ Không ghi chú, không markdown, chỉ trả về JSON đúng cấu trúc trên.
+⛔️ Tuyệt đối không kèm markdown hay bất kỳ text nào ngoài JSON.  
 `;
     return await this.chatWithGeminiApi(prompt);
   }

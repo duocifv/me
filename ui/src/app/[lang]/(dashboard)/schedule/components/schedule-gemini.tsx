@@ -15,6 +15,7 @@ import { DEVICE_LABELS } from "./schedule-labels";
 import { Card, CardContent } from "@/components/ui/card";
 import CreateGeminiSubmit from "../dispatch/dispatch-gemini-create";
 import GeminiSyncData from "../dispatch/dispatch-schedule-sync-gemini";
+import ReactMarkdown from "react-markdown";
 
 export function ScheduleGemini() {
   const gemini = useDeviceConfigStore((s) => s.gemini);
@@ -26,7 +27,7 @@ export function ScheduleGemini() {
       <Card className="bg-orange-50">
         <CardContent className="text-md min-w-full leading-relaxed p-4">
           <div className="min-w-full  text-black max-w-prose leading-relaxed mb-4">
-            {gemini.note}
+            <ReactMarkdown>{gemini.note}</ReactMarkdown>
           </div>
 
           <Dialog>

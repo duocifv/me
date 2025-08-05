@@ -6,7 +6,7 @@ import {
   AiLogStatus,
   LiteAiScheduleLog,
 } from 'src/sqlite/lite-ai-schedule-log.entity';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ScheduleAIDataDto, ScheduleAIDataSchema } from './dto/ai.dto';
 import { OpenRouterAnalysisService } from './ai-analysis.service';
 import { GeminiService } from './gemini-formatter.service';
@@ -93,66 +93,6 @@ export class AIService {
     }
 
     return { updated: items.length };
-  }
-
-  async buildAiScheduleFeedbackPrompt(take = 5): Promise<string> {
-    const history = await this.aiLogRepo.find({
-      where: { status: AiLogStatus.Evaluated },
-      order: { evaluatedAt: 'DESC' },
-      take,
-    });
-
-    if (!history.length) {
-      return '⚠️ Chưa có lịch nào được đánh giá trước đó.';
-    }
-
-    return history
-      .map((h, i) => {
-        const env = h.inputEnv || {};
-        const rewardText = typeof h.reward === 'number' ? h.reward : 'chưa rõ';
-        const noteText = h.note || 'Không có ghi chú';
-        const feedbackText = h.feedback ? `Phản hồi: ${h.feedback}` : '';
-        const timeText = h.evaluatedAt
-          ? `⏱️ Đánh giá lúc: ${new Date(h.evaluatedAt).toLocaleString()}`
-          : '';
-
-        return `#${i + 1}
-Môi trường: Nước ${env.waterTemperature}°C, Không khí ${env.ambientTemperature}°C, Độ ẩm ${env.humidity}%
-Điểm đánh giá: ${rewardText}
-Ghi chú: ${noteText}
-${feedbackText}
-${timeText}
-
-Schedule:
-${JSON.stringify(h.schedule, null, 2)}`;
-      })
-      .join('\n\n');
-  }
-
-  async getTopRatedLogsText(limit = 3): Promise<string> {
-    const topLogs = await this.aiLogRepo.find({
-      where: {
-        status: AiLogStatus.Evaluated,
-        reward: MoreThanOrEqual(5),
-      },
-      order: { reward: 'DESC' },
-      take: limit,
-    });
-
-    if (!topLogs.length) return 'Chưa có lịch tốt nào.';
-
-    return topLogs
-      .map((log, i) => {
-        const env = log.inputEnv || {};
-        const reward = log.reward ?? '?';
-        const note = log.note || 'Không có ghi chú';
-        return `#${i + 1}
-Môi trường: Nước ${env.waterTemperature}°C, Không khí ${env.ambientTemperature}°C, Độ ẩm ${env.humidity}%
-Điểm: ${reward}
-Ghi chú: ${note}
-${JSON.stringify(log.schedule, null, 2)}`;
-      })
-      .join('\n\n');
   }
 
   async generateFinalSchedule() {

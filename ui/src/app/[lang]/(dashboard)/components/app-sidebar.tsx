@@ -103,6 +103,11 @@ const data = {
       url: "/vi/schedule/",
       icon: Calendar,
     },
+     {
+      name: $t`Lịch thông minh`,
+      url: "/vi/ai/",
+      icon: Calendar,
+    },
   ],
 };
 
