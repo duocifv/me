@@ -67,7 +67,7 @@ export class ApiClient {
             accessToken: string;
           }>("POST", "/auth/token", {
             credentials: "include",
-            timeout: 80000,
+            timeout: 8000,
             headers: {
               "X-Device-Fingerprint": fingerprint,
             },

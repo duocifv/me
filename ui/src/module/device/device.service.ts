@@ -24,8 +24,15 @@ class DeviceConfigService {
   }
 
   async getGemini(): Promise<DeviceGemini> {
-    return this.device.get<DeviceGemini>(`ai`);
+    return this.device.get<DeviceGemini>(
+      `ai`,
+      {},
+      {
+        timeout: 90000,
+      }
+    );
   }
+
   async setGemini() {
     await this.device.post<DeviceGemini>(`ai/apply`);
     return true;

@@ -29,6 +29,7 @@ export const callApi = async <T>(
   statusText?: string;
   failed?: zodValidation;
 }> => {
+  console.log("timeouttimeouttimeouttimeouttimeouttimeouttimeout", timeout);
   const url = makeUrl(path, params);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -52,7 +53,16 @@ export const callApi = async <T>(
         : {}),
     };
 
-    return await retryFetch<T>(url, requestOpts, 3, 500, 1, responseType);
+    const response = await retryFetch<T>(
+      url,
+      requestOpts,
+      3,
+      500,
+      1,
+      responseType
+    );
+    clearTimeout(timeoutId);
+    return response;
   } catch (err: unknown) {
     let errorResponse: ErrorRespose = {
       message: "Unknown error",

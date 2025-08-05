@@ -80,12 +80,12 @@ ${analysisText}
       ]
     },
     {
-      "deviceId": "device-002",
+      "deviceId": "device-001",
       "device": "fanOn",
       "times": [ … ]
     },
     {
-      "deviceId": "device-003",
+      "deviceId": "device-001",
       "device": "ledOn",
       "times": [ … ]
     }
