@@ -38,7 +38,7 @@ export function ScheduleGemini() {
               </Button>
             </DialogTrigger>
 
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl text-orange-600">
                   Lịch hoạt động khuyến nghị
