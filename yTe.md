@@ -67,3 +67,46 @@ Cảm biến sinh lý MLP (Multi-layer Perceptron), Time-series models (LSTM, GR
    Babylon Health / Ada Health AI triage (LLM + ML) Đánh giá triệu chứng, gợi ý khám ✔ Kết hợp AI đưa khuyến nghị
    Apple Health + Watch Cảm biến + AI dự đoán xu hướng Theo dõi tim mạch, vận động, ngủ ✔ Fusion nhiều dữ liệu
    Cue Health AI đọc test nhanh (COVID, cúm...) Đọc que test phân tử, cho kết quả tự động ✔ Test nhanh
+
+modal
+
+- Tìm câu trả lời, từ câu hỏi và tất cả tài liệu nó đọc được.
+  https://huggingface.co/emilyalsentzer/Bio_ClinicalBERT
+
+- Hiểu và phân tích văn bản y tế, dựa trên những văn bản không rõ ràng hoặc thiếu.
+  https://huggingface.co/microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext
+  https://api-inference.huggingface.co/models/emilyalsentzer/Bio_ClinicalBERT
+
+https://huggingface.co/Zabihin/Symptom_to_Diagnosis
+
+- Mô hình classification fine‑tuned từ bert-base-cased, được huấn luyện trên dataset ~1,065 triệu chứng → 22 bệnh lý phổ biến.
+  Độ chính xác ~94%, F1 ~93% trên tập kiểm tra
+
+https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+
+- chat fakebook
+
+- chuyên y khoa
+  https://huggingface.co/medalpaca/medalpaca-7b
+  https://huggingface.co/microsoft/biogpt
+
+
+
+= Tương tác giữa bác sĩ và bệnh nhân
+MedAlpaca	Trả lời câu hỏi y khoa, chẩn đoán từ triệu chứng	HuggingFace
+ClinicalCamel	Chatbot y khoa, tương tác tự nhiên	HuggingFace
+BioMistral	Hiểu các biểu hiện sinh học + ngôn ngữ lâm sàng	HuggingFace
+
+===
+ 1. Chuyển ảnh da thành chẩn đoán da liễu
+https://huggingface.co/Conn-Finnegan/Soma_Skin_Cancer_Classifier
+
+2. Xử lý âm thanh phổi bằng spectrogram → Transformer
+https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+
+3. Xử lý âm thanh hô hấp/sound health embeddings
+https://huggingface.co/google/hear
+
+4. Xử lý cảm biến sinh lý (time-series)
+PyTorch hoặc TensorFlow, sử dụng LSTM/GRU/MLP.
+
