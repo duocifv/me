@@ -15,6 +15,16 @@ export function useDeviceScheduleQuery() {
   });
 }
 
+
+export function useHealthQuery() {
+  return useQuery({
+    queryKey: ["deviceHealth"],
+    queryFn: () => deviceScheduleService.getHealth(),
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true, 
+  });
+}
+
 // Lấy 1 lịch theo ID
 export function useDeviceScheduleDetailQuery(id: string) {
   return useQuery({

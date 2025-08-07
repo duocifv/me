@@ -11,6 +11,14 @@ class DeviceScheduleService {
     return this.device.get<ScheduleItem[]>(`device-001`);
   }
 
+  async getHealth(): Promise<{
+    on: true;
+  }> {
+    return this.device.get<{
+      on: true;
+    }>(`health`);
+  }
+
   async getSchedule(id: string): Promise<ScheduleItem> {
     return this.device.get<ScheduleItem>(`device-001/${id}`);
   }
