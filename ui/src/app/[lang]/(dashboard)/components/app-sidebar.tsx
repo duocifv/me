@@ -103,9 +103,14 @@ const data = {
       url: "/vi/schedule/",
       icon: Calendar,
     },
-     {
-      name: $t`Lịch thông minh`,
+    {
+      name: $t`AI thủy canh`,
       url: "/vi/ai/",
+      icon: Calendar,
+    },
+    {
+      name: $t`AI Y Tế`,
+      url: "/vi/medical/",
       icon: Calendar,
     },
   ],

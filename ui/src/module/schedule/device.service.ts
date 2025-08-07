@@ -12,10 +12,10 @@ class DeviceScheduleService {
   }
 
   async getHealth(): Promise<{
-    on: true;
+    on: boolean;
   }> {
     return this.device.get<{
-      on: true;
+      on: boolean;
     }>(`health`);
   }
 

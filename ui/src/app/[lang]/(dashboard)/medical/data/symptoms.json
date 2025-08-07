@@ -1,0 +1,626 @@
+[
+  {
+    "system": "Hô hấp",
+    "description": "Từ mũi đến ngực trên. Giúp bạn hít vào oxy và thở ra khí CO₂. Gồm mũi, họng, phổi.",
+    "anatomicalParts": [
+      {
+        "anatomicalPart": "Mũi",
+        "clinicalSigns": [
+          {
+            "sign": "Nghẹt mũi",
+            "description": "Khó thở bằng mũi do tắc nghẽn."
+          },
+          {
+            "sign": "Chảy nước mũi",
+            "description": "Dịch mũi chảy ra ngoài, thường do cảm lạnh."
+          },
+          {
+            "sign": "Mất khứu giác",
+            "description": "Không ngửi được mùi."
+          },
+          {
+            "sign": "Ngứa mũi",
+            "description": "Cảm giác khó chịu trong mũi."
+          },
+          {
+            "sign": "Chảy máu mũi",
+            "description": "Máu chảy từ lỗ mũi ra ngoài."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Họng",
+        "clinicalSigns": [
+          {
+            "sign": "Đau họng",
+            "description": "Cảm giác đau rát khi nuốt hoặc nói."
+          },
+          {
+            "sign": "Khó nuốt",
+            "description": "Cảm giác vướng hoặc đau khi nuốt thức ăn."
+          },
+          {
+            "sign": "Khàn tiếng",
+            "description": "Giọng nói thay đổi, yếu hoặc mất tiếng."
+          },
+          {
+            "sign": "Ngứa họng",
+            "description": "Cảm giác kích thích gây muốn ho."
+          },
+          {
+            "sign": "Sưng amidan",
+            "description": "Amidan to, đỏ, có thể đau."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Phổi",
+        "clinicalSigns": [
+          {
+            "sign": "Ho",
+            "description": "Phản xạ tống dị vật khỏi đường hô hấp."
+          },
+          {
+            "sign": "Ho có đờm",
+            "description": "Ho kèm chất nhầy từ phổi."
+          },
+          {
+            "sign": "Khó thở",
+            "description": "Cảm giác thiếu không khí."
+          },
+          {
+            "sign": "Đau ngực khi thở",
+            "description": "Đau nhói khi hít sâu."
+          },
+          {
+            "sign": "Thở khò khè",
+            "description": "Tiếng thở rít, thường do hẹp đường thở."
+          },
+          {
+            "sign": "Thở nhanh",
+            "description": "Nhịp thở cao hơn bình thường."
+          },
+          {
+            "sign": "Ho ra máu",
+            "description": "Có máu trong đờm khi ho."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "system": "Tiêu hóa",
+    "description": "Từ miệng xuống bụng dưới. Giúp tiêu hóa thức ăn và hấp thu dinh dưỡng. Gồm miệng, dạ dày, ruột.",
+    "anatomicalParts": [
+      {
+        "anatomicalPart": "Miệng",
+        "clinicalSigns": [
+          {
+            "sign": "Khô miệng",
+            "description": "Thiếu nước bọt, gây khó chịu."
+          },
+          {
+            "sign": "Hơi thở hôi",
+            "description": "Mùi khó chịu từ miệng."
+          },
+          {
+            "sign": "Lở miệng",
+            "description": "Vết loét nhỏ gây đau trong miệng."
+          },
+          {
+            "sign": "Đắng miệng",
+            "description": "Vị đắng kéo dài không rõ nguyên nhân."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Dạ dày",
+        "clinicalSigns": [
+          {
+            "sign": "Đau bụng trên",
+            "description": "Cảm giác đau vùng giữa ngực và rốn."
+          },
+          {
+            "sign": "Buồn nôn",
+            "description": "Cảm giác muốn nôn."
+          },
+          {
+            "sign": "Nôn",
+            "description": "Tống thức ăn ra khỏi dạ dày qua miệng."
+          },
+          {
+            "sign": "Ợ nóng",
+            "description": "Cảm giác nóng rát từ dạ dày lên cổ."
+          },
+          {
+            "sign": "Chướng bụng",
+            "description": "Bụng đầy, căng và khó chịu."
+          },
+          {
+            "sign": "Khó tiêu",
+            "description": "Cảm giác no, đầy hơi sau khi ăn."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Ruột non",
+        "clinicalSigns": [
+          {
+            "sign": "Tiêu chảy",
+            "description": "Đi ngoài lỏng nhiều lần trong ngày."
+          },
+          {
+            "sign": "Đầy hơi",
+            "description": "Tích tụ khí gây khó chịu."
+          },
+          {
+            "sign": "Co thắt bụng",
+            "description": "Cơn đau thắt ở bụng."
+          },
+          {
+            "sign": "Đau bụng từng cơn",
+            "description": "Cơn đau ngắt quãng, thường đi kèm tiêu chảy."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Ruột già",
+        "clinicalSigns": [
+          {
+            "sign": "Táo bón",
+            "description": "Đi ngoài khó, ít hơn 3 lần/tuần."
+          },
+          {
+            "sign": "Đi ngoài ra máu",
+            "description": "Phân có lẫn máu tươi."
+          },
+          {
+            "sign": "Đi ngoài phân nhầy",
+            "description": "Phân kèm chất nhầy."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Gan",
+        "clinicalSigns": [
+          {
+            "sign": "Vàng da",
+            "description": "Da và mắt có màu vàng."
+          },
+          {
+            "sign": "Mệt mỏi",
+            "description": "Cảm giác kiệt sức dù nghỉ ngơi."
+          },
+          {
+            "sign": "Chán ăn",
+            "description": "Không muốn ăn, mất cảm giác ngon miệng."
+          },
+          {
+            "sign": "Nước tiểu sẫm màu",
+            "description": "Tiểu có màu như trà."
+          },
+          {
+            "sign": "Đau hạ sườn phải",
+            "description": "Đau vùng bụng dưới xương sườn bên phải."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Túi mật",
+        "clinicalSigns": [
+          {
+            "sign": "Đau bụng phải",
+            "description": "Đau vùng bụng trên bên phải."
+          },
+          {
+            "sign": "Buồn nôn sau ăn dầu mỡ",
+            "description": "Dạ dày khó chịu sau khi ăn đồ chiên."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "system": "Thần kinh",
+    "description": "Trải dài toàn cơ thể, tập trung ở đầu và cột sống. Điều khiển suy nghĩ, cảm giác, vận động. Gồm não, tủy sống, dây thần kinh.",
+    "anatomicalParts": [
+      {
+        "anatomicalPart": "Não",
+        "clinicalSigns": [
+          {
+            "sign": "Đau đầu",
+            "description": "Cảm giác đau ở vùng đầu."
+          },
+          {
+            "sign": "Mất trí nhớ",
+            "description": "Quên nhanh, nhớ kém bất thường."
+          },
+          {
+            "sign": "Chóng mặt",
+            "description": "Cảm giác quay cuồng, mất thăng bằng."
+          },
+          {
+            "sign": "Mất ý thức",
+            "description": "Bất tỉnh trong thời gian ngắn."
+          },
+          {
+            "sign": "Co giật",
+            "description": "Cơ thể rung lắc không kiểm soát."
+          },
+          {
+            "sign": "Rối loạn ngôn ngữ",
+            "description": "Khó nói hoặc không hiểu lời nói."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Tủy sống",
+        "clinicalSigns": [
+          {
+            "sign": "Tê liệt",
+            "description": "Mất khả năng vận động một phần hoặc toàn phần."
+          },
+          {
+            "sign": "Yếu cơ",
+            "description": "Cơ lực giảm, vận động yếu."
+          },
+          {
+            "sign": "Rối loạn cảm giác",
+            "description": "Cảm giác bất thường như tê, châm chích."
+          },
+          {
+            "sign": "Tê bì chân tay",
+            "description": "Mất cảm giác, cảm giác như kim châm."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Toàn thân",
+        "clinicalSigns": [
+          {
+            "sign": "Mất ngủ",
+            "description": "Không ngủ được hoặc ngủ không sâu."
+          },
+          {
+            "sign": "Lo âu",
+            "description": "Cảm giác căng thẳng, lo lắng kéo dài."
+          },
+          {
+            "sign": "Trầm cảm",
+            "description": "Buồn bã, mất hứng thú với mọi việc."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "system": "Tim mạch",
+    "description": "Trung tâm ở ngực. Vận chuyển máu và oxy đi khắp cơ thể. Gồm tim và hệ thống mạch máu.",
+    "anatomicalParts": [
+      {
+        "anatomicalPart": "Tim",
+        "clinicalSigns": [
+          {
+            "sign": "Đánh trống ngực",
+            "description": "Tim đập nhanh hoặc không đều."
+          },
+          {
+            "sign": "Khó thở khi nằm",
+            "description": "Cảm giác khó thở tăng khi nằm."
+          },
+          {
+            "sign": "Đau ngực",
+            "description": "Đau vùng ngực, có thể lan ra tay."
+          },
+          {
+            "sign": "Ngất",
+            "description": "Mất ý thức tạm thời."
+          },
+          {
+            "sign": "Mệt khi gắng sức",
+            "description": "Nhanh mệt khi vận động nhẹ."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Mạch máu",
+        "clinicalSigns": [
+          {
+            "sign": "Phù chân",
+            "description": "Chân sưng do ứ dịch."
+          },
+          {
+            "sign": "Tê tay chân",
+            "description": "Cảm giác tê, mất cảm giác ở chi."
+          },
+          {
+            "sign": "Tụt huyết áp",
+            "description": "Huyết áp thấp gây chóng mặt."
+          },
+          {
+            "sign": "Huyết áp cao",
+            "description": "Áp lực máu cao hơn bình thường."
+          },
+          {
+            "sign": "Giãn tĩnh mạch",
+            "description": "Tĩnh mạch nổi to, thường ở chân."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "system": "Cơ xương khớp",
+    "description": "Khắp toàn thân. Giúp bạn đứng, đi lại, cử động. Gồm xương, khớp, cơ bắp.",
+    "anatomicalParts": [
+      {
+        "anatomicalPart": "Khớp",
+        "clinicalSigns": [
+          {
+            "sign": "Đau khớp",
+            "description": "Đau vùng khớp khi cử động."
+          },
+          {
+            "sign": "Cứng khớp buổi sáng",
+            "description": "Khớp khó cử động sau khi ngủ dậy."
+          },
+          {
+            "sign": "Sưng khớp",
+            "description": "Khớp sưng, đỏ, đau."
+          },
+          {
+            "sign": "Biến dạng khớp",
+            "description": "Khớp thay đổi hình dạng."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Cơ",
+        "clinicalSigns": [
+          {
+            "sign": "Yếu cơ",
+            "description": "Cơ không đủ sức vận động."
+          },
+          {
+            "sign": "Đau cơ",
+            "description": "Cảm giác đau nhức cơ."
+          },
+          {
+            "sign": "Co rút cơ",
+            "description": "Cơ co chặt, gây đau."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Xương",
+        "clinicalSigns": [
+          {
+            "sign": "Đau xương",
+            "description": "Đau sâu trong xương."
+          },
+          {
+            "sign": "Gãy xương",
+            "description": "Xương bị nứt hoặc vỡ."
+          },
+          {
+            "sign": "Loãng xương",
+            "description": "Mật độ xương giảm, dễ gãy."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "system": "Nội tiết",
+    "description": "Rải rác khắp cơ thể. Kiểm soát hormone, điều chỉnh tăng trưởng và sinh lý. Gồm tuyến giáp, tụy, tuyến thượng thận…",
+    "anatomicalParts": [
+      {
+        "anatomicalPart": "Tuyến giáp",
+        "clinicalSigns": [
+          {
+            "sign": "Sụt cân",
+            "description": "Giảm cân nhanh không rõ lý do."
+          },
+          {
+            "sign": "Tăng cân",
+            "description": "Tăng cân nhanh dù ăn uống bình thường."
+          },
+          {
+            "sign": "Run tay",
+            "description": "Tay run nhẹ khi nghỉ ngơi."
+          },
+          {
+            "sign": "Tim đập nhanh",
+            "description": "Nhịp tim cao dù không hoạt động."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Tuyến tụy",
+        "clinicalSigns": [
+          {
+            "sign": "Khát nhiều",
+            "description": "Luôn cảm thấy khát nước."
+          },
+          {
+            "sign": "Tiểu nhiều",
+            "description": "Đi tiểu nhiều hơn bình thường."
+          },
+          {
+            "sign": "Sụt cân nhanh",
+            "description": "Mất cân không rõ nguyên nhân."
+          },
+          {
+            "sign": "Mệt mỏi",
+            "description": "Kiệt sức, thiếu năng lượng."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "system": "Tiết niệu - Sinh dục",
+    "description": "Ở vùng bụng dưới và cơ quan sinh dục. Đào thải nước tiểu và hỗ trợ sinh sản. Gồm thận, bàng quang, tử cung hoặc tinh hoàn.",
+    "anatomicalParts": [
+      {
+        "anatomicalPart": "Thận",
+        "clinicalSigns": [
+          {
+            "sign": "Tiểu buốt",
+            "description": "Đau rát khi tiểu tiện."
+          },
+          {
+            "sign": "Tiểu rắt",
+            "description": "Thường xuyên buồn tiểu, tiểu ít."
+          },
+          {
+            "sign": "Tiểu đục",
+            "description": "Nước tiểu có màu mờ, vẩn đục."
+          },
+          {
+            "sign": "Đau lưng dưới",
+            "description": "Đau vùng sau thắt lưng, gần thận."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Bàng quang",
+        "clinicalSigns": [
+          {
+            "sign": "Tiểu không tự chủ",
+            "description": "Mất kiểm soát tiểu tiện."
+          },
+          {
+            "sign": "Tiểu nhiều lần",
+            "description": "Đi tiểu liên tục trong ngày."
+          },
+          {
+            "sign": "Tiểu ra máu",
+            "description": "Nước tiểu có màu hồng hoặc đỏ."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Sinh dục nam",
+        "clinicalSigns": [
+          {
+            "sign": "Đau tinh hoàn",
+            "description": "Cảm giác đau ở vùng tinh hoàn."
+          },
+          {
+            "sign": "Rối loạn cương",
+            "description": "Khó cương hoặc duy trì cương."
+          },
+          {
+            "sign": "Xuất tinh sớm",
+            "description": "Xuất tinh trước mong muốn."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Sinh dục nữ",
+        "clinicalSigns": [
+          {
+            "sign": "Đau bụng kinh",
+            "description": "Đau vùng bụng dưới trong kỳ kinh."
+          },
+          {
+            "sign": "Rối loạn kinh nguyệt",
+            "description": "Chu kỳ kinh không đều."
+          },
+          {
+            "sign": "Khí hư bất thường",
+            "description": "Dịch âm đạo khác thường về màu, mùi, lượng."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "system": "Da liễu",
+    "description": "Bao phủ toàn bộ cơ thể. Bảo vệ cơ thể và điều hòa thân nhiệt. Gồm da, tóc, móng.",
+    "anatomicalParts": [
+      {
+        "anatomicalPart": "Da",
+        "clinicalSigns": [
+          {
+            "sign": "Phát ban",
+            "description": "Vùng da đỏ, nổi mẩn ngứa."
+          },
+          {
+            "sign": "Ngứa",
+            "description": "Cảm giác muốn gãi do kích thích da."
+          },
+          {
+            "sign": "Nổi mề đay",
+            "description": "Mẩn ngứa, mảng da sưng tạm thời."
+          },
+          {
+            "sign": "Mụn",
+            "description": "Nốt đỏ, mủ thường ở mặt."
+          },
+          {
+            "sign": "Da khô",
+            "description": "Da thiếu độ ẩm, nứt nẻ."
+          },
+          {
+            "sign": "Rụng tóc",
+            "description": "Tóc rụng nhiều bất thường."
+          }
+        ]
+      },
+      {
+        "anatomicalPart": "Móng - tóc",
+        "clinicalSigns": [
+          {
+            "sign": "Gãy móng",
+            "description": "Móng dễ gãy, mỏng yếu."
+          },
+          {
+            "sign": "Rụng tóc nhiều",
+            "description": "Tóc rụng nhiều hơn bình thường."
+          },
+          {
+            "sign": "Thay đổi màu móng",
+            "description": "Màu móng thay đổi, có thể là dấu hiệu bệnh."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "system": "Toàn thân",
+    "description": "Không thuộc riêng một vùng nào. Các dấu hiệu ảnh hưởng toàn cơ thể như sốt, mệt mỏi.",
+    "anatomicalParts": [
+      {
+        "anatomicalPart": "Triệu chứng chung",
+        "clinicalSigns": [
+          {
+            "sign": "Sốt",
+            "description": "Nhiệt độ cơ thể tăng cao."
+          },
+          {
+            "sign": "Ớn lạnh",
+            "description": "Cảm giác lạnh dù môi trường ấm."
+          },
+          {
+            "sign": "Giảm cân không rõ lý do",
+            "description": "Mất cân không cố ý."
+          },
+          {
+            "sign": "Mệt mỏi",
+            "description": "Cảm giác thiếu năng lượng kéo dài."
+          },
+          {
+            "sign": "Chán ăn",
+            "description": "Mất cảm giác thèm ăn."
+          },
+          {
+            "sign": "Ra mồ hôi ban đêm",
+            "description": "Đổ mồ hôi nhiều khi ngủ."
+          }
+        ]
+      }
+    ]
+  }
+]
