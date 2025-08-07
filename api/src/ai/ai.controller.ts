@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { UpdateAiRewardDto } from './dto/update-ai-log.dto';
 import { AIService } from './ai.service';
