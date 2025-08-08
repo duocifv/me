@@ -2,7 +2,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as mqtt from 'mqtt';
-import { RedisService } from 'src/redis/redis.service';
 import { CreateSnapshotDto } from './dto/create-snapshot.dto';
 import { AddCameraChunkDto, ChunkCache } from './dto/add-camera-chunk.dto';
 import { ErrorDto } from './dto/error.dto';
@@ -13,6 +12,7 @@ import { Repository } from 'typeorm';
 import { LiteCamera } from 'src/sqlite/lite-camera.entity';
 import { LiteErrors } from '../sqlite/lite-errors.entity';
 import { LiteSensors } from '../sqlite/lite-sensors.entity';
+import { nowVNDate } from 'src/shared/utils/time';
 
 interface ChunkCacheWithTimestamp extends ChunkCache {
   ts: number;
@@ -27,7 +27,6 @@ export class MqttService implements OnModuleInit {
 
   constructor(
     private readonly config: ConfigService,
-    private readonly redis: RedisService,
     private readonly scheduleService: ScheduleService,
 
     @InjectRepository(LiteCamera, 'sqlite')
@@ -154,7 +153,7 @@ export class MqttService implements OnModuleInit {
   }
 
   private async createCamera(url: string): Promise<LiteCamera> {
-    return await this.cameraRepo.save({ url });
+    return await this.cameraRepo.save({ url, createdAt: nowVNDate() });
   }
 
   private isValidChunk(o: any): o is AddCameraChunkDto {
@@ -269,7 +268,7 @@ export class MqttService implements OnModuleInit {
   }
 
   async createError(dto: ErrorDto): Promise<LiteErrors> {
-    return await this.errorsRepo.save(dto);
+    return await this.errorsRepo.save({ ...dto, createdAt: nowVNDate() });
   }
 
   async deleteError() {

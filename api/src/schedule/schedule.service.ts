@@ -12,6 +12,7 @@ import { UpdateControlDto } from 'src/mqtt/dto/control.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { LiteSchedule } from '../sqlite/lite-schedule.entity';
+import { nowVNDate } from 'src/shared/utils/time';
 
 @Injectable()
 export class ScheduleService {
@@ -51,8 +52,7 @@ export class ScheduleService {
       ...dto,
       deviceId,
     });
-    console.log('save schedule', schedule);
-    await this.scheduleRepo.save(schedule);
+    await this.scheduleRepo.save({ ...schedule, createdAt: nowVNDate() });
   }
 
   async getScheduleById(

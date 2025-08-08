@@ -14,3 +14,7 @@ export const timeNowISO = (): string => {
 export const nowVNShort = (): string => {
   return timeNow().toFormat('yyyy-MM-dd HH:mm:ss'); // ví dụ: "2025-07-30 13:01:45"
 };
+
+export const nowVNDate = (): Date => {
+  return DateTime.now().setZone('Asia/Ho_Chi_Minh').toJSDate();
+};
