@@ -6,3 +6,20 @@ export class AddImagesDto {
   @ApiProperty({ type: [String] })
   images: string[];
 }
+
+export interface CameraData {
+  id: string;
+  url: string;
+  createdAt: string;
+}
+
+export type CloudinaryResource = {
+  public_id: string;
+  format: string;
+  secure_url: string;
+  created_at: string;
+};
+
+export type CloudinaryApiResponse = {
+  resources: CloudinaryResource[];
+};

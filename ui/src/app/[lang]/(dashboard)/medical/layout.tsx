@@ -23,7 +23,7 @@ export default async function UserLayout({
                 <h1 className="text-2xl font-semibold">AI Y Tế</h1>
               </div>
             </div>
-            <div className="p-6">
+            <div className="md:p-6">
               <Suspense>{children}</Suspense>
             </div>
           </div>

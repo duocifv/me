@@ -13,6 +13,7 @@ import { LiteCamera } from 'src/sqlite/lite-camera.entity';
 import { LiteErrors } from '../sqlite/lite-errors.entity';
 import { LiteSensors } from '../sqlite/lite-sensors.entity';
 import { nowVNDate } from 'src/shared/utils/time';
+import { CameraData, CloudinaryApiResponse } from './dto/add-camera-image.dto';
 
 interface ChunkCacheWithTimestamp extends ChunkCache {
   ts: number;
@@ -20,9 +21,9 @@ interface ChunkCacheWithTimestamp extends ChunkCache {
 
 @Injectable()
 export class MqttService implements OnModuleInit {
-  private lastPing: number = Date.now();
   private readonly logger = new Logger(MqttService.name);
   private client: mqtt.MqttClient;
+  private lastPing: number = Date.now();
   private chunkCache = new Map<number, ChunkCacheWithTimestamp>();
 
   constructor(
@@ -254,14 +255,31 @@ export class MqttService implements OnModuleInit {
     return { success: true };
   }
 
-  async findAllCamera(): Promise<LiteCamera[]> {
-    return await this.cameraRepo.find({
-      order: {
-        createdAt: 'DESC',
-      },
-    });
-  }
+  // async findAllCamera(): Promise<LiteCamera[]> {
+  //   return await this.cameraRepo.find({
+  //     order: {
+  //       createdAt: 'DESC',
+  //     },
+  //   });
+  // }
+  async findAllCamera(): Promise<CameraData[]> {
+    try {
+      const res = (await cloudinary.api.resources({
+        type: 'upload',
+        resource_type: 'image',
+        max_results: 50,
+      })) as CloudinaryApiResponse;
 
+      return res.resources.map((img) => ({
+        id: img.public_id,
+        url: img.secure_url,
+        createdAt: img.created_at,
+      }));
+    } catch (err) {
+      console.error('Error fetching images:', err);
+      throw err;
+    }
+  }
   async deleteCamera() {
     await this.cameraRepo.clear();
     return { success: true };
