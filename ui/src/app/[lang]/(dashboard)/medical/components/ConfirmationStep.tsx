@@ -1,7 +1,7 @@
 import React from "react";
-import { MedicalHistory } from "../page";
+import { MedicalHistory, PatientInfo } from "../page";
 
-interface DetailedSymptoms {
+export interface DetailedSymptoms {
   painIntensity: string;
   painDuration: string;
   painLocation: string;
@@ -11,6 +11,7 @@ interface DetailedSymptoms {
 }
 
 interface ConfirmationStepProps {
+  patientInfo: PatientInfo;
   basicSymptoms: string[];
   detailedSymptoms: DetailedSymptoms;
   medicalHistory: MedicalHistory;
@@ -19,6 +20,7 @@ interface ConfirmationStepProps {
 }
 
 export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
+  patientInfo,
   basicSymptoms,
   detailedSymptoms,
   medicalHistory,
@@ -37,6 +39,51 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
       </div>
 
       <div className="space-y-6">
+        {/* Patient Information */}
+        <div className="border rounded-lg p-5">
+          <h3 className="font-semibold text-lg text-gray-800 mb-4">
+            Thông tin bệnh nhân
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-gray-600">Họ và tên:</p>
+              <p className="font-medium">{patientInfo.fullName}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Tuổi:</p>
+              <p className="font-medium">{patientInfo.age} tuổi</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Giới tính:</p>
+              <p className="font-medium">{patientInfo.gender}</p>
+            </div>
+            {patientInfo.weight && (
+              <div>
+                <p className="text-gray-600">Cân nặng:</p>
+                <p className="font-medium">{patientInfo.weight} kg</p>
+              </div>
+            )}
+            {patientInfo.height && (
+              <div>
+                <p className="text-gray-600">Chiều cao:</p>
+                <p className="font-medium">{patientInfo.height} cm</p>
+              </div>
+            )}
+            {patientInfo.phone && (
+              <div>
+                <p className="text-gray-600">Điện thoại:</p>
+                <p className="font-medium">{patientInfo.phone}</p>
+              </div>
+            )}
+            {patientInfo.email && (
+              <div className="md:col-span-2">
+                <p className="text-gray-600">Email:</p>
+                <p className="font-medium">{patientInfo.email}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Basic Symptoms */}
         <div className="border rounded-lg p-5">
           <h3 className="font-semibold text-lg text-gray-800 mb-4">

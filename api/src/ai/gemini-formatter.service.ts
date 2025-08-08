@@ -8,6 +8,47 @@ import { ScheduleAIDataDto } from './dto/ai.dto';
 export class GeminiService {
   constructor(private readonly config: ConfigService) {}
 
+  async chatWithGeminiRaw(prompt: string): Promise<string> {
+    const apiKey = this.config.get<string>('GEMINI_API_KEY');
+    if (!apiKey) {
+      throw new Error('⚠️ Thiếu GEMINI_API_KEY trong biến môi trường!');
+    }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      // tùy chọn: nếu bạn có Bearer token, bật dòng dưới
+      // Authorization: `Bearer ${apiKey}`,
+    };
+
+    const body = {
+      contents: [{ parts: [{ text: prompt }] }],
+    };
+
+    try {
+      const res = await axios.post(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+        body,
+        { headers, timeout: 30000 },
+      );
+
+      const text =
+        res.data?.candidates?.[0]?.content?.parts?.[0]?.text ??
+        (typeof res.data === 'string' ? res.data : '');
+
+      // Trả nguyên văn text (raw) — caller sẽ quyết định xử lý tiếp
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return (text || '').toString();
+    } catch (err: any) {
+      // Ném lỗi rõ ràng, log chi tiết trên server nếu cần
+      const serverMsg = err?.response?.data ?? err?.message ?? err;
+      throw new HttpException(
+        'Gemini API Error: ' + JSON.stringify(serverMsg),
+        500,
+      );
+    }
+  }
+
   async chatWithGeminiApi(prompt: string) {
     const apiKey = this.config.get<string>('GEMINI_API_KEY');
     if (!apiKey) {

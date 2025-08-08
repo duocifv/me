@@ -6,15 +6,21 @@ import {
   Param,
   Post,
   Put,
-  Query,
 } from '@nestjs/common';
 import { UpdateAiRewardDto } from './dto/update-ai-log.dto';
 import { AIService } from './ai.service';
 import { ScheduleAIDataDto } from './dto/ai.dto';
+import { MedalpacaService } from './medalpaca.service';
+import { ApiBody } from '@nestjs/swagger';
+import { string } from 'zod';
+import { CreateMedalpacaDto } from './dto/create-medalpaca.dto';
 
 @Controller('ai')
 export class AIController {
-  constructor(private readonly AIService: AIService) {}
+  constructor(
+    private readonly AIService: AIService,
+    private readonly medalpacaService: MedalpacaService,
+  ) {}
 
   @Get()
   async getIrrigationSchedule(): Promise<ScheduleAIDataDto> {
@@ -45,5 +51,11 @@ export class AIController {
   @Get('logs')
   async getAllAiLogs() {
     return await this.AIService.getAllAiLogs();
+  }
+
+  @Post('medalpaca')
+  @ApiBody({ type: CreateMedalpacaDto })
+  async medAlpaca(@Body() body: CreateMedalpacaDto) {
+    return this.medalpacaService.ask(body.text);
   }
 }

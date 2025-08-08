@@ -2,55 +2,35 @@
 import React, { useState } from "react";
 import { SymptomSearchStep } from "./components/SymptomSearchStep";
 import DetailedSymptomsStep from "./components/DetailedSymptomsStep";
-import ConfirmationStep from "./components/ConfirmationStep";
+import ConfirmationStep, {
+  DetailedSymptoms,
+} from "./components/ConfirmationStep";
 import { ProcessingStep } from "./components/ProcessingStep";
 import ResultsStep from "./components/ResultsStep";
 import { MedicalHistoryStep } from "./components/MedicalHistoryStep";
-
-interface DetailedSymptoms {
-  painIntensity: string;
-  painDuration: string;
-  painLocation: string;
-  associatedSymptoms: string[];
-  aggravatingFactors: string[];
-  relievingFactors: string[];
-}
-
-export interface MedicalHistory {
-  chronicConditions: string[];
-  allergies: string;
-  currentMedications: string;
-  previousSurgeries: string;
-  familyHistory: string[];
-}
-
-const initialDetailedSymptoms: DetailedSymptoms = {
-  painIntensity: "",
-  painDuration: "",
-  painLocation: "",
-  associatedSymptoms: [],
-  aggravatingFactors: [],
-  relievingFactors: [],
-};
-
-const initialMedicalHistory: MedicalHistory = {
-  chronicConditions: [],
-  allergies: "",
-  currentMedications: "",
-  previousSurgeries: "",
-  familyHistory: [],
-};
+import { PatientInfoStep } from "./components/PatientInfoStep";
+import { generateSummaryText } from "./components/generateSummaryText";
+import { useMedicalStore } from "@/module/medical/medical.store";
+import { MedicalHistory, PatientInfo } from "@/module/medical/medical.type";
+import { useMedicalMutation } from "@/module/medical/medical.hook.";
 
 export default function MedicalDiagnosisApp() {
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [basicSymptoms, setBasicSymptoms] = useState<string[]>([]);
-  const [detailedSymptoms, setDetailedSymptoms] = useState<DetailedSymptoms>(
-    initialDetailedSymptoms
-  );
-  const [medicalHistory, setMedicalHistory] = useState<MedicalHistory>(
-    initialMedicalHistory
-  );
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const { mutate } = useMedicalMutation();
+  const [currentStep, setCurrentStep] = useState<number>(0);
+  const {
+    patientInfo,
+    basicSymptoms,
+    detailedSymptoms,
+    medicalHistory,
+    setPatientInfo,
+    setBasicSymptoms,
+    setDetailedSymptoms,
+    setMedicalHistory,
+  } = useMedicalStore((s) => s);
+
+  const handlePatientInfoSubmit = (info: PatientInfo) => {
+    setPatientInfo(info);
+  };
 
   const handleSymptomsSelect = (symptoms: string[]): void => {
     setBasicSymptoms(symptoms);
@@ -64,17 +44,29 @@ export default function MedicalDiagnosisApp() {
     setMedicalHistory(history);
   };
 
-  const handleNext = (): void => {
+  const handleNext = () => {
     if (currentStep === 4) {
-      setCurrentStep(5);
-      setIsProcessing(true);
-
-      setTimeout(() => {
-        setIsProcessing(false);
-        setCurrentStep(6);
-      }, 3000);
+      const summaryText = generateSummaryText(
+        patientInfo,
+        basicSymptoms,
+        detailedSymptoms,
+        medicalHistory
+      );
+      setCurrentStep(5); // chuyển sang bước xử lý ngay khi gọi mutate
+      mutate(summaryText, {
+        onSuccess: () => {
+          console.log("Summary Text sắp gửi:", summaryText);
+          setCurrentStep(6);
+        },
+        onError: (error) => {
+          console.error("Lỗi khi gửi dữ liệu:", error);
+          // Có thể chuyển về bước 4 để người dùng sửa hoặc hiện thông báo lỗi
+          setCurrentStep(4);
+          alert("Có lỗi xảy ra khi gửi dữ liệu, vui lòng thử lại.");
+        },
+      });
     } else {
-      setCurrentStep((prev) => prev + 1);
+      setCurrentStep(currentStep + 1);
     }
   };
 
@@ -83,43 +75,104 @@ export default function MedicalDiagnosisApp() {
   };
 
   const handleRestart = (): void => {
-    setCurrentStep(1);
+    setCurrentStep(0);
+    setPatientInfo(patientInfo);
     setBasicSymptoms([]);
-    setDetailedSymptoms(initialDetailedSymptoms);
-    setMedicalHistory(initialMedicalHistory);
+    setDetailedSymptoms(detailedSymptoms);
+    setMedicalHistory(medicalHistory);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br  p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-center mb-4">
             <div className="flex items-center">
-              {[1, 2, 3, 4, 5].map((step) => (
-                <React.Fragment key={step}>
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                      currentStep >= step
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-300 text-gray-600"
-                    }`}
-                  >
-                    {step}
-                  </div>
-                  {step < 5 && (
-                    <div
-                      className={`w-16 h-1 ${
-                        currentStep > step ? "bg-blue-600" : "bg-gray-300"
-                      }`}
-                    ></div>
-                  )}
-                </React.Fragment>
-              ))}
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  currentStep >= 0
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                1
+              </div>
+              <div
+                className={`w-12 h-1 ${
+                  currentStep >= 1 ? "bg-blue-600" : "bg-gray-300"
+                }`}
+              ></div>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  currentStep >= 1
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                2
+              </div>
+              <div
+                className={`w-12 h-1 ${
+                  currentStep >= 2 ? "bg-blue-600" : "bg-gray-300"
+                }`}
+              ></div>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  currentStep >= 2
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                3
+              </div>
+              <div
+                className={`w-12 h-1 ${
+                  currentStep >= 3 ? "bg-blue-600" : "bg-gray-300"
+                }`}
+              ></div>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  currentStep >= 3
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                4
+              </div>
+              <div
+                className={`w-12 h-1 ${
+                  currentStep >= 4 ? "bg-blue-600" : "bg-gray-300"
+                }`}
+              ></div>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  currentStep >= 5
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                5
+              </div>
+              <div
+                className={`w-12 h-1 ${
+                  currentStep >= 6 ? "bg-blue-600" : "bg-gray-300"
+                }`}
+              ></div>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  currentStep >= 6
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                6
+              </div>
             </div>
           </div>
           <div className="text-center">
             <p className="text-sm text-gray-600">
+              {currentStep === 0 && "Thông tin bệnh nhân"}
               {currentStep === 1 && "Chọn triệu chứng cơ bản"}
               {currentStep === 2 && "Nhập thông tin chi tiết"}
               {currentStep === 3 && "Tiền sử y khoa"}
@@ -131,6 +184,12 @@ export default function MedicalDiagnosisApp() {
         </div>
 
         {/* Form Content */}
+        {currentStep === 0 && (
+          <PatientInfoStep
+            onNext={handleNext}
+            onPatientInfoSubmit={handlePatientInfoSubmit}
+          />
+        )}
         {currentStep === 1 && (
           <SymptomSearchStep
             onNext={handleNext}
@@ -153,6 +212,7 @@ export default function MedicalDiagnosisApp() {
         )}
         {currentStep === 4 && (
           <ConfirmationStep
+            patientInfo={patientInfo}
             basicSymptoms={basicSymptoms}
             detailedSymptoms={detailedSymptoms}
             medicalHistory={medicalHistory}
@@ -160,7 +220,7 @@ export default function MedicalDiagnosisApp() {
             onNext={handleNext}
           />
         )}
-        {currentStep === 5 && isProcessing && <ProcessingStep />}
+        {currentStep === 5 && <ProcessingStep />}
         {currentStep === 6 && <ResultsStep onRestart={handleRestart} />}
       </div>
     </div>

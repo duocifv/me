@@ -8,6 +8,7 @@ import { AIController } from './ai.controller';
 import { AIService } from './ai.service';
 import { OpenRouterAnalysisService } from './ai-analysis.service';
 import { GeminiService } from './gemini-formatter.service';
+import { MedalpacaService } from './medalpaca.service';
 
 @Module({
   imports: [
@@ -16,7 +17,12 @@ import { GeminiService } from './gemini-formatter.service';
     TypeOrmModule.forFeature([LiteAiScheduleLog], 'sqlite'),
   ],
   controllers: [AIController],
-  providers: [AIService, GeminiService, OpenRouterAnalysisService],
+  providers: [
+    AIService,
+    GeminiService,
+    OpenRouterAnalysisService,
+    MedalpacaService,
+  ],
   exports: [AIService],
 })
 export class AIModule {}
