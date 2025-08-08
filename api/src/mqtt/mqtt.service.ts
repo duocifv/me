@@ -255,7 +255,11 @@ export class MqttService implements OnModuleInit {
   }
 
   async findAllCamera(): Promise<LiteCamera[]> {
-    return await this.cameraRepo.find();
+    return await this.cameraRepo.find({
+      order: {
+        createdAt: 'DESC',
+      },
+    });
   }
 
   async deleteCamera() {
@@ -264,7 +268,9 @@ export class MqttService implements OnModuleInit {
   }
 
   async findAllError(): Promise<LiteErrors[]> {
-    return await this.errorsRepo.find();
+    return await this.errorsRepo.find({
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async createError(dto: ErrorDto): Promise<LiteErrors> {
