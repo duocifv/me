@@ -1,5 +1,5 @@
 import React from "react";
-import { MedicalHistory, PatientInfo } from "../page";
+import { MedicalHistory, PatientInfo } from "@/module/medical/medical.type";
 
 export interface DetailedSymptoms {
   painIntensity: string;
