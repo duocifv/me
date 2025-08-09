@@ -116,6 +116,8 @@ void onMqttMessage(char *topic, byte *payload, unsigned int length) {
     }
   }
   Serial.println("✅ Relays updated from MQTT");
+
+  mqtt.publishPing();
 }
 
 

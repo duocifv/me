@@ -24,7 +24,7 @@
 
 class CameraModule {
 public:
-  bool begin(framesize_t size = FRAMESIZE_QVGA) {
+  bool begin(framesize_t size = FRAMESIZE_VGA) {
     camera_config_t config;
     config.ledc_channel = LEDC_CHANNEL_0;
     config.ledc_timer   = LEDC_TIMER_0;
@@ -49,11 +49,11 @@ public:
 
     if(psramFound()) {
       config.frame_size = size;
-      config.jpeg_quality = 15;
+      config.jpeg_quality = 12;
       config.fb_count = 1;
     } else {
-      config.frame_size = FRAMESIZE_QQVGA;
-      config.jpeg_quality = 20;
+      config.frame_size = FRAMESIZE_QVGA;
+      config.jpeg_quality = 12;
       config.fb_count = 1;
     }
 

@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
-import { PatientInfo } from "../page";
+import { PatientInfo } from "@/module/medical/medical.type";
 
 interface PatientInfoStepProps {
   onNext: () => void;
