@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Simple Mobile VR Player (A-Frame)</title>
+
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+
+  <style>
+    html,body { height:100%; margin:0; background:#000; color:#fff; font-family:Arial, sans-serif;}
+    #ui {
+      position: absolute; z-index: 10; left: 12px; top: 12px;
+      background: rgba(0,0,0,0.45); padding:10px; border-radius:8px;
+    }
+    #ui button, #ui input[type=file] { margin:6px 0; display:block; width:100%; }
+    #note { font-size:12px; opacity:0.9; margin-top:6px; }
+    #enterVrBtn { background:#1e90ff; color:#fff; padding:8px; border:0; border-radius:6px; font-weight:600; }
+    #enableMotion { background:#22c55e; color:#fff; padding:6px; border:0; border-radius:6px; }
+    a-scene { height:100vh; width:100vw; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <input id="fileInput" type="file" accept="video/*" />
+    <button id="enableMotion">Enable Motion (Gyro)</button>
+    <label style="font-size:13px; display:block; margin-top:6px;">
+      <input type="checkbox" id="stereoCheck"> Treat as Side-By-Side (SBS) stereo (experimental)
+    </label>
+    <button id="enterVrBtn">Enter VR / Fullscreen</button>
+    <div id="note">
+      Hướng dẫn: Chọn video 360/180 equirectangular từ iPhone. Nếu video SBS chọn checkbox (còn hạn chế).
+    </div>
+  </div>
+
+  <!-- A-Frame scene -->
+  <a-scene vr-mode-ui="enabled: false" embedded renderer="logarithmicDepthBuffer: true">
+    <!-- Camera with look-controls (gyroscope + touch) -->
+    <a-entity id="cameraRig">
+      <a-entity camera look-controls="enabled: true; touchEnabled: true" position="0 1.6 0"></a-entity>
+    </a-entity>
+
+    <!-- Video sphere (monoscopic / equirectangular) -->
+    <a-videosphere id="sphere" rotation="0 -90 0" src="#videoEl" visible="false"></a-videosphere>
+
+    <!-- For SBS experimental: two inner planes near camera (left/right) -->
+    <a-entity id="sbsPlanes" visible="false">
+      <!-- left eye plane -->
+      <a-plane id="sbsLeft" position="-0.6 1.6 -1.5" rotation="0 0 0" width="1.2" height="0.8" material="shader: flat; side: double;"></a-plane>
+      <!-- right eye plane -->
+      <a-plane id="sbsRight" position="0.6 1.6 -1.5" rotation="0 0 0" width="1.2" height="0.8" material="shader: flat; side: double;"></a-plane>
+    </a-entity>
+
+    <!-- Hidden video element used as texture -->
+    <video id="videoEl" crossorigin="anonymous" playsinline webkit-playsinline loop muted style="display:none"></video>
+
+    <!-- simple environment -->
+    <a-sky color="#000"></a-sky>
+  </a-scene>
+
+<script>
+(function(){
+  const fileInput = document.getElementById('fileInput');
+  const videoEl = document.getElementById('videoEl');
+  const sphere = document.getElementById('sphere');
+  const enableMotionBtn = document.getElementById('enableMotion');
+  const enterVrBtn = document.getElementById('enterVrBtn');
+  const stereoCheck = document.getElementById('stereoCheck');
+  const sbsPlanes = document.getElementById('sbsPlanes');
+  const sbsLeft = document.getElementById('sbsLeft');
+  const sbsRight = document.getElementById('sbsRight');
+
+  // Helper: create object URL and set video src
+  fileInput.addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return alert('Bạn chưa chọn video.');
+    // Revoke previous if any
+    if (videoEl.src && videoEl.src.startsWith('blob:')) {
+      URL.revokeObjectURL(videoEl.src);
+    }
+    const blobUrl = URL.createObjectURL(f);
+    videoEl.src = blobUrl;
+    videoEl.load();
+
+    try {
+      await videoEl.play();
+    } catch(err) {
+      // autoplay blocked; user will need to tap play
+      console.warn('Autoplay blocked, hãy nhấn Enter VR và play thủ công nếu cần.', err);
+    }
+
+    // Show sphere or SBS mode depending on checkbox
+    updateMode();
+  });
+
+  // Request device orientation permission on iOS 13+
+  enableMotionBtn.addEventListener('click', async () => {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === 'granted') {
+          alert('Đã cấp phép Motion. Quay đầu sẽ hoạt động.');
+        } else {
+          alert('Bạn đã từ chối cấp phép Motion. Vẫn có thể dùng touch để điều khiển.');
+        }
+      } catch (err) {
+        console.warn('Lỗi requestPermission:', err);
+        alert('Không thể yêu cầu permission tự động. Hãy thử trong Settings nếu cần.');
+      }
+    } else {
+      alert('Thiết bị của bạn không cần cấp phép thủ công cho motion (hoặc trình duyệt không hỗ trợ API này).');
+    }
+  });
+
+  // Enter fullscreen / VR
+  enterVrBtn.addEventListener('click', () => {
+    const scene = document.querySelector('a-scene');
+    // play video if paused
+    if (videoEl && videoEl.paused) {
+      videoEl.play().catch(()=>{});
+    }
+    // Try A-Frame enter VR/fullscreen
+    if (scene && scene.enterVR) {
+      scene.enterVR();
+    } else {
+      // fallback fullscreen
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      }
+    }
+  });
+
+  // Toggle mode update
+  stereoCheck.addEventListener('change', updateMode);
+
+  function updateMode(){
+    const isSBS = stereoCheck.checked;
+    if (!videoEl.src) {
+      alert('Chọn video trước nhé.');
+      stereoCheck.checked = false;
+      return;
+    }
+    if (isSBS) {
+      // Show two planes, map left/right halves to each via canvas texture
+      sbsPlanes.setAttribute('visible','true');
+      sphere.setAttribute('visible','false');
+      setupSBSPlanes();
+    } else {
+      sbsPlanes.setAttribute('visible','false');
+      sphere.setAttribute('visible','true');
+      // material of sphere uses video (#videoEl)
+      sphere.setAttribute('material', 'src: #videoEl; side:back; shader:flat;');
+    }
+  }
+
+  // For experimental SBS: create canvas to split texture
+  let sbsCanvas, sbsCtx, sbsTex;
+  function setupSBSPlanes(){
+    // create or reuse canvas
+    if (!sbsCanvas){
+      sbsCanvas = document.createElement('canvas');
+      sbsCtx = sbsCanvas.getContext('2d');
+    }
+    // set canvas aspect to 2:1 typical SBS input (left|right)
+    const w = videoEl.videoWidth || 2048;
+    const h = videoEl.videoHeight || 1024;
+    sbsCanvas.width = w;
+    sbsCanvas.height = h;
+    // update in loop
+    function tick(){
+      if (videoEl && !videoEl.paused && !videoEl.ended) {
+        // draw video frame to canvas
+        sbsCtx.drawImage(videoEl, 0, 0, sbsCanvas.width, sbsCanvas.height);
+        // create dataURL for left half and right half textures (inefficient but works)
+        // left
+        const halfW = Math.floor(sbsCanvas.width/2);
+        // left canvas
+        const leftCanvas = document.createElement('canvas');
+        leftCanvas.width = halfW;
+        leftCanvas.height = sbsCanvas.height;
+        leftCanvas.getContext('2d').drawImage(sbsCanvas, 0, 0, halfW, sbsCanvas.height, 0, 0, halfW, sbsCanvas.height);
+        const rightCanvas = document.createElement('canvas');
+        rightCanvas.width = halfW;
+        rightCanvas.height = sbsCanvas.height;
+        rightCanvas.getContext('2d').drawImage(sbsCanvas, halfW, 0, halfW, sbsCanvas.height, 0, 0, halfW, sbsCanvas.height);
+
+        // set as texture for planes
+        sbsLeft.setAttribute('material', 'src', leftCanvas.toDataURL());
+        sbsRight.setAttribute('material', 'src', rightCanvas.toDataURL());
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  // Cleanup blob URLs on unload
+  window.addEventListener('pagehide', () => {
+    if (videoEl && videoEl.src && videoEl.src.startsWith('blob:')) URL.revokeObjectURL(videoEl.src);
+  });
+
+})();
+</script>
+</body>
+</html>
