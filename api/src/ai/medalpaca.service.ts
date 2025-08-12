@@ -6,6 +6,9 @@ import {
 import axios from 'axios';
 import { GeminiService } from './gemini-formatter.service';
 import { OpenRouterAnalysisService } from './ai-analysis.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { LiteMedical } from 'src/sqlite/lite-medical.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class MedalpacaService {
@@ -13,6 +16,8 @@ export class MedalpacaService {
   constructor(
     private readonly geminiService: GeminiService,
     private readonly analysisService: OpenRouterAnalysisService,
+    @InjectRepository(LiteMedical)
+    private readonly medicalRepo: Repository<LiteMedical>,
   ) {}
 
   async convertGeminiToPrompMedalpacat(analysisText: string) {
@@ -55,7 +60,7 @@ ${analysisText}
     // ### Response:
     // `;
 
-    const medAlpacaPrompt = `You are a medical specialist. The patient ${rewritten.trim()}. What are the possible diagnoses and reliability ?`;
+    const medAlpacaPrompt = `The patient ${rewritten.trim()}. What are the possible diagnoses and reliability?`;
 
     return medAlpacaPrompt;
   }
@@ -72,9 +77,14 @@ ${analysisText}
         text: prompt,
       });
       if (response?.data) {
-        return await this.analysisService.analyzeMedical(
+        const analysisResult = await this.analysisService.analyzeMedical(
           response?.data?.output,
         );
+        await this.medicalRepo.save({
+          analysisResult: JSON.stringify(analysisResult),
+        });
+
+        return analysisResult;
       }
       return null;
     } catch {
