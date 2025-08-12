@@ -16,7 +16,7 @@ export class MedalpacaService {
   constructor(
     private readonly geminiService: GeminiService,
     private readonly analysisService: OpenRouterAnalysisService,
-    @InjectRepository(LiteMedical)
+    @InjectRepository(LiteMedical, 'sqlite')
     private readonly medicalRepo: Repository<LiteMedical>,
   ) {}
 
