@@ -12,7 +12,6 @@ import { AIService } from './ai.service';
 import { ScheduleAIDataDto } from './dto/ai.dto';
 import { MedalpacaService } from './medalpaca.service';
 import { ApiBody } from '@nestjs/swagger';
-import { string } from 'zod';
 import { CreateMedalpacaDto } from './dto/create-medalpaca.dto';
 
 @Controller('ai')
