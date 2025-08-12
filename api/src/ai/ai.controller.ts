@@ -57,4 +57,14 @@ export class AIController {
   async medAlpaca(@Body() body: CreateMedalpacaDto) {
     return this.medalpacaService.ask(body.text);
   }
+
+  @Get('medalpaca')
+  async getAllAnalysisResults() {
+    const list = await this.medalpacaService.getAllAnalysisResults();
+    return list.map((item) => ({
+      id: item.id,
+      analysisResult: JSON.parse(item.analysisResult),
+      createdAt: item.createdAt,
+    }));
+  }
 }

@@ -92,4 +92,9 @@ ${analysisText}
       throw new NotFoundException('Lỗi khi gọi API AI bên ngoài');
     }
   }
+  async getAllAnalysisResults(): Promise<LiteMedical[]> {
+    return this.medicalRepo.find({
+      order: { createdAt: 'DESC' }, // tùy chọn sắp xếp mới nhất lên trước
+    });
+  }
 }
