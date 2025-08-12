@@ -213,7 +213,7 @@ Trả lời ngắn gọn, rõ ràng, dùng bullet points hoặc danh sách số.
       model: string;
       messages: { role: 'user' | 'system' | 'assistant'; content: string }[];
     } = {
-      model: 'openai/gpt-oss-20b:free',
+      model: 'deepseek/deepseek-chat-v3-0324:free',
       messages: [
         {
           role: 'user',
