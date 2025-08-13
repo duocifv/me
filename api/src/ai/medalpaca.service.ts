@@ -40,6 +40,7 @@ Raw: ${analysisText}
 ### Instruction:
 ${rewritten}
 
+Diagnosis, severity (mild/moderate/severe), confidence %, advice (cause, prevention, treatment, emergency/specialist).
 ### Response:
 `.trim();
 
