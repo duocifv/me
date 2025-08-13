@@ -36,7 +36,7 @@ Raw: ${analysisText}
       throw new InternalServerErrorException('Gemini output empty or invalid.');
     }
 
-     const medAlpacaPrompt = `
+    const medAlpacaPrompt = `
 ### Instruction:
 ${rewritten}
 
@@ -54,7 +54,6 @@ ${rewritten}
     }
 
     const prompt = await this.convertGeminiToPrompMedalpacat(text);
-    return prompt;
     try {
       const response = await axios.post<{ output: string }>(this.apiUrl, {
         text: prompt,
@@ -71,7 +70,6 @@ ${rewritten}
       }
       return null;
     } catch {
-      // Có thể log error chi tiết nếu muốn
       throw new NotFoundException('Lỗi khi gọi API AI bên ngoài');
     }
   }
