@@ -23,11 +23,18 @@ export function useMedicalMutation() {
 
       // Chuẩn hóa các trường text
       const cleanedData = {
+        diagnosis: data.diagnosis?.trim() || "",
+        severity: data.severity?.trim() || "",
+        confidence_percent: Number(data.confidence_percent) || 0,
         explanation: data.explanation?.trim() || "",
         user_friendly_summary: data.user_friendly_summary?.trim() || "",
-        management_advice: parseBulletPoints(data.management_advice as string),
-        red_flags: parseBulletPoints(data.red_flags as string),
-        confidence_level: data.confidence_level || "",
+        management_advice: Array.isArray(data.management_advice)
+          ? data.management_advice
+          : parseBulletPoints(data.management_advice as string),
+        red_flags: Array.isArray(data.red_flags)
+          ? data.red_flags
+          : parseBulletPoints(data.red_flags as string),
+        confidence_level: data.confidence_level?.trim() || "",
       };
 
       // Lưu vào store
