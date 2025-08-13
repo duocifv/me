@@ -9,6 +9,7 @@ import { OpenRouterAnalysisService } from './ai-analysis.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LiteMedical } from 'src/sqlite/lite-medical.entity';
 import { Repository } from 'typeorm';
+import { GroqService } from './groq-formatter.service';
 
 @Injectable()
 export class MedalpacaService {
@@ -16,6 +17,7 @@ export class MedalpacaService {
   constructor(
     private readonly geminiService: GeminiService,
     private readonly analysisService: OpenRouterAnalysisService,
+    private readonly groqService: GroqService,
     @InjectRepository(LiteMedical, 'sqlite')
     private readonly medicalRepo: Repository<LiteMedical>,
   ) {}
@@ -40,27 +42,26 @@ Raw: ${analysisText}
 ### Instruction:
 ${rewritten}
 
-Diagnosis, severity (mild/moderate/severe), confidence %, advice (cause, prevention, treatment, emergency/specialist).
+Diagnosis, severity (mild/moderate/severe), confidence %.
 ### Response:
 `.trim();
 
-    console.log('medAlpacaPrompt', medAlpacaPrompt);
     return medAlpacaPrompt;
   }
 
   async ask(text: string) {
-    console.log('Gemini raw response:', text);
     if (!text) {
       throw new NotFoundException('Bạn phải gửi trường "text" trong body.');
     }
 
     const prompt = await this.convertGeminiToPrompMedalpacat(text);
+    console.log('prompt Medalpa:', prompt);
     try {
       const response = await axios.post<{ output: string }>(this.apiUrl, {
         text: prompt,
       });
       if (response?.data) {
-        const analysisResult = await this.analysisService.analyzeMedical(
+        const analysisResult = await this.groqService.chatJson(
           response?.data?.output,
         );
         await this.medicalRepo.save({
@@ -69,7 +70,6 @@ Diagnosis, severity (mild/moderate/severe), confidence %, advice (cause, prevent
 
         return analysisResult;
       }
-      return null;
     } catch {
       throw new NotFoundException('Lỗi khi gọi API AI bên ngoài');
     }

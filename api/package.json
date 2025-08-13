@@ -59,6 +59,7 @@
     "fastify": "^5.3.2",
     "fastify-mailer": "^2.3.1",
     "fastify-plugin": "^5.0.1",
+    "groq-sdk": "^0.30.0",
     "ioredis": "^5.6.1",
     "jimp": "^1.6.0",
     "json5": "^2.2.3",

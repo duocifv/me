@@ -1,0 +1,13 @@
+fastapi
+requests
+uvicorn[standard]
+transformers>=4.30.0
+torch
+accelerate
+bitsandbytes
+pydantic
+huggingface_hub
+tiktoken
+protobuf
+sentencepiece
+sacremoses

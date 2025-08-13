@@ -1,104 +1,126 @@
-import React from "react";
+"use client";
 
-interface DiagnosisResult {
-  diagnosis: string;
-  confidence: string;
-  description: string;
-  recommendations: string[];
-  urgentCare: boolean;
-}
+import { useMedicalStore } from "@/module/medical/medical.store";
+import React from "react";
 
 interface ResultsStepProps {
   onRestart: () => void;
 }
 
 const ResultsStep: React.FC<ResultsStepProps> = ({ onRestart }) => {
-  // Mock result data
-  const diagnosisResult: DiagnosisResult = {
-    diagnosis: "Viêm dạ dày cấp tính",
-    confidence: "85%",
-    description:
-      "Dựa trên các triệu chứng bạn cung cấp, khả năng cao bạn đang mắc viêm dạ dày cấp tính. Đây là tình trạng viêm niêm mạc dạ dày thường do vi khuẩn, stress hoặc sử dụng thuốc.",
-    recommendations: [
-      "Uống nhiều nước và nghỉ ngơi",
-      "Tránh thức ăn cay nóng, nhiều dầu mỡ",
-      "Dùng thuốc theo chỉ định của bác sĩ",
-      "Tái khám nếu triệu chứng kéo dài hơn 3 ngày",
-    ],
-    urgentCare: false,
+  const resultsStep = useMedicalStore((s) => s.resultsStep);
+
+  const renderList = (list: string | string[]) => {
+    const arr = Array.isArray(list) ? list : list.split("\n").filter(Boolean);
+    return arr.map((item, idx) => (
+      <li key={idx} className="flex items-start">
+        <div className="flex-shrink-0 mt-1">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+        </div>
+        <span className="ml-3 text-gray-700">{item}</span>
+      </li>
+    ));
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          Kết Quả Chẩn Đoán
-        </h2>
-        <p className="text-gray-600">Dựa trên các triệu chứng bạn cung cấp</p>
-      </div>
-
-      <div className="space-y-6">
-        {/* Main Diagnosis */}
-        <div className="border-l-4 border-blue-600 bg-blue-50 p-5 rounded-r-lg">
-          <h3 className="font-semibold text-lg text-gray-800 mb-2">
-            Chẩn đoán chính
-          </h3>
-          <p className="text-xl font-bold text-blue-700">
-            {diagnosisResult.diagnosis}
-          </p>
-          <p className="text-sm text-gray-600 mt-1">
-            Độ tin cậy: {diagnosisResult.confidence}
-          </p>
-        </div>
-
-        {/* Description */}
-        <div className="border rounded-lg p-5">
-          <h3 className="font-semibold text-lg text-gray-800 mb-3">Mô tả</h3>
-          <p className="text-gray-700">{diagnosisResult.description}</p>
-        </div>
-
-        {/* Recommendations */}
-        <div className="border rounded-lg p-5">
-          <h3 className="font-semibold text-lg text-gray-800 mb-3">
-            Khuyến nghị
-          </h3>
-          <ul className="space-y-2">
-            {diagnosisResult.recommendations.map((recommendation, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">✓</span>
-                <span className="text-gray-700">{recommendation}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Urgent Care Warning */}
-        {diagnosisResult.urgentCare && (
-          <div className="border-l-4 border-red-600 bg-red-50 p-5 rounded-r-lg">
-            <h3 className="font-semibold text-lg text-red-800 mb-2">
-              Cảnh báo
-            </h3>
-            <p className="text-red-700">
-              Tình trạng của bạn có thể nghiêm trọng. Vui lòng đến cơ sở y tế
-              gần nhất ngay lập tức.
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-8 text-center">
+            <h2 className="text-3xl font-bold text-white mb-2">
+              Kết Quả Chẩn Đoán
+            </h2>
+            <p className="text-blue-100">
+              Dựa trên các triệu chứng bạn cung cấp
             </p>
           </div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-          <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-            In kết quả
-          </button>
-          <button className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
-            Lưu kết quả
-          </button>
-          <button
-            onClick={onRestart}
-            className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
-          >
-            Bắt đầu lại
-          </button>
+          <div className="p-6 space-y-8">
+            {/* Diagnosis & Severity */}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm">
+              <h3 className="font-semibold text-xl text-gray-800 mb-2">
+                Chẩn đoán chính
+              </h3>
+              <p>
+                <strong>Bệnh:</strong> {resultsStep.diagnosis}
+              </p>
+              <p>
+                <strong>Mức độ:</strong> {resultsStep.severity}
+              </p>
+              <p>
+                <strong>Độ chính xác:</strong> {resultsStep.confidence_percent}%
+              </p>
+            </div>
+
+            {/* User friendly summary */}
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 rounded-xl p-6 shadow-sm">
+              <h3 className="font-semibold text-xl text-gray-800 mb-2">
+                Tóm tắt dễ hiểu
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                {resultsStep.user_friendly_summary}
+              </p>
+            </div>
+
+            {/* Confidence */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-r-lg p-6 shadow-sm">
+              <h3 className="font-semibold text-lg text-gray-800 mb-2">
+                Mức độ chắc chắn
+              </h3>
+              <p className="text-xl font-bold text-blue-700">
+                {resultsStep.confidence_level}
+              </p>
+            </div>
+
+            {/* Explanation */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <h3 className="font-semibold text-xl text-gray-800 mb-2">
+                Phân tích chi tiết
+              </h3>
+              <p className="text-gray-700 whitespace-pre-line">
+                {resultsStep.explanation}
+              </p>
+            </div>
+
+            {/* Management Advice */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <h3 className="font-semibold text-xl text-gray-800 mb-2">
+                Xử trí / Khuyến nghị
+              </h3>
+              <ul className="space-y-3">
+                {renderList(resultsStep.management_advice)}
+              </ul>
+            </div>
+
+            {/* Red Flags */}
+            {resultsStep.red_flags && (
+              <div className="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-6 shadow-sm">
+                <h3 className="font-semibold text-xl text-red-800 mb-2">
+                  Cảnh báo
+                </h3>
+                <ul className="space-y-3">
+                  {renderList(resultsStep.red_flags)}
+                </ul>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
+              <button
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-xl"
+                onClick={() => window.print()}
+              >
+                In kết quả
+              </button>
+              <button
+                onClick={onRestart}
+                className="px-8 py-4 bg-gradient-to-r from-gray-200 to-gray-300 text-gray-800 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl"
+              >
+                Bắt đầu lại
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

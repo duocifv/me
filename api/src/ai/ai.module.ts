@@ -10,6 +10,7 @@ import { OpenRouterAnalysisService } from './ai-analysis.service';
 import { GeminiService } from './gemini-formatter.service';
 import { MedalpacaService } from './medalpaca.service';
 import { LiteMedical } from 'src/sqlite/lite-medical.entity';
+import { GroqService } from './groq-formatter.service';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { LiteMedical } from 'src/sqlite/lite-medical.entity';
     GeminiService,
     OpenRouterAnalysisService,
     MedalpacaService,
+    GroqService,
   ],
   exports: [AIService],
 })

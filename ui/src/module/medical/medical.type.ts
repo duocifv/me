@@ -24,3 +24,14 @@ export interface PatientInfo {
   phone?: string;
   email?: string;
 }
+
+export interface UserFriendlyAnalysisDto {
+  diagnosis: string;
+  severity: string;
+  confidence_percent: number;
+  explanation: string;
+  user_friendly_summary: string;
+  management_advice: string | string[];
+  red_flags: string | string[];
+  confidence_level: string;
+}
