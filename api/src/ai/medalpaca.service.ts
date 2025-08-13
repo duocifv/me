@@ -36,7 +36,13 @@ Raw: ${analysisText}
       throw new InternalServerErrorException('Gemini output empty or invalid.');
     }
 
-    const medAlpacaPrompt = `Clinical summary: ${rewritten}`;
+     const medAlpacaPrompt = `
+### Instruction:
+${rewritten}
+
+### Response:
+`.trim();
+
     console.log('medAlpacaPrompt', medAlpacaPrompt);
     return medAlpacaPrompt;
   }
@@ -49,25 +55,25 @@ Raw: ${analysisText}
 
     const prompt = await this.convertGeminiToPrompMedalpacat(text);
     return prompt;
-    // try {
-    //   const response = await axios.post<{ output: string }>(this.apiUrl, {
-    //     text: prompt,
-    //   });
-    //   if (response?.data) {
-    //     const analysisResult = await this.analysisService.analyzeMedical(
-    //       response?.data?.output,
-    //     );
-    //     await this.medicalRepo.save({
-    //       analysisResult: JSON.stringify(analysisResult),
-    //     });
+    try {
+      const response = await axios.post<{ output: string }>(this.apiUrl, {
+        text: prompt,
+      });
+      if (response?.data) {
+        const analysisResult = await this.analysisService.analyzeMedical(
+          response?.data?.output,
+        );
+        await this.medicalRepo.save({
+          analysisResult: JSON.stringify(analysisResult),
+        });
 
-    //     return analysisResult;
-    //   }
-    //   return null;
-    // } catch {
-    //   // Có thể log error chi tiết nếu muốn
-    //   throw new NotFoundException('Lỗi khi gọi API AI bên ngoài');
-    // }
+        return analysisResult;
+      }
+      return null;
+    } catch {
+      // Có thể log error chi tiết nếu muốn
+      throw new NotFoundException('Lỗi khi gọi API AI bên ngoài');
+    }
   }
   async getAllAnalysisResults(): Promise<LiteMedical[]> {
     return this.medicalRepo.find({
