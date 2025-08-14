@@ -6,5 +6,9 @@
   "admin": {
     "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
     "is_admin": false
+  },
+  "trang": {
+    "password": "47d21fb4481381e84d4395fe14126396fe40e872abdcfa973f6c66c12997c35f",
+    "is_admin": false
   }
 }
