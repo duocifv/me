@@ -1,5 +1,0 @@
-Site Key:
-0x4AAAAAABeOBlfY1H_Gtejl
-
-Secret Key:
-0x4AAAAAABeOBpzGRyT7L5K2mJOxxd17Y5U

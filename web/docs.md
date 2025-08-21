@@ -1,1 +1,0 @@
-// "build": "next build && npx serve@latest out",

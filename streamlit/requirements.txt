@@ -1,4 +1,0 @@
-streamlit
-streamlit-extras
-streamlit-aggrid
-plotly
