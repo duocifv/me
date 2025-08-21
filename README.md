@@ -52,12 +52,16 @@
 
 ### Backend (NestJS)
 
+```bash
 cd api
 npm install
 npm run dev
+```
 
 ### Frontend (Next.js)
 
+```bash
 cd ui
 npm install
 npm run dev
+```
