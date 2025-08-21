@@ -9,6 +9,7 @@ import { Picture } from "@/components/share/picture/ui-picture";
 import Lottie from "lottie-react";
 import animationData from "@/share/assets/hydroponic-animation.json";
 import ReCapcha from "../dispatch/dispatch-recapcha";
+import { $t } from "@/app/lang";
 import Link from "next/link";
 
 export function LoginForm() {
@@ -17,9 +18,9 @@ export function LoginForm() {
       <div className="p-6 md:p-8">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center text-center">
-            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <h1 className="text-2xl font-bold">{$t`Chào mừng trở lại`}</h1>
             <p className="text-balance text-muted-foreground">
-              Login to your Acme Inc account
+              {$t`Đăng nhập vào tài khoản của bạn`}
             </p>
           </div>
           <FormWrapper<SignInDto>
@@ -29,12 +30,12 @@ export function LoginForm() {
             {(from) => (
               <>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{$t`Email`}</Label>
                   <div className="relative">
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder={$t`ban@example.com`}
                       {...from.register("email")}
                     />
                     {from.formState.errors.email && (
@@ -47,19 +48,19 @@ export function LoginForm() {
 
                 <div className="grid gap-2 mt-6">
                   <div className="flex items-center flex-wrap">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{$t`Mật khẩu`}</Label>
                     <a
                       href="#"
                       className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                     >
-                      Forgot your password?
+                      {$t`Quên mật khẩu?`}
                     </a>
                   </div>
                   <div className="relative">
                     <Input
                       id="password"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder={$t`••••••••`}
                       {...from.register("password")}
                     />
                     {from.formState.errors.password && (
@@ -72,23 +73,23 @@ export function LoginForm() {
                   <ReCapcha />
                   <div className="relative my-4 text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                     <span className="relative z-10 bg-background px-2 text-muted-foreground">
-                      Or continue with
+                      {$t`Hoặc tiếp tục với`}
                     </span>
                   </div>
                   <LoginFormAuth />
                   <div className="text-center text-sm mt-4">
-                    Don&apos;t have an account?{" "}
+                    {$t`Bạn chưa có tài khoản?`}{" "}
                     <Link
                       href="/en/register/"
                       className="underline underline-offset-4"
                     >
-                      Sign up
+                      {$t`Đăng ký`}
                     </Link>
                   </div>
                   <div className="relative hidden bg-muted md:block">
                     <Picture
                       src="/placeholder.svg"
-                      alt="Image"
+                      alt={$t`Hình ảnh`}
                       className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
                     />
                   </div>
@@ -121,7 +122,7 @@ export function LoginFormAuth() {
             fill="currentColor"
           />
         </svg>
-        <span className="sr-only">Login with Apple</span>
+        <span className="sr-only">{$t`Đăng nhập với Apple`}</span>
       </Button>
       <Button variant="outline" className="w-full">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -130,7 +131,7 @@ export function LoginFormAuth() {
             fill="currentColor"
           />
         </svg>
-        <span className="sr-only">Login with Google</span>
+        <span className="sr-only">{$t`Đăng nhập với Google`}</span>
       </Button>
       <Button variant="outline" className="w-full">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -139,7 +140,7 @@ export function LoginFormAuth() {
             fill="currentColor"
           />
         </svg>
-        <span className="sr-only">Login with Meta</span>
+        <span className="sr-only">{$t`Đăng nhập với Meta`}</span>
       </Button>
     </div>
   );
