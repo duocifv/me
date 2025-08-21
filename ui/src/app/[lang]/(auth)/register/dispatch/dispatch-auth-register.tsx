@@ -20,7 +20,7 @@ export function RegisterSubmit() {
     // }
     mutate(data, {
       onSuccess: () => {
-        toast.success("Đăng nhập thành công", {
+        toast.success("Đăng ký thành công", {
           duration: 5000,
           icon: <CheckCircle className="h-5 w-5 text-green-500" />,
         });
