@@ -1,9 +1,11 @@
-NGUYEN VAN DUOC — Front-End / Full-Stack Developer
+NGUYEN VAN DUOC
 
-Sơn Trà, Đà Nẵng · ☏ 0775 583 921 · ✉️ duocifv@gmail.com
- · GitHub: github.com/duocifv/me
+Front-End / Full-Stack Developer
 
-Ngày sinh: 15/07/1990
+📍 Sơn Trà, Đà Nẵng · ☏ 0775 583 921 · ✉️ duocifv@gmail.com
+
+🔗 GitHub: github.com/duocifv/me
+🎂 Ngày sinh: 15/07/1990
 
 Summary
 
@@ -11,11 +13,13 @@ Front-End / Full-Stack Developer với 9+ năm kinh nghiệm phát triển giao 
 
 Kinh nghiệm
 
-Front-End Developer — Công Ty Cổ Phần Khiết Long · 01/2016 – 11/2016
+Front-End Developer — Công Ty Cổ Phần Khiết Long
+(01/2016 – 11/2016)
 
 Lập trình và thiết kế website, triển khai giao diện và chức năng cơ bản.
 
-Front-End Developer — DGW ASIA CO., LTD, Đà Nẵng · 11/2016 – Hiện tại
+Front-End Developer — DGW ASIA CO., LTD, Đà Nẵng
+(11/2016 – Hiện tại)
 
 Chuyển thiết kế Figma/PSD thành giao diện responsive, pixel-perfect.
 
@@ -27,24 +31,28 @@ Refactor UI, tối ưu file & CSS structure, nâng cao maintainability và khả
 
 Dự án cá nhân / Full-stack
 
-Vegetable Container — Full-Stack (Next.js + NestJS), học & phát triển Node.js/NestJS 2 năm, triển khai backend + frontend, CI/CD.
+Vegetable Container + Personal Demo Website — Full-Stack (Next.js + NestJS)
 
-API & demo: https://vegetable-container.onrender.com/api
+Học & phát triển Node.js/NestJS 2 năm, triển khai dự án cá nhân backend + frontend, CI/CD.
 
-Personal Demo Website — Next.js SSG/ISR, componentized, triển khai trên Vercel.
+API & Demo: https://vegetable-container.onrender.com/api
 
-UI & Demo: https://www.duocnv.top/vi/
+UI & Demo: https://duocnv.top/
 
 Kỹ năng
 
 Frontend: HTML5, CSS3, SASS, Tailwind CSS, Vanilla JS, TypeScript, React, Next.js (SSG/ISR/SSR)
+
 State & Data: TanStack Query, Zustand
-Backend: Node.js, Express, NestJS (2 năm học & triển khai dự án thực tế)
+
+Backend: Node.js, Express, NestJS (2 năm học & triển khai dự án cá nhân)
+
 Build & Tools: Webpack, npm, Git, Chrome DevTools, Lighthouse, Vite
+
 Design & UI: Figma, Photoshop
+
 Workflow & AI: GitHub Copilot, ChatGPT — scaffold & tăng tốc development, luôn kiểm tra & chỉnh sửa code
 
 Học vấn
 
-Đại học FPT — Cử nhân
-Chuyên ngành: Lập trình và Thiết kế Website (tốt nghiệp 01/2016)
+Đại học FPT — Chuyên ngành Lập trình & Thiết kế Website (Tốt nghiệp 01/2016)

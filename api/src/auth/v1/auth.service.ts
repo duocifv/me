@@ -124,14 +124,20 @@ export class AuthService {
 
   async register(dto: CreateUserDto): Promise<UserDto> {
     const { fullUser, dto: userDto } = await this.usersService.create(dto);
-
+    // Tạo token trước
     const token =
       await this.usersService.generateEmailVerificationToken(fullUser);
-    await this.mailService.sendEmailVerification(fullUser.email, token);
 
+    // Gửi email nhưng không await (background job)
+    this.mailService
+      .sendEmailVerification(fullUser.email, token)
+      .catch((err) => {
+        console.error('Send email failed:', err);
+      });
+
+    // Trả về ngay cho client
     return userDto;
   }
-
   // Đăng nhập, tạo cặp token và trả về
   async signIn(user: User, fingerprint: string): Promise<Token> {
     return this.tokensService.generateTokenPair(user, fingerprint);
