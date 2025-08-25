@@ -11,6 +11,7 @@ import { GeminiService } from './gemini-formatter.service';
 import { MedalpacaService } from './medalpaca.service';
 import { LiteMedical } from 'src/sqlite/lite-medical.entity';
 import { GroqService } from './groq-formatter.service';
+import { HotelGeminiService } from './hotel-gemini.service';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { GroqService } from './groq-formatter.service';
     OpenRouterAnalysisService,
     MedalpacaService,
     GroqService,
+    HotelGeminiService,
   ],
   exports: [AIService],
 })

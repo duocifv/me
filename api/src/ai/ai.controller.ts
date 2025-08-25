@@ -13,12 +13,15 @@ import { ScheduleAIDataDto } from './dto/ai.dto';
 import { MedalpacaService } from './medalpaca.service';
 import { ApiBody } from '@nestjs/swagger';
 import { CreateMedalpacaDto } from './dto/create-medalpaca.dto';
+import { HotelGeminiService } from './hotel-gemini.service';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 @Controller('ai')
 export class AIController {
   constructor(
     private readonly AIService: AIService,
     private readonly medalpacaService: MedalpacaService,
+    private readonly hotelGeminiService: HotelGeminiService,
   ) {}
 
   @Get()
@@ -37,6 +40,53 @@ export class AIController {
     return {
       message: 'Updated all schedules from Gemini successfully.',
       updated: result,
+    };
+  }
+
+  @Public()
+  @Post('hotel-chat')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example:
+            'Xin chào, tôi muốn đặt phòng đôi cho 2 người cuối tuần này.',
+        },
+        chatHistory: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              role: { type: 'string', example: 'user' },
+              content: {
+                type: 'string',
+                example: 'Nếu 3 người thì có phòng nào?',
+              },
+            },
+          },
+          example: [
+            { role: 'user', content: 'Nếu 3 người thì có phòng nào?' },
+            {
+              role: 'assistant',
+              content: 'Dạ với 3 người có thể chọn Family Room.',
+            },
+          ],
+        },
+      },
+    },
+  })
+  async hotelChat(
+    @Body('message') message: string,
+    @Body('chatHistory')
+    chatHistory: { role: 'user' | 'assistant'; content: string }[],
+  ) {
+    const reply = await this.hotelGeminiService.chatHotel(message, chatHistory);
+
+    return {
+      success: true,
+      reply,
     };
   }
 
