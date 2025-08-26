@@ -93,34 +93,74 @@ export class AIController {
       reply,
     };
   }
-
-  /** Endpoint gọi khi user gửi message */
+  @Public()
   @Post('message')
   @ApiOperation({
     summary:
       'Gửi message từ user, nhận trả lời AI và thông tin booking tạm thời',
   })
-  @ApiBody({ type: MessageDto })
+  @ApiBody({
+    type: MessageDto,
+    examples: {
+      example1: {
+        summary: 'Ví dụ request',
+        value: {
+          sessionId: 'abc123',
+          message:
+            'Tôi muốn đặt phòng Deluxe từ 2025-09-01 đến 2025-09-03 cho 2 khách',
+          chatHistory: [
+            { role: 'user', content: 'Cho tôi biết giá phòng Deluxe' },
+            { role: 'assistant', content: 'Phòng Deluxe 1.200.000đ/đêm' },
+          ],
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'Kết quả trả về từ AI',
     type: ChatMessageResponse,
+    examples: {
+      example1: {
+        summary: 'Ví dụ response',
+        value: {
+          aiReply: 'Phòng Deluxe vẫn còn, bạn có muốn đặt không?',
+          confirmRequired: true,
+          summaryMessage:
+            'Xác nhận đặt phòng: Deluxe từ 2025-09-01 đến 2025-09-03 cho 2 khách. Tên: -, SĐT: -, Email: -.',
+        },
+      },
+    },
   })
   async message(@Body() body: MessageDto): Promise<ChatMessageResponse> {
     const { sessionId, message, chatHistory = [] } = body;
     return this.chatService.handleMessage(sessionId, message, chatHistory);
   }
 
-  /** Endpoint gọi khi user bấm nút xác nhận booking */
+  @Public()
   @Post('confirm')
   @ApiOperation({
     summary: 'Xác nhận booking dựa trên sessionId và lưu vào Sheets',
   })
-  @ApiBody({ type: ConfirmDto })
+  @ApiBody({
+    type: ConfirmDto,
+    examples: {
+      example1: {
+        summary: 'Ví dụ request',
+        value: { sessionId: 'abc123' },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'Kết quả xác nhận',
     type: ConfirmResponse,
+    examples: {
+      example1: {
+        summary: 'Ví dụ response',
+        value: { success: true, message: 'Đặt phòng thành công!' },
+      },
+    },
   })
   async confirm(@Body() body: ConfirmDto): Promise<ConfirmResponse> {
     const { sessionId } = body;
