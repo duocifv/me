@@ -5,39 +5,40 @@ import { Send, Maximize2, X } from "lucide-react";
 
 const STORAGE_KEY = "hotel_chat_history";
 
+type Message = {
+  role: string;
+  content: string;
+};
+
 export default function HotelChatboxAI() {
-  const [messages, setMessages] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved
-        ? JSON.parse(saved)
-        : [
-            {
-              role: "assistant",
-              content: "Xin chào 👋, tôi có thể giúp gì cho bạn hôm nay?",
-            },
-          ];
-    }
-    return [
-      {
-        role: "assistant",
-        content: "Xin chào 👋, tôi có thể giúp gì cho bạn hôm nay?",
-      },
-    ];
-  });
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: "assistant",
+      content: "Xin chào 👋, tôi có thể giúp gì cho bạn hôm nay?",
+    },
+  ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load từ localStorage sau khi client mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      setMessages(JSON.parse(saved));
+    }
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
-  const handleSend = async () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSend = async (e: any) => {
+    e.preventDefault();
     if (!input.trim()) return;
-
     const userMsg = { role: "user", content: input };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
@@ -52,7 +53,7 @@ export default function HotelChatboxAI() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: input,
-            chatHistory: updatedMessages, // Gửi toàn bộ chat history
+            chatHistory: updatedMessages,
           }),
         }
       );
@@ -61,48 +62,17 @@ export default function HotelChatboxAI() {
         role: "assistant",
         content: data.reply || "Xin lỗi, tôi chưa hiểu câu hỏi.",
       };
-      setMessages((prev: { role: string; content: string }[]) => [
-        ...prev,
-        aiMsg,
-      ]);
+      setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
       console.error(err);
-      const aiMsg = {
-        role: "assistant",
-        content: "Có lỗi xảy ra khi kết nối AI.",
-      };
-      setMessages((prev: { role: string; content: string }[]) => [
+      setMessages((prev) => [
         ...prev,
-        aiMsg,
+        { role: "assistant", content: "Có lỗi xảy ra khi kết nối AI." },
       ]);
     } finally {
       setIsTyping(false);
     }
   };
-
-  type Message = {
-    role: string;
-    content: string;
-  };
-
-  const renderMessage = (msg: Message, idx: number) => (
-    <div
-      key={idx}
-      className={`flex ${
-        msg.role === "user" ? "justify-end" : "justify-start"
-      }`}
-    >
-      <div
-        className={`px-4 py-2 rounded-2xl max-w-[75%] text-sm ${
-          msg.role === "user"
-            ? "bg-sky-600 text-white rounded-br-none"
-            : "bg-slate-100 text-slate-800 rounded-bl-none"
-        }`}
-      >
-        {msg.content}
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -121,7 +91,24 @@ export default function HotelChatboxAI() {
 
           {/* Messages */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3 h-80 bg-slate-50">
-            {messages.map(renderMessage)}
+            {messages.map((msg: Message, idx: number) => (
+              <div
+                key={idx}
+                className={`flex ${
+                  msg.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`px-4 py-2 rounded-2xl max-w-[75%] text-sm ${
+                    msg.role === "user"
+                      ? "bg-sky-600 text-white rounded-br-none"
+                      : "bg-slate-100 text-slate-800 rounded-bl-none"
+                  }`}
+                >
+                  {msg?.content}
+                </div>
+              </div>
+            ))}
             {isTyping && (
               <div className="flex justify-start">
                 <div className="px-4 py-2 rounded-2xl bg-slate-100 text-slate-500 text-sm">
@@ -140,10 +127,10 @@ export default function HotelChatboxAI() {
               className="flex-1 px-4 py-2 rounded-full border text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onKeyDown={(e) => e.key === "Enter" && handleSend(e)}
             />
             <button
-              onClick={handleSend}
+              onClick={(e) => handleSend(e)}
               className="p-2 bg-sky-600 text-white rounded-full hover:bg-sky-700"
             >
               <Send size={18} />
@@ -169,7 +156,24 @@ export default function HotelChatboxAI() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4 w-full max-w-[860px] mx-auto">
-            {messages.map(renderMessage)}
+            {messages.map((msg: Message, idx: number) => (
+              <div
+                key={idx}
+                className={`flex ${
+                  msg.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`px-4 py-2 rounded-2xl max-w-[75%] text-sm ${
+                    msg.role === "user"
+                      ? "bg-sky-600 text-white rounded-br-none"
+                      : "bg-slate-100 text-slate-800 rounded-bl-none"
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))}
             {isTyping && (
               <div className="flex justify-start">
                 <div className="px-4 py-2 rounded-2xl bg-slate-100 text-slate-500 text-sm">
@@ -188,7 +192,7 @@ export default function HotelChatboxAI() {
               className="flex-1 px-4 py-3 rounded-xl border text-base focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onKeyDown={(e) => e.key === "Enter" && handleSend(e)}
             />
             <button
               onClick={handleSend}

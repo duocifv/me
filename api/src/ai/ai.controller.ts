@@ -11,10 +11,13 @@ import { UpdateAiRewardDto } from './dto/update-ai-log.dto';
 import { AIService } from './ai.service';
 import { ScheduleAIDataDto } from './dto/ai.dto';
 import { MedalpacaService } from './medalpaca.service';
-import { ApiBody } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateMedalpacaDto } from './dto/create-medalpaca.dto';
 import { HotelGeminiService } from './hotel-gemini.service';
 import { Public } from 'src/shared/decorators/public.decorator';
+import { ConfirmDto, MessageDto } from './dto/message.dto';
+import { ChatService } from './chat.service';
+import { ChatMessageResponse, ConfirmResponse } from './dto/chat.dto';
 
 @Controller('ai')
 export class AIController {
@@ -22,6 +25,7 @@ export class AIController {
     private readonly AIService: AIService,
     private readonly medalpacaService: MedalpacaService,
     private readonly hotelGeminiService: HotelGeminiService,
+    private readonly chatService: ChatService,
   ) {}
 
   @Get()
@@ -88,6 +92,39 @@ export class AIController {
       success: true,
       reply,
     };
+  }
+
+  /** Endpoint gọi khi user gửi message */
+  @Post('message')
+  @ApiOperation({
+    summary:
+      'Gửi message từ user, nhận trả lời AI và thông tin booking tạm thời',
+  })
+  @ApiBody({ type: MessageDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Kết quả trả về từ AI',
+    type: ChatMessageResponse,
+  })
+  async message(@Body() body: MessageDto): Promise<ChatMessageResponse> {
+    const { sessionId, message, chatHistory = [] } = body;
+    return this.chatService.handleMessage(sessionId, message, chatHistory);
+  }
+
+  /** Endpoint gọi khi user bấm nút xác nhận booking */
+  @Post('confirm')
+  @ApiOperation({
+    summary: 'Xác nhận booking dựa trên sessionId và lưu vào Sheets',
+  })
+  @ApiBody({ type: ConfirmDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Kết quả xác nhận',
+    type: ConfirmResponse,
+  })
+  async confirm(@Body() body: ConfirmDto): Promise<ConfirmResponse> {
+    const { sessionId } = body;
+    return this.chatService.confirmBooking(sessionId);
   }
 
   @Put(':id/reward')

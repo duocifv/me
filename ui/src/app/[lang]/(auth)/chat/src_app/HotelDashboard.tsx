@@ -1,21 +1,14 @@
+/* eslint-disable jsx-a11y/alt-text */
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import React from "react";
 import HotelChatboxUI from "./features/chat/components/HotelChatboxUI";
 import BookingForm from "./features/booking/BookingForm";
-
-// HotelTravel_UI.jsx
-// Single-file React component (Tailwind CSS required in your project)
-// How to use: import HotelDashboard from './HotelTravel_UI.jsx' and render <HotelDashboard />
-// This component is meant to be dropped into an existing Next.js / React project.
-// It uses Tailwind for layout and small utility styles. Replace sample data with real API calls.
+import { useStoreRooms } from "./service/store";
+import { RoomType } from "./service/type";
 
 export default function HotelDashboard({ hotel = null }) {
-  // const handleBooking = (data: unknown) => {
-  //   console.log("Booking data:", data);
-  //   // Có thể thay bằng redirect đến Booking Engine thực tế
-  // };
-
-  // Sample data (replace with fetch / props)
+  const rooms = useStoreRooms((s) => s.rooms);
   const sampleHotel = hotel || {
     name: "Mường Thanh Luxury Đà Nẵng Hotel",
     address: "270 Võ Nguyên Giáp, Mỹ An, Ngũ Hành Sơn, Đà Nẵng",
@@ -130,25 +123,20 @@ export default function HotelDashboard({ hotel = null }) {
     </div>
   );
 
-  type Room = {
-    id: string;
-    type: string;
-    beds: string;
-    price: number;
-    images: string;
-  };
-
-  const RoomCard: React.FC<{ room: Room }> = ({ room }) => (
+  const RoomCard: React.FC<{ room: RoomType }> = ({ room }) => (
     <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
       <div className="h-36 bg-slate-100 flex items-center justify-center">
-        <img src={room.images} alt="" className="w-full h-full object-cover" />
+        <img src={room["Hình ảnh"]} className="w-full h-full object-cover" />
       </div>
       <div className="p-4">
         <div className="flex justify-between items-center">
-          <h5 className="font-semibold">{room.type}</h5>
-          <div className="text-sm">${room.price}/đêm</div>
+          <h5 className="font-semibold">{room["Loại phòng"]}</h5>
         </div>
-        <p className="text-sm text-slate-500">Giường: {room.beds}</p>
+        <div className="text-sm">
+          {Number(room.Giá).toLocaleString("vi-VN")} VND
+        </div>
+        <div className="text-sm">{room["Mô tả"]}</div>
+        <p className="text-sm text-slate-500">Sức chứa: {room["Sức chứa"]}</p>
         <div className="mt-3 flex gap-2">
           <button className="px-3 py-1 rounded-md border text-sm">
             Xem chi tiết
@@ -242,8 +230,8 @@ export default function HotelDashboard({ hotel = null }) {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data.rooms.map((r) => (
-                <RoomCard key={r.id} room={r} />
+              {rooms.map((r, idx) => (
+                <RoomCard key={idx} room={r} />
               ))}
             </div>
           </div>

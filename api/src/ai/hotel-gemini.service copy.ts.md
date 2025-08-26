@@ -12,12 +12,11 @@ export class HotelGeminiService {
     private readonly sheetsService: SheetsService,
   ) {}
 
-  /** Chat bình thường với khách */
   async chatHotel(
     message: string,
     chatHistory: { role: 'user' | 'assistant'; content: string }[],
   ): Promise<string> {
-    // 🔹 Lấy dữ liệu khách sạn
+    // 🔹 Lấy dữ liệu từ Google Sheets
     const hotelRes = await this.sheetsService.getHotel();
     const roomsRes = await this.sheetsService.getRooms();
     const servicesRes = await this.sheetsService.getServices();
@@ -26,6 +25,7 @@ export class HotelGeminiService {
       throw new Error('Không thể tải dữ liệu khách sạn');
     }
 
+    // 🔹 Map sang object chuẩn
     const hotel = {
       name: hotelRes.data['Tên khách sạn'],
       address: hotelRes.data['Địa chỉ'],
@@ -42,6 +42,7 @@ export class HotelGeminiService {
         type: r['Loại phòng'],
         beds: r['Mô tả'],
         price: r['Giá'] ?? '-',
+        images: r['Hình ảnh'],
       })),
       policies: [
         'Hủy miễn phí 48 giờ trước khi nhận phòng.',
@@ -50,14 +51,32 @@ export class HotelGeminiService {
       ],
     };
 
+    // 🔹 Prompt
     const systemPrompt = `
 Bạn là lễ tân khách sạn ${hotel.name}.
-Trả lời thân thiện, ngắn gọn, tối đa 2 câu.
-Thông tin khách sạn: ${hotel.address}, ${hotel.phone}, ${hotel.email}.
-Phòng & giá: ${hotel.rooms.map((r) => `- ${r.type}: ${r.price}, ${r.beds}`).join('\n')}
-Chính sách: ${hotel.policies.join('; ')}
+Cách giao tiếp: tự nhiên, thân thiện, như người thật, không cứng nhắc, giống như đang chat với bạn bè.
+
+⚠️ Quy tắc:
+- Trả lời NGẮN GỌN, tối đa 2 câu.
+- Nếu khách quan tâm phòng/giá → bạn khéo léo thuyết phục họ đặt ngay.
+- Nếu khách muốn đặt → hãy HỎI đủ thông tin: Họ tên, SĐT, Email, Loại phòng, Ngày check-in, Ngày check-out, Số khách.
+- Không lưu booking trực tiếp, chỉ hỏi & xác nhận. Việc lưu sẽ do hệ thống gọi API.
+- Không nhắc lại điện thoại/email khách sạn trừ khi họ yêu cầu.
+
+🏨 Thông tin khách sạn:
+- Địa chỉ: ${hotel.address}
+- Điện thoại: ${hotel.phone}
+- Email: ${hotel.email}
+- Giờ nhận phòng: ${hotel.checkIn}, trả phòng: ${hotel.checkOut}
+- Dịch vụ: ${hotel.description}
+
+📌 Phòng & Giá:
+${hotel.rooms.map((r) => `- ${r.type}: ${r.price}, ${r.beds}`).join('\n')}
+📌 Chính sách:
+${hotel.policies.map((p) => `- ${p}`).join('\n')}
 `;
 
+    // 🟢 Ghép lịch sử chat
     const messagesText = chatHistory
       .map((m) => `${m.role === 'user' ? 'Khách' : 'Lễ tân'}: ${m.content}`)
       .join('\n');
@@ -69,17 +88,20 @@ ${systemPrompt}
 ${messagesText}
 
 💬 Khách vừa hỏi: ${message}
+
+⚠️ Trả lời NGẮN, tối đa 3 câu.
 `;
 
     return this.geminiService.chatWithGeminiRaw(finalPrompt);
   }
 
-  /** Trích xuất thông tin booking từ tin nhắn khách (PartialBooking) */
+  /** Parse thông tin booking từ tin nhắn khách */
   async parseBooking(
     message: string,
     chatHistory: { role: 'user' | 'assistant'; content: string }[],
   ): Promise<PartialBooking> {
     try {
+      // Tạo prompt để Gemini trả về JSON booking
       const prompt = `
 Bạn là lễ tân AI. Trích xuất thông tin booking từ nội dung dưới đây và trả về JSON:
 Nội dung chat: ${chatHistory.map((h) => `${h.role}: ${h.content}`).join('\n')}
@@ -90,6 +112,7 @@ Nếu không có thông tin nào thì bỏ trống.
 `;
       const raw = await this.geminiService.chatWithGeminiRaw(prompt);
 
+      // parse JSON trả về từ AI
       const cleaned = raw.replace(/```json|```/g, '').trim();
       const start = cleaned.indexOf('{');
       const end = cleaned.lastIndexOf('}');
@@ -99,22 +122,5 @@ Nếu không có thông tin nào thì bỏ trống.
     } catch {
       return {};
     }
-  }
-
-  /** Tạo tóm tắt booking để user xác nhận trước khi commit */
-  buildBookingSummary(booking: PartialBooking): string {
-    const name = booking.name || '-';
-    const phone = booking.phone || '-';
-    const email = booking.email || '-';
-    const room = booking.room || '-';
-    const checkin = booking.checkin || '-';
-    const checkout = booking.checkout || '-';
-    const guests = booking.guests ?? '-';
-    return `Xác nhận đặt phòng:
-Phòng: ${room}
-Từ: ${checkin} đến ${checkout}
-Khách: ${guests}
-Tên: ${name}, SĐT: ${phone}, Email: ${email}
-Vui lòng kiểm tra và bấm "Đồng ý" nếu thông tin đúng.`;
   }
 }

@@ -12,6 +12,8 @@ import { MedalpacaService } from './medalpaca.service';
 import { LiteMedical } from 'src/sqlite/lite-medical.entity';
 import { GroqService } from './groq-formatter.service';
 import { HotelGeminiService } from './hotel-gemini.service';
+import { SheetsService } from './sheets.service';
+import { ChatService } from './chat.service';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { HotelGeminiService } from './hotel-gemini.service';
     MedalpacaService,
     GroqService,
     HotelGeminiService,
+    SheetsService,
+    ChatService,
   ],
   exports: [AIService],
 })

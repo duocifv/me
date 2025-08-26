@@ -3,7 +3,13 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchPosts } from "../api"
 import { useStorePost } from "../store"
 
-export default function PostsTableLoading({ children }) {
+import { ReactNode } from "react"
+
+interface PostsTableLoadingProps {
+    children: ReactNode
+}
+
+export default function PostsTableLoading({ children }: PostsTableLoadingProps) {
     const setPosts = useStorePost(s => s.setPosts)
     const { isLoading, isError, error, data: posts, isSuccess } = useQuery({
         queryKey: ['posts'],
