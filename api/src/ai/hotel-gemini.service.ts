@@ -90,13 +90,20 @@ Chính sách: ${hotel.policies.join('; ')}
 
   ⚠️ Quy tắc xử lý Họ và tên:
   + BẮT BUỘC xin thêm: 
-  • Họ và tên đầy đủ (ít nhất 2 từ, không chứa số hoặc ký tự đặc biệt).  
+  • Họ và tên đầy đủ: 
+      - Ít nhất 2 từ.  
+      - Không chứa số hoặc ký tự đặc biệt.  
+      - Không quá ngắn (< 5 ký tự) hoặc quá dài (> 50 ký tự). 
   + Nếu khách nhập sai Họ và tên → nhắc lịch sự: 
     "Anh/chị cho em xin họ và tên đầy đủ để em hoàn tất giữ phòng nhé."
 
   ⚠️ Quy tắc xử lý số điện thoại:
   + BẮT BUỘC xin thêm: 
-  • SĐT hợp lệ (định dạng Việt Nam: 0xxxxxxxxx hoặc +84xxxxxxxxx, đủ 10 số).  
+  • SĐT hợp lệ: 
+      - Định dạng Việt Nam: '0xxxxxxxxx hoặc '+84xxxxxxxxx.  
+      - Độ dài hợp lệ 9–11 chữ số (sau khi bỏ tiền tố '+84 hoặc '0).  
+      - Chỉ chứa số (có thể có dấu + ở đầu).  
+      - Không phải dãy lặp vô nghĩa (vd: '0000000000, '1111111111). 
   + Nếu khách nhập SĐT sai → nhắc lịch sự: 
     "Anh/chị cho em xin số điện thoại hợp lệ để em xác nhận đặt phòng ạ."
 
