@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini-formatter.service';
 import { SheetsService } from './sheets.service';
 import { PartialBooking } from './dto/booking.dto';
+import { Booking } from './type/bookings.type';
 
 @Injectable()
 export class HotelGeminiService {
@@ -16,7 +17,7 @@ export class HotelGeminiService {
   async chatHotel(
     message: string,
     chatHistory: { role: 'user' | 'assistant'; content: string }[],
-  ): Promise<string> {
+  ): Promise<{ message: string; customerInfo: Booking }> {
     // 🔹 Lấy dữ liệu khách sạn
     const hotelRes = await this.sheetsService.getHotel();
     const roomsRes = await this.sheetsService.getRooms();
@@ -51,11 +52,44 @@ export class HotelGeminiService {
     };
 
     const systemPrompt = `
-Bạn là lễ tân khách sạn ${hotel.name}.
-Trả lời thân thiện, ngắn gọn, tối đa 2 câu.
+Bạn là lễ tân khách sạn ${hotel.name} ở Đà Nẵng.
+Trả lời tự nhiên, thân thiện, tối đa 3 câu.
 Thông tin khách sạn: ${hotel.address}, ${hotel.phone}, ${hotel.email}.
 Phòng & giá: ${hotel.rooms.map((r) => `- ${r.type}: ${r.price}, ${r.beds}`).join('\n')}
+Dịch vụ: ${hotel.description}
 Chính sách: ${hotel.policies.join('; ')}
+`;
+
+    const validatePrompt = `
+⚠️ Quy tắc bắt buộc:
+- Trả lời ngắn gọn, thân thiện (tối đa 3 câu), xưng "em", gọi khách là "anh/chị".
+- Luôn trả lời dưới dạng JSON có 2 phần:
+  {
+    "message": "tin nhắn trả lời khách",
+    "customerInfo": {
+      'Ngày đặt': string | null; // ISO date string
+      'Họ và tên': string | null;
+      'Số điện thoại': number | null;
+      Email: string | null;
+      'Check-in': string | null; // ISO date string
+      'Check-out': string | null; // ISO date string
+      'Loại phòng': string | null;
+      'Ghi chú khách': string | null;
+      'Tình trạng': string | null;
+    }
+  }
+
+📊 Đánh giá bookingIntent:
+- "low" = khách chỉ hỏi chung.
+- "medium" = khách hỏi giá, số đêm, số người.
+- "high" = khách cung cấp liên hệ hoặc xác nhận muốn đặt.
+
+📌 Quy tắc hội thoại:
+- Nếu khách hỏi phòng/dịch vụ → gợi mở: "Anh/chị dự định ở mấy đêm và đi bao nhiêu người để em tư vấn phù hợp hơn ạ?".
+- Nếu khách quan tâm đặt phòng → xin thêm: Tên, SĐT, Email 
+  (nói rõ: "chỉ dùng để xác nhận đặt phòng & chăm sóc khách, không chia sẻ cho bên thứ ba").
+- Giải thích lợi ích khi xin thông tin, ví dụ: "Nếu muốn nhận ưu đãi & xác nhận nhanh, anh/chị vui lòng nhập email nhé (không bắt buộc đâu ạ)."
+- Luôn tạo cảm giác khách có quyền chọn, không bị ép buộc.
 `;
 
     const messagesText = chatHistory
@@ -65,13 +99,28 @@ Chính sách: ${hotel.policies.join('; ')}
     const finalPrompt = `
 ${systemPrompt}
 
+${validatePrompt}
+
 💬 Lịch sử chat:
 ${messagesText}
 
 💬 Khách vừa hỏi: ${message}
 `;
 
-    return this.geminiService.chatWithGeminiRaw(finalPrompt);
+    const rawReply = await this.geminiService.chatWithGeminiRaw(finalPrompt);
+    const cleaned = rawReply
+      .replace(/```json/i, '')
+      .replace(/```/g, '')
+      .trim();
+    let parsed: { message: string; customerInfo: Booking };
+
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      throw new Error(`AI trả về không phải JSON hợp lệ: ${rawReply}`);
+    }
+
+    return parsed;
   }
 
   /** Trích xuất thông tin booking từ tin nhắn khách (PartialBooking) */
@@ -102,19 +151,19 @@ Nếu không có thông tin nào thì bỏ trống.
   }
 
   /** Tạo tóm tắt booking để user xác nhận trước khi commit */
-  buildBookingSummary(booking: PartialBooking): string {
-    const name = booking.name || '-';
-    const phone = booking.phone || '-';
-    const email = booking.email || '-';
-    const room = booking.room || '-';
-    const checkin = booking.checkin || '-';
-    const checkout = booking.checkout || '-';
-    const guests = booking.guests ?? '-';
-    return `Xác nhận đặt phòng:
-Phòng: ${room}
-Từ: ${checkin} đến ${checkout}
-Khách: ${guests}
-Tên: ${name}, SĐT: ${phone}, Email: ${email}
-Vui lòng kiểm tra và bấm "Đồng ý" nếu thông tin đúng.`;
-  }
+  //   buildBookingSummary(booking: PartialBooking): string {
+  //     const name = booking.name || '-';
+  //     const phone = booking.phone || '-';
+  //     const email = booking.email || '-';
+  //     const room = booking.room || '-';
+  //     const checkin = booking.checkin || '-';
+  //     const checkout = booking.checkout || '-';
+  //     const guests = booking.guests ?? '-';
+  //     return `Xác nhận đặt phòng:
+  // Phòng: ${room}
+  // Từ: ${checkin} đến ${checkout}
+  // Khách: ${guests}
+  // Tên: ${name}, SĐT: ${phone}, Email: ${email}
+  // Vui lòng kiểm tra và bấm "Đồng ý" nếu thông tin đúng.`;
+  //   }
 }

@@ -1,14 +1,14 @@
 // bookings.type.ts
 export interface Booking {
-  'Ngày đặt': string; // ISO date string
-  'Họ và tên': string;
-  'Số điện thoại': number;
-  Email: string;
-  'Check-in': string; // ISO date string
-  'Check-out': string; // ISO date string
-  'Loại phòng': string;
-  'Ghi chú khách': string;
-  'Tình trạng': string;
+  'Ngày đặt': string | null; // ISO date string
+  'Họ và tên': string | null;
+  'Số điện thoại': number | null;
+  Email: string | null;
+  'Check-in': string | null; // ISO date string
+  'Check-out': string | null; // ISO date string
+  'Loại phòng': string | null;
+  'Ghi chú khách': string | null;
+  'Tình trạng': string | null;
 }
 
 export interface BookingsResponse {

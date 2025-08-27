@@ -15,9 +15,9 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateMedalpacaDto } from './dto/create-medalpaca.dto';
 import { HotelGeminiService } from './hotel-gemini.service';
 import { Public } from 'src/shared/decorators/public.decorator';
-import { ConfirmDto, MessageDto } from './dto/message.dto';
+import { MessageDto } from './dto/message.dto';
 import { ChatService } from './chat.service';
-import { ChatMessageResponse, ConfirmResponse } from './dto/chat.dto';
+import { ChatMessageResponse } from './dto/chat.dto';
 
 @Controller('ai')
 export class AIController {
@@ -86,12 +86,7 @@ export class AIController {
     @Body('chatHistory')
     chatHistory: { role: 'user' | 'assistant'; content: string }[],
   ) {
-    const reply = await this.hotelGeminiService.chatHotel(message, chatHistory);
-
-    return {
-      success: true,
-      reply,
-    };
+    return this.chatService.handleMessage(message, chatHistory);
   }
   @Public()
   @Post('message')
@@ -132,40 +127,40 @@ export class AIController {
       },
     },
   })
-  async message(@Body() body: MessageDto): Promise<ChatMessageResponse> {
-    const { sessionId, message, chatHistory = [] } = body;
-    return this.chatService.handleMessage(sessionId, message, chatHistory);
+  async message(@Body() body: MessageDto) {
+    const { message, chatHistory = [] } = body;
+    return this.chatService.handleMessage(message, chatHistory);
   }
 
-  @Public()
-  @Post('confirm')
-  @ApiOperation({
-    summary: 'Xác nhận booking dựa trên sessionId và lưu vào Sheets',
-  })
-  @ApiBody({
-    type: ConfirmDto,
-    examples: {
-      example1: {
-        summary: 'Ví dụ request',
-        value: { sessionId: 'abc123' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Kết quả xác nhận',
-    type: ConfirmResponse,
-    examples: {
-      example1: {
-        summary: 'Ví dụ response',
-        value: { success: true, message: 'Đặt phòng thành công!' },
-      },
-    },
-  })
-  async confirm(@Body() body: ConfirmDto): Promise<ConfirmResponse> {
-    const { sessionId } = body;
-    return this.chatService.confirmBooking(sessionId);
-  }
+  // @Public()
+  // @Post('confirm')
+  // @ApiOperation({
+  //   summary: 'Xác nhận booking dựa trên sessionId và lưu vào Sheets',
+  // })
+  // @ApiBody({
+  //   type: ConfirmDto,
+  //   examples: {
+  //     example1: {
+  //       summary: 'Ví dụ request',
+  //       value: { sessionId: 'abc123' },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Kết quả xác nhận',
+  //   type: ConfirmResponse,
+  //   examples: {
+  //     example1: {
+  //       summary: 'Ví dụ response',
+  //       value: { success: true, message: 'Đặt phòng thành công!' },
+  //     },
+  //   },
+  // })
+  // async confirm(@Body() body: ConfirmDto){
+  //   const { sessionId } = body;
+  //   return this.chatService.confirmBooking(sessionId);
+  // }
 
   @Put(':id/reward')
   async setAiReward(@Param('id') id: string, @Body() body: UpdateAiRewardDto) {
