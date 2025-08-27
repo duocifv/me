@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HotelGeminiService } from './hotel-gemini.service';
 import { SheetsService } from './sheets.service';
 import { BookingSchema, PartialBooking } from './dto/booking.dto';
-import { parseAiJson } from 'src/shared/utils/parseAiJson';
 
 type ProvisionalRecord = {
   sessionId: string;
