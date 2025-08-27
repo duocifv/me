@@ -394,7 +394,7 @@ ${messagesText}
 
     // Gọi Gemini (hoặc service AI tương tự)
     const rawReply = await this.geminiService.chatWithGeminiRaw(finalPrompt);
-
+    console.log('Raw AI reply:', rawReply);
     // Tách JSON từ raw reply robust
     const jsonText = this.tryExtractJson(rawReply);
     if (!jsonText) {
@@ -465,43 +465,45 @@ ${messagesText}
       booking.email = null;
     }
 
-    // If AI did not return bookingIntent, compute fallback
-    if (!bookingIntentFromAI || typeof bookingIntentFromAI.score !== 'number') {
+    // Xử lý bookingIntent từ AI hoặc fallback
+    if (!bookingIntentFromAI || !Array.isArray(bookingIntentFromAI.reasons)) {
+      // Nếu AI không trả về hoặc không hợp lệ, dùng fallback
       booking.bookingIntent = this.evaluateBookingIntentFallback(
         message,
         chatHistory,
         booking,
       );
     } else {
-      // Some minimal validation/clamp on AI-provided bookingIntent
       const bi = bookingIntentFromAI;
-      // ✅ Tính điểm theo trọng số
-      let rawScore = 0;
 
-      if (bi.hasContactInfo) rawScore += 30; // có SĐT/email
-      if (bi.hasCheckinCheckout) rawScore += 20; // có ngày nhận/trả phòng
-      if (bi.hasNightsOrGuests) rawScore += 10; // có số đêm/số khách
-      if (bi.hasPriceOrPromoQuestion) rawScore += 10; // hỏi giá/phòng/khuyến mãi
-      if (bi.hasClearBookingIntent) rawScore += 25; // ý định đặt phòng rõ ràng
-      if (bi.hasUrgency) rawScore += 10; // có tính khẩn cấp
-      if (bi.hasRepeatedQuestions) rawScore += 8; // hỏi lặp lại
-      if (bi.hasNegativeSignal) rawScore -= 15; // không quan tâm / từ chối
+      // ✅ Danh sách lý do AI trả về (tiếng Việt)
+      const reasons: string[] = bi.reasons.map(String);
 
-      // ✅ Giới hạn điểm 0–100
-      const score = Math.max(0, Math.min(100, Math.round(rawScore)));
+      // ✅ Tính điểm dựa trên lý do
+      let score = 0;
+      if (reasons.includes('Có thông tin liên hệ')) score += 30;
+      if (reasons.includes('Có ngày lưu trú')) score += 20;
+      if (reasons.includes('Có thông tin số khách')) score += 10;
+      if (reasons.includes('Hỏi về giá')) score += 10;
+      if (reasons.includes('Có câu xác nhận đặt phòng')) score += 25;
+      if (reasons.includes('Có dấu hiệu khẩn cấp')) score += 10;
+      if (reasons.includes('Có hỏi lặp lại')) score += 8;
+      if (reasons.includes('Tín hiệu không quan tâm')) score -= 15;
 
-      // ✅ Ánh xạ điểm sang mức độ quan tâm (4 bậc)
+      // ✅ Clamp điểm 0..100
+      score = Math.max(0, Math.min(100, Math.round(score)));
+
+      // ✅ Phân loại 4 bậc
       let category: BookingIntent['category'];
-      if (score >= 75) category = 'Rất cao';
-      else if (score >= 50) category = 'Cao';
-      else if (score >= 25) category = 'Trung bình';
+      if (score >= 85) category = 'Rất cao';
+      else if (score >= 75) category = 'Cao';
+      else if (score >= 50) category = 'Trung bình';
       else category = 'Thấp';
 
-      const reasons = Array.isArray(bi.reasons) ? bi.reasons.map(String) : [];
-
-      // ✅ Hành động đề xuất theo mức độ quan tâm
+      // ✅ Hành động đề xuất dựa trên category
       const recommendedAction =
-        typeof bi.recommendedAction === 'string'
+        typeof bi.recommendedAction === 'string' &&
+        bi.recommendedAction.trim() !== ''
           ? bi.recommendedAction
           : category === 'Rất cao'
             ? 'Gọi ngay lập tức'
@@ -511,6 +513,7 @@ ${messagesText}
                 ? 'Gửi email chào giá'
                 : 'Đưa vào danh sách chăm sóc dài hạn';
 
+      // ✅ Gán vào booking
       booking.bookingIntent = {
         score,
         category,
