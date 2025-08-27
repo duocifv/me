@@ -11,15 +11,21 @@ export default function BookingsTable() {
         <thead>
           <tr>
             <th className="tbl-id">#</th>
-            <th className="tbl-date">Ngày đặt</th>
-            <th className="tbl-name">Họ và tên</th>
-            <th className="tbl-phone">Số điện thoại</th>
-            <th className="tbl-email">Email</th>
-            <th className="tbl-in">Check-in</th>
-            <th className="tbl-out">Check-out</th>
-            <th className="tbl-room">Loại phòng</th>
-            <th className="tbl-note">Ghi chú</th>
-            <th className="tbl-status">Tình trạng</th>
+            <th>Ngày đặt</th>
+            <th>Họ và tên</th>
+            <th>Số điện thoại</th>
+            <th>Email</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Loại phòng</th>
+            <th>Số đêm</th>
+            <th>Số khách</th>
+            <th>Ghi chú</th>
+            <th>Ý định đặt phòng</th>
+            <th>Lý do nhận diện</th>
+            <th>Điểm đánh giá</th>
+            <th>Hành động khuyến nghị</th>
+            <th>Tình trạng</th>
           </tr>
         </thead>
         <tbody>
@@ -33,7 +39,13 @@ export default function BookingsTable() {
               <td>{formatDate(row["Check-in"])}</td>
               <td>{formatDate(row["Check-out"])}</td>
               <td>{row["Loại phòng"] ?? "-"}</td>
+              <td>{row["Số đêm"] ?? "-"}</td>
+              <td>{row["Số khách"] ?? "-"}</td>
               <td>{row["Ghi chú khách"] ?? "-"}</td>
+              <td>{row["Ý định đặt phòng"] ?? "-"}</td>
+              <td>{row["Lý do nhận diện"] ?? "-"}</td>
+              <td>{row["Điểm đánh giá"] ?? "-"}</td>
+              <td>{row["Hành động khuyến nghị"] ?? "-"}</td>
               <td>{row["Tình trạng"] ?? "-"}</td>
             </tr>
           ))}
