@@ -4,7 +4,7 @@ import { z } from 'zod';
 // Zod schema cho Booking với key tiếng Việt + nullable
 export const BookingSchema = z.object({
   name: z.string().min(1),
-  phone: z.string().regex(/^(?:\+84|0)\d{8,9}$/),
+  phone: z.number().int().positive(),
   email: z.string().email().nullable(),
   checkin: z
     .string()
