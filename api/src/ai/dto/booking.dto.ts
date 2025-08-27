@@ -3,24 +3,20 @@ import { z } from 'zod';
 
 // Zod schema cho Booking với key tiếng Việt + nullable
 export const BookingSchema = z.object({
-  'Ngày đặt': z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .nullable(), // ISO date string
-  'Họ và tên': z.string().min(1),
-  'Số điện thoại': z.string().regex(/^(?:\+84|0)\d{8,9}$/),
-  Email: z.string().email().nullable(),
-  'Check-in': z
+  name: z.string().min(1),
+  phone: z.string().regex(/^(?:\+84|0)\d{8,9}$/),
+  email: z.string().email().nullable(),
+  checkin: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .nullable(),
-  'Check-out': z
+  checkout: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .nullable(),
-  'Loại phòng': z.string().min(1).nullable(),
-  'Ghi chú khách': z.string().nullable(),
-  'Tình trạng': z.string().nullable(),
+  roomType: z.string().min(1).nullable(),
+  note: z.string().nullable(),
+  status: z.string().nullable(),
 });
 
 // Type đầy đủ

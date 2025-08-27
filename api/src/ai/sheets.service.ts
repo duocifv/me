@@ -83,10 +83,10 @@ export class SheetsService {
         type: 'booking',
         ...data,
       });
-      console.log('res booking:', res);
+      console.log('booking ok:', res);
       return res.data as { success: boolean; message: string };
     } catch (error) {
-      console.error(error);
+      console.log('booking error:', error);
       throw new Error('Cannot add booking via Google Apps Script');
     }
   }

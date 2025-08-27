@@ -2,8 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini-formatter.service';
 import { SheetsService } from './sheets.service';
-import { PartialBooking } from './dto/booking.dto';
-import { Booking } from './type/bookings.type';
+import { BookingDto, PartialBooking } from './dto/booking.dto';
 
 @Injectable()
 export class HotelGeminiService {
@@ -17,7 +16,7 @@ export class HotelGeminiService {
   async chatHotel(
     message: string,
     chatHistory: { role: 'user' | 'assistant'; content: string }[],
-  ): Promise<{ message: string; customerInfo: Booking }> {
+  ): Promise<{ message: string; customerInfo: BookingDto }> {
     // 🔹 Lấy dữ liệu khách sạn
     const hotelRes = await this.sheetsService.getHotel();
     const roomsRes = await this.sheetsService.getRooms();
@@ -67,15 +66,14 @@ Chính sách: ${hotel.policies.join('; ')}
   {
     "message": "tin nhắn trả lời khách",
     "customerInfo": {
-      'Ngày đặt': string | null; // ISO date string
-      'Họ và tên': string | null;
-      'Số điện thoại': number | null;
-      Email: string | null;
-      'Check-in': string | null; // ISO date string
-      'Check-out': string | null; // ISO date string
-      'Loại phòng': string | null;
-      'Ghi chú khách': string | null;
-      'Tình trạng': string | null;
+      name: string | null;
+      phone: number | null;
+      email: string | null;
+      checkin: string | null; // ISO date string
+      checkout: string | null; // ISO date string
+      roomType: string | null;
+      note: string | null;
+      status: string | null;
     }
   }
 
@@ -112,7 +110,7 @@ ${messagesText}
       .replace(/```json/i, '')
       .replace(/```/g, '')
       .trim();
-    let parsed: { message: string; customerInfo: Booking };
+    let parsed: { message: string; customerInfo: BookingDto };
 
     try {
       parsed = JSON.parse(cleaned);
