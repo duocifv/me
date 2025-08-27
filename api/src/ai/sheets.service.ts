@@ -77,11 +77,13 @@ export class SheetsService {
   }
 
   async createBooking(data: BookingDto) {
+    console.log('Creating booking:', data);
     try {
       const res = await axios.post(this.API_URL, {
         type: 'booking',
         ...data,
       });
+      console.log('res booking:', res);
       return res.data as { success: boolean; message: string };
     } catch (error) {
       console.error(error);
