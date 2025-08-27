@@ -1,232 +1,339 @@
-import { Injectable, Logger } from '@nestjs/common';
+// src/ai/chat.service.ts
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { HotelGeminiService } from './hotel-gemini.service';
 import { SheetsService } from './sheets.service';
-import { BookingSchema, PartialBooking } from './dto/booking.dto';
+import { BookingSchema, PartialBooking, BookingDto } from './dto/booking.dto';
 
 type ProvisionalRecord = {
-  sessionId: string;
+  id: string;
+  sessionId?: string | null;
   booking: PartialBooking;
   createdAt: number;
   expiresAt: number;
-  idempotencyKey?: string;
+  idempotencyKey?: string | null;
 };
 
 @Injectable()
-export class ChatService {
+export class ChatService implements OnModuleDestroy {
   private readonly logger = new Logger(ChatService.name);
+
+  // in-memory provisional records and committed keys (simple dedupe)
   private provisional = new Map<string, ProvisionalRecord>();
-  private committed = new Set<string>();
+  private committedKeys = new Set<string>();
+
+  // TTL default 15 minutes
   private readonly TTL = 15 * 60 * 1000;
+  private cleanupInterval: NodeJS.Timeout;
 
   constructor(
     private readonly gemini: HotelGeminiService,
     private readonly sheets: SheetsService,
-  ) {}
+  ) {
+    // start cleanup loop
+    this.cleanupInterval = setInterval(() => this.cleanupExpired(), 60 * 1000);
+  }
 
-  /** handle incoming chat message */
+  onModuleDestroy() {
+    clearInterval(this.cleanupInterval);
+  }
+
+  /**
+   * handleMessage
+   * - message, chatHistory: from UI
+   * - options: optional object { sessionId?, idempotencyKey? } (keeps compatibility)
+   *
+   * Return: { success, reply, provisionalId?, committed?:boolean, note? }
+   */
   async handleMessage(
     message: string,
     chatHistory: any[],
+    options?: { sessionId?: string; idempotencyKey?: string },
   ): Promise<{
     success: boolean;
     reply: string;
+    provisionalId?: string | null;
+    committed?: boolean;
+    note?: string | null;
   }> {
+    const sessionId = options?.sessionId ?? null;
+    const idempotencyKey = options?.idempotencyKey ?? null;
+
     try {
-      // 🔹 Chat AI
+      // 1) call AI
       const aiReply = await this.gemini.chatHotel(message, chatHistory);
       console.log('AI reply:', aiReply);
-      // 🔹 Validate Booking Info
-      const result = await BookingSchema.safeParseAsync(aiReply.customerInfo);
 
-      if (result.success) {
-        await this.sheets.createBooking(result.data);
-      } else {
-        console.warn(
-          'Booking data không hợp lệ (chưa đủ thông tin):',
-          result.error.format(),
-        );
-        // 👉 có thể tạm lưu vào DB/session để đợi khách bổ sung
+      this.logger.debug(
+        `AI reply for session ${sessionId || '-'}: ${JSON.stringify(aiReply)}`,
+      );
+
+      // Ensure aiReply structure
+      if (!aiReply || typeof aiReply !== 'object' || !aiReply.customerInfo) {
+        this.logger.warn('AI trả về không có customerInfo, lưu provisional');
+        const prov = await this.saveProvisional({
+          sessionId,
+          booking: {},
+          idempotencyKey,
+        });
+        return {
+          success: true,
+          reply: aiReply?.message || 'Dạ em nhận được ạ.',
+          provisionalId: prov.id,
+          committed: false,
+          note: 'AI không trả customerInfo',
+        };
       }
 
-      return {
-        success: true,
-        reply: aiReply.message,
-      };
-    } catch (error) {
-      console.error('handleMessage error:', error);
+      // 2) Validate/parse booking via BookingSchema (zod)
+      const parseResult = await BookingSchema.safeParseAsync(
+        aiReply.customerInfo,
+      );
 
+      // 2a) If parsed and valid
+      if (parseResult.success) {
+        // parseResult.data là BookingDto (hợp lệ)
+        const booking: BookingDto = parseResult.data;
+
+        // 3) Derive a dedupe key (prefer idempotencyKey if present)
+        const dedupeKey = this.makeDedupeKey(booking, idempotencyKey);
+
+        // 4) duplicate check (in-memory + optionally you can check Sheets via an index)
+        if (this.committedKeys.has(dedupeKey)) {
+          this.logger.log(
+            `Duplicate booking prevented (dedupeKey=${dedupeKey})`,
+          );
+          // still respond to customer with friendly message but avoid double-book
+          return {
+            success: true,
+            reply:
+              'Dạ em đã ghi nhận yêu cầu trước đó rồi ạ. Nếu anh/chị muốn thay đổi thông tin hãy cho em biết ạ.',
+            provisionalId: null,
+            committed: false,
+            note: 'duplicate',
+          };
+        }
+
+        // 5) try to commit to Sheets
+        try {
+          // booking là BookingDto phù hợp với createBooking
+          await this.sheets.createBooking(booking);
+          // mark committed
+          this.committedKeys.add(dedupeKey);
+          this.logger.log(`Booking committed (dedupeKey=${dedupeKey})`);
+
+          // if any provisional related to this dedupeKey, remove it
+          this.removeProvisionalByIdempotencyKey(idempotencyKey, booking);
+
+          return {
+            success: true,
+            reply: aiReply.message,
+            provisionalId: null,
+            committed: true,
+            note: 'booked',
+          };
+        } catch (sheetErr) {
+          this.logger.error('Lỗi khi lưu booking vào Sheets', sheetErr);
+          // fallback: save provisional for later retry by agent
+          const prov = await this.saveProvisional({
+            sessionId,
+            booking, // BookingDto ok as PartialBooking parameter
+            idempotencyKey,
+          });
+          return {
+            success: false,
+            reply:
+              'Dạ em xin lỗi, hiện tại hệ thống lưu trữ gặp vấn đề. Em đã tạm giữ thông tin và sẽ thông báo lại ạ.',
+            provisionalId: prov.id,
+            committed: false,
+            note: 'sheet_error',
+          };
+        }
+      } else {
+        // 2b) invalid/incomplete: save provisional
+        this.logger.warn(
+          'Booking data không hợp lệ: ',
+          parseResult.error.format(),
+        );
+        // attempt to keep AI-provided fields (normalized) where possible
+        const cleaned: PartialBooking = this.normalizePartialBooking(
+          aiReply.customerInfo,
+        );
+        const prov = await this.saveProvisional({
+          sessionId,
+          booking: cleaned,
+          idempotencyKey,
+        });
+
+        // Reply should still be AI's message (which likely asks for more info)
+        return {
+          success: true,
+          reply: aiReply.message,
+          provisionalId: prov.id,
+          committed: false,
+          note: 'provisional_saved',
+        };
+      }
+    } catch (err) {
+      this.logger.error('handleMessage unexpected error', err);
       return {
         success: false,
         reply:
-          'Xin lỗi anh/chị, hệ thống đang gặp sự cố. Anh/chị vui lòng thử lại sau ạ.',
+          'Xin lỗi anh/chị, hệ thống đang gặp lỗi. Vui lòng thử lại sau ạ.',
+        provisionalId: null,
+        committed: false,
+        note: 'unexpected_error',
       };
     }
   }
 
-  // /** confirm booking: only sessionId required */
-  // async confirmBooking(sessionId: string) {
-  //   const rec = this.provisional.get(sessionId);
-  //   if (!rec)
-  //     return {
-  //       success: false,
-  //       message: 'Booking không tồn tại hoặc đã hết hạn.',
-  //     };
-  //   if (Date.now() > rec.expiresAt) {
-  //     this.provisional.delete(sessionId);
-  //     return { success: false, message: 'Booking đã hết hạn.' };
-  //   }
+  /**
+   * commitProvisional
+   * - commit a previously saved provisional record (called e.g. from webhook/agent)
+   */
+  async commitProvisional(
+    provisionalId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const prov = this.provisional.get(provisionalId);
+    if (!prov) {
+      return {
+        success: false,
+        message: 'Không tìm thấy bản ghi tạm thời hoặc đã hết hạn.',
+      };
+    }
 
-  //   const parseResult = BookingSchema.safeParse(rec.booking);
-  //   if (!parseResult.success) {
-  //     return {
-  //       success: false,
-  //       message:
-  //         'Dữ liệu đặt phòng không hợp lệ: ' +
-  //         JSON.stringify(parseResult.error.flatten()),
-  //     };
-  //   }
+    // validate again
+    const parsed = await BookingSchema.safeParseAsync(prov.booking);
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: 'Dữ liệu chưa đủ để commit. Vui lòng kiểm tra lại thông tin.',
+      };
+    }
 
-  //   const booking = parseResult.data;
+    const booking: BookingDto = parsed.data;
+    const dedupeKey = this.makeDedupeKey(booking, prov.idempotencyKey);
+    if (this.committedKeys.has(dedupeKey)) {
+      // already committed
+      this.provisional.delete(provisionalId);
+      return { success: true, message: 'Booking đã được lưu trước đó.' };
+    }
 
-  //   // tránh duplicate commit
-  //   if (rec.idempotencyKey && this.committed.has(rec.idempotencyKey)) {
-  //     this.provisional.delete(sessionId);
-  //     return { success: true, message: 'Booking đã được ghi trước đó.' };
-  //   }
+    try {
+      await this.sheets.createBooking(booking);
+      this.committedKeys.add(dedupeKey);
+      this.provisional.delete(provisionalId);
+      return { success: true, message: 'Đã lưu booking thành công.' };
+    } catch (err) {
+      this.logger.error('commitProvisional -> sheets error', err);
+      return { success: false, message: 'Lưu booking thất bại, thử lại sau.' };
+    }
+  }
 
-  //   // check availability
-  //   try {
-  //     const roomStatus = await this.sheets.getRoomStatus(booking.checkin);
-  //     if (roomStatus?.success) {
-  //       const room = roomStatus.data.find(
-  //         (r) =>
-  //           r['Loại phòng'] === booking.room || r['Mã phòng'] === booking.room,
-  //       );
-  //       if (
-  //         room &&
-  //         room['Tình_trạng'] &&
-  //         /hết|0|no/i.test(String(room['Tình_trạng']))
-  //       ) {
-  //         return {
-  //           success: false,
-  //           message: `Phòng ${booking.room} đã hết vào ngày ${booking.checkin}.`,
-  //         };
-  //       }
-  //     }
-  //   } catch (err) {
-  //     this.logger.warn(
-  //       'Không lấy được tình trạng phòng, tiếp tục thử ghi booking: ' +
-  //         err?.message,
-  //     );
-  //   }
+  /** --- Helper functions --- */
 
-  //   // commit to Sheets
-  //   const MAX_RETRY = 3;
-  //   for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
-  //     try {
-  //       const res = await this.sheets.createBooking(booking);
-  //       if (res?.success) {
-  //         if (rec.idempotencyKey) this.committed.add(rec.idempotencyKey);
-  //         this.provisional.delete(sessionId);
-  //         return { success: true, message: 'Đặt phòng thành công!' };
-  //       }
-  //     } catch {
-  //       await this.delay(500 * attempt);
-  //     }
-  //   }
+  // create a deterministic dedupe key from booking or use idempotencyKey
+  private makeDedupeKey(
+    booking: PartialBooking | BookingDto,
+    idempotencyKey?: string | null,
+  ): string {
+    if (idempotencyKey) return `idem:${idempotencyKey}`;
+    // prefer phone + checkin + roomType as composite key
+    const phone = String((booking as any).phone || '').trim();
+    const checkin = String((booking as any).checkin || '').trim();
+    const roomType = String((booking as any).roomType || '').trim();
+    if (phone) return `phone:${phone}|ci:${checkin}|rt:${roomType}`;
+    // fallback to uuid
+    return `tmp:${uuidv4()}`;
+  }
 
-  //   return {
-  //     success: false,
-  //     message: 'Không thể lưu booking vào Google Sheets.',
-  //   };
-  // }
+  // save provisional record
+  // eslint-disable-next-line @typescript-eslint/require-await
+  private async saveProvisional(input: {
+    sessionId?: string | null;
+    booking: PartialBooking;
+    idempotencyKey?: string | null;
+  }): Promise<ProvisionalRecord> {
+    const id = uuidv4();
+    const now = Date.now();
+    const rec: ProvisionalRecord = {
+      id,
+      sessionId: input.sessionId || null,
+      booking: input.booking || {},
+      createdAt: now,
+      expiresAt: now + this.TTL,
+      idempotencyKey: input.idempotencyKey || null,
+    };
+    this.provisional.set(id, rec);
+    this.logger.log(
+      `Saved provisional booking id=${id} (expires ${new Date(rec.expiresAt).toISOString()})`,
+    );
+    return rec;
+  }
 
-  // // ----------------- helpers -----------------
-  // private mergeWithFallback(
-  //   sessionId: string,
-  //   parsed: PartialBooking,
-  //   rawText: string,
-  // ): PartialBooking {
-  //   const buf: PartialBooking = {
-  //     ...(this.provisional.get(sessionId)?.booking || {}),
-  //     ...(parsed || {}),
-  //   };
-  //   // extract phone
-  //   if (!buf.phone) {
-  //     const p = rawText.match(/0\d{9,10}|\+84\d{9,10}/)?.[0];
-  //     if (p) buf.phone = p;
-  //   }
-  //   // extract email
-  //   if (!buf.email) {
-  //     const e = rawText.match(
-  //       /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i,
-  //     )?.[0];
-  //     if (e) buf.email = e;
-  //   }
-  //   // dates
-  //   if (!buf.checkin || !buf.checkout) {
-  //     const ds = rawText.match(/\d{4}-\d{2}-\d{2}/g);
-  //     if (ds && ds.length >= 2) {
-  //       buf.checkin = buf.checkin || ds[0];
-  //       buf.checkout = buf.checkout || ds[1];
-  //     }
-  //   }
-  //   // guests
-  //   if (buf.guests === undefined) {
-  //     const g = rawText.match(/(\d+)\s*(người|khách)/i)?.[1];
-  //     if (g) buf.guests = parseInt(g, 10);
-  //   }
-  //   // room
-  //   if (!buf.room) {
-  //     const r = rawText.match(
-  //       /\b(Deluxe|Suite|Superior|Standard|Family)\b/i,
-  //     )?.[0];
-  //     if (r) buf.room = r;
-  //   }
-  //   // name
-  //   if (!buf.name) {
-  //     const nameMatch = rawText.match(/^[\p{L}\s'.-]{3,60}(?=,|\d|@)/u);
-  //     if (nameMatch) buf.name = nameMatch[0].trim();
-  //     else {
-  //       const nm = rawText.match(
-  //         /(?:Họ tên|Tên|Name)[:\\-]\s*([A-Za-zÀ-ỹ\s]+)/i,
-  //       );
-  //       if (nm) buf.name = nm[1].trim();
-  //     }
-  //   }
-  //   return buf;
-  // }
+  // remove provisional by idempotency key (or matching booking phone+checkin)
+  private removeProvisionalByIdempotencyKey(
+    idempotencyKey?: string | null,
+    booking?: PartialBooking | BookingDto,
+  ) {
+    if (!this.provisional.size) return;
+    for (const [id, rec] of this.provisional.entries()) {
+      if (idempotencyKey && rec.idempotencyKey === idempotencyKey) {
+        this.provisional.delete(id);
+        this.logger.debug(`Removed provisional ${id} by idempotencyKey`);
+        continue;
+      }
+      // if idempotencyKey not present try match phone+checkin
+      const recPhone = String(rec.booking?.phone || '').trim();
+      const recCheckin = String(rec.booking?.checkin || '').trim();
+      const bookingPhone = String((booking as any)?.phone || '').trim();
+      const bookingCheckin = String((booking as any)?.checkin || '').trim();
 
-  // private isComplete(b: PartialBooking): b is BookingDto {
-  //   return !!(
-  //     b.name &&
-  //     b.phone &&
-  //     b.email &&
-  //     b.room &&
-  //     b.checkin &&
-  //     b.checkout &&
-  //     typeof b.guests === 'number'
-  //   );
-  // }
+      if (
+        booking &&
+        bookingPhone &&
+        recPhone &&
+        recPhone === bookingPhone &&
+        recCheckin === bookingCheckin
+      ) {
+        this.provisional.delete(id);
+        this.logger.debug(`Removed provisional ${id} by phone+checkin match`);
+      }
+    }
+  }
 
-  // /** build summary message để user xác nhận */
-  // private buildBookingSummary(b: PartialBooking) {
-  //   const name = b.name || '-';
-  //   const phone = b.phone || '-';
-  //   const email = b.email || '-';
-  //   const room = b.room || '-';
-  //   const checkin = b.checkin || '-';
-  //   const checkout = b.checkout || '-';
-  //   const guests = (b.guests ?? '-') as number | string;
-  //   return `Xác nhận đặt phòng: ${room} từ ${checkin} đến ${checkout} cho ${guests} khách. Tên: ${name}, SĐT: ${phone}, Email: ${email}. Vui lòng kiểm tra và bấm "Đồng ý" nếu thông tin đúng.`;
-  // }
+  // Normalize partial booking (best-effort)
+  private normalizePartialBooking(raw: any): PartialBooking {
+    const normalized: PartialBooking = { ...raw };
+    if (raw?.nights) normalized.nights = Number(raw.nights);
+    if (raw?.guests) normalized.guests = Number(raw.guests);
+    // trim strings
+    [
+      'name',
+      'phone',
+      'email',
+      'checkin',
+      'checkout',
+      'roomType',
+      'note',
+      'status',
+    ].forEach((k) => {
+      if ((normalized as any)[k])
+        (normalized as any)[k] = String((normalized as any)[k]).trim();
+    });
+    return normalized;
+  }
 
-  // private computeIdempotencyKey(b: BookingDto) {
-  //   const raw = `${b.phone}|${b.room}|${b.checkin}|${b.checkout}`;
-  //   return crypto.createHash('sha256').update(raw).digest('hex');
-  // }
-
-  // private delay(ms: number) {
-  //   return new Promise((res) => setTimeout(res, ms));
-  // }
+  // Remove expired provisional records
+  private cleanupExpired() {
+    const now = Date.now();
+    const toRemove: string[] = [];
+    for (const [id, rec] of this.provisional.entries()) {
+      if (rec.expiresAt <= now) toRemove.push(id);
+    }
+    toRemove.forEach((id) => {
+      this.provisional.delete(id);
+      this.logger.debug(`Provisional ${id} expired and removed`);
+    });
+  }
 }

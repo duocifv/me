@@ -102,7 +102,7 @@ export class AIController {
         value: {
           sessionId: 'abc123',
           message:
-            'Tôi muốn đặt phòng Deluxe từ 2025-09-01 đến 2025-09-03 cho 2 khách',
+            'Tôi tên nguyễn văn nam, 0809558612, nvnam@ifg@uiv22.com muốn đặt phòng Deluxe từ 2025-09-01 đến 2025-09-03 cho 2 khách',
           chatHistory: [
             { role: 'user', content: 'Cho tôi biết giá phòng Deluxe' },
             { role: 'assistant', content: 'Phòng Deluxe 1.200.000đ/đêm' },

@@ -11,7 +11,7 @@ import { DailyUpdateDto } from './dto/daily-update.dto';
 @Injectable()
 export class SheetsService {
   private readonly API_URL =
-    'https://script.google.com/macros/s/AKfycbzv3t32wXLk4ccaQLRJXHiLQvs4C1iZJNtVTmzGakKJxxbENro9ky283VVmRMxoKcrR/exec';
+    'https://script.google.com/macros/s/AKfycbwChl7o1zTthXM1aprGH3sdkqqNglm1RYC61fZ0qPJzwQhHVN6-qT54yhXp-04LzZ4W/exec';
 
   async getRooms(): Promise<RoomsResponse> {
     try {
@@ -83,7 +83,7 @@ export class SheetsService {
         type: 'booking',
         ...data,
       });
-      console.log('booking ok:', res);
+      console.log('booking ok:', res.data);
       return res.data as { success: boolean; message: string };
     } catch (error) {
       console.log('booking error:', error);
