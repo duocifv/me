@@ -9,7 +9,7 @@ type ChatHistoryItem = { role: 'user' | 'assistant'; content: string };
 
 type BookingIntent = {
   score: number;
-  category: 'Thấp' | 'Trung bình' | 'Cao' | 'Rất cao';
+  category: 'low' | 'medium' | 'high';
   reasons: string[];
   recommendedAction: string;
 };
@@ -182,20 +182,15 @@ export class HotelGeminiService {
     if (score > 100) score = 100;
     if (score < 0) score = 0;
 
-    let category: BookingIntent['category'] = 'Thấp';
-    let recommendedAction = 'Đưa vào danh sách chăm sóc dài hạn';
-
+    let category: BookingIntent['category'] = 'low';
+    let recommendedAction = 'add_to_nurture_campaign';
     if (score >= 75) {
-      category = 'Rất cao';
-      recommendedAction = 'Gọi ngay lập tức';
+      category = 'high';
+      recommendedAction = 'call_within_30min';
     } else if (score >= 50) {
-      category = 'Cao';
-      recommendedAction = 'Gọi lại trong 30 phút';
-    } else if (score >= 25) {
-      category = 'Trung bình';
-      recommendedAction = 'Gửi email chào giá';
+      category = 'medium';
+      recommendedAction = 'send_email_offer';
     }
-    // score < 25 vẫn giữ: Thấp / Đưa vào danh sách chăm sóc dài hạn
 
     return {
       score,
@@ -251,14 +246,9 @@ export class HotelGeminiService {
     const systemPrompt = `
 Bạn là lễ tân khách sạn ${hotel.name} ở Đà Nẵng.
 Trả lời tự nhiên, thân thiện, tối đa 3 câu; xưng "em", gọi khách là "anh/chị".
-Thông tin khách sạn:
-- Địa chỉ: ${hotel.address}
-- Điện thoại: ${hotel.phone}
-- Email: ${hotel.email}
-
-Các loại phòng & giá:
+Thông tin khách sạn: ${hotel.address}, ${hotel.phone}, ${hotel.email}.
+Phòng & giá:
 ${hotel.rooms.map((r) => `- ${r.type}: ${r.price}, ${r.beds}`).join('\n')}
-
 Dịch vụ: ${hotel.description}
 Chính sách: ${hotel.policies.join('; ')}
 `.trim();
@@ -272,8 +262,8 @@ Chính sách: ${hotel.policies.join('; ')}
     "name": string | null,
     "phone": string | null,
     "email": string | null,
-    "checkin": string | null,   // phải ở dạng "YYYY-MM-DD" hoặc null
-    "checkout": string | null,  // phải ở dạng "YYYY-MM-DD" hoặc null
+    "checkin": string | null,
+    "checkout": string | null,
     "roomType": string | null,
     "nights": number | null,
     "guests": number | null,
@@ -282,97 +272,28 @@ Chính sách: ${hotel.policies.join('; ')}
   },
   "bookingIntent": {
     "score": number, // 0-100
-    "category": "Thấp" | "Trung bình" | "Cao" | "Rất cao",
+    "category": "low"|"medium"|"high",
     "reasons": string[],
     "recommendedAction": string
   }
 }
 
-- Rules chính (tóm tắt):
+- Rules:
   * message: thân thiện, ngắn gọn (<=3 câu), xưng "em", hỏi gợi mở nếu thiếu thông tin.
-  * Khi xin phone/email, **chỉ hỏi nếu khách chưa cung cấp**:
-    - Nếu message đã có số điện thoại, **không hỏi lại số điện thoại**.
-    - Nếu message đã có email, **không hỏi lại email**.
-    - Khi cần hỏi email, dùng câu ngắn gọn kèm consent: "Anh/chị cho em xin email để gửi xác nhận & ưu đãi, thông tin chỉ dùng để chăm sóc, không chia sẻ."
-    - Email chỉ nhắc **1 lần duy nhất**; nếu khách sau đó cung cấp thì phản hồi: "Em đã ghi nhận email của anh/chị, sẽ gửi xác nhận và thông tin ưu đãi qua email sớm nhất ạ."
-  * Nếu lịch nhận/trả phòng không rõ, để 'checkin'/'checkout' = null.
-
-  - ⚠️ **Luật chuẩn hoá ngày (bắt buộc)**:
-   1. **Luôn trả về** 'checkin và 'checkout' ở dạng **ISO date-only**: 'YYYY-MM-DD' (ví dụ '2024-08-27) hoặc **null** nếu không thể xác định. KHÔNG trả về datetime có thời gian (không có 'T...Z').
-  2. **Các định dạng đầu vào AI có thể gặp** (không giới hạn):  
-     - 'YYYY-MM-DD' (ví dụ '2024-08-27') → giữ nguyên.  
-     - ISO full (ví dụ '2024-08-27T17:00:00.000Z') → chuyển về '2024-08-27' (theo timezone **Asia/Ho_Chi_Minh**).  
-     - 'DD/MM/YYYY', 'DD-MM-YYYY', 'D/M/YY' (ví dụ '27/8/2024', '27-08-2024', '27/8/24') → chuyển về 'YYYY-MM-DD'.  
-     - '27/8' hoặc '27-8' (không có năm) → **giả định năm hiện tại**; nếu ngày đó đã qua trong năm hiện tại thì tăng 1 năm (để ra ngày trong tương lai).  
-     - Các dạng chữ: '27 tháng 8', '27 Aug 2024', 'Aug 27' → parse và chuyển về 'YYYY-MM-DD' theo quy tắc trên.  
-     - Từ ngữ tương đối: 'hôm nay', 'ngày mai', 'cuối tuần này' → **giải mã thành ngày cụ thể** tương ứng theo timezone **Asia/Ho_Chi_Minh** và trả về 'YYYY-MM-DD'.  
-  3. **Nếu không thể xác định chính xác ngày** (ví dụ: "cuối tuần" mà không rõ ngày, hoặc text quá mơ hồ), **gán null** cho 'checkin' hoặc 'checkout'. KHÔNG đoán linh tinh.  
-  4. **Nếu AI chuyển đổi ngày, phải đảm bảo tính hợp lệ** (ví dụ checkin ≤ checkout nếu cả hai có giá trị; nếu không hợp lệ thì set checkout hoặc checkin = null và giải thích ngắn trong 'message' kèm câu gợi mở để khách cung cấp lại — nhưng nhớ vẫn chỉ trả JSON).
-  5. **Ví dụ chuyển đổi (AI phải làm theo ví dụ)**:
-     - Input: "27/8/2024" → output 'checkin': "2024-08-27"
-     - Input: "2024-08-27T17:00:00.000Z" → output 'checkin': "2024-08-27"
-     - Input: "ngày mai" (giả sử hôm nay 2025-08-26 Asia/Ho_Chi_Minh) → output 'checkin': "2025-08-27"
-     - Input: "27/8" (năm hiện tại 2025) và 27/8/2025 đã qua → assume 2026-08-27
-     - Input mơ hồ → 'checkin': null
-
-- ⚠️ Quy tắc xử lý Họ và tên (BẮT BUỘC nếu khách muốn đặt):
-  + Yêu cầu họ tên đầy đủ khi thiếu hoặc không hợp lệ.
-  + Tiêu chuẩn hợp lệ:
-    - Ít nhất 2 từ.
-    - Không chứa chữ số hoặc ký tự đặc biệt (chỉ chữ unicode, dấu - và ' và khoảng trắng).
-    - Độ dài 5..50 ký tự.
-  + Nếu khách nhập họ tên **không hợp lệ**, AI phải **khéo léo nhắc** bằng câu:  
-    "Anh/chị cho em xin họ và tên đầy đủ để em hoàn tất giữ phòng nhé."
-
-- ⚠️ Quy tắc xử lý SĐT (BẮT BUỘC):
-  + Yêu cầu SĐT hợp lệ khi thiếu hoặc không hợp lệ.
-  + Tiêu chuẩn hợp lệ:
-    - Định dạng VN: '0xxxxxxxxx' hoặc '+84xxxxxxxxx'.
-    - Sau khi loại bỏ tiền tố ('+84' hoặc '0') còn 9–11 chữ số.
-    - Chỉ chứa chữ số (có thể có dấu + ở đầu).
-    - Không phải dãy lặp vô nghĩa (ví dụ '000000000', '111111111').
-  + Nếu SĐT **không hợp lệ**, AI phải nhắc lịch sự:  
-    "Anh/chị cho em xin số điện thoại hợp lệ để em xác nhận đặt phòng ạ."
-
-- ⚠️ Quy tắc xử lý email:
-  - Email là **tùy chọn**, chỉ nhắc 1 lần nếu chưa có.
-  - Nếu khách đã cung cấp email trong message, AI phải trả lời thêm:  
-    "Em đã ghi nhận email của anh/chị, sẽ gửi xác nhận và thông tin ưu đãi qua email sớm nhất ạ."
-  - Nếu khách chưa cung cấp email, gợi ý bằng câu:  
-    "Anh/chị có thể để lại email để nhận xác nhận nhanh và ưu đãi ạ."
-
-- bookingIntent (tự động tính điểm):
-  - Có cung cấp số điện thoại hoặc email: **+30**
-  - Có cung cấp ngày nhận hoặc trả phòng: **+20**
-  - Có thông tin số đêm hoặc số khách: **+10**
-  - Có câu hỏi về giá/phòng/khuyến mãi: **+10**
-  - Có cụm từ thể hiện ý định đặt phòng rõ ràng: **+25**
-  - Có từ ngữ thể hiện tính khẩn cấp: **+10**
-  - Có hỏi lặp lại nhiều lần: **+8**
-  - Có tín hiệu không quan tâm / phủ định: **-15**
-  * Clamp score trong 0..100.
-  * Ánh xạ điểm sang mức độ (category):
-    - 0–49 → "thấp"
-    - 50–74 → "trung bình"
-    - 75–100 → "cao"
-    - (Bạn có thể dùng thêm "Rất cao" cho score >= 85 nếu muốn — nhưng giữ nhất quán)
- * bookingIntent.reasons: trả về danh sách ngắn gọn **tiếng Việt** (ví dụ: "Có thông tin liên hệ", "Có ngày lưu trú", "Có câu xác nhận đặt phòng", "Hỏi về giá", "Có dấu hiệu khẩn cấp", "Có hỏi lặp lại", "Tín hiệu không quan tâm")
-* recommendedAction: chọn **1** trong các hành động (trả về tiếng Việt ngắn gọn hoặc mã nội bộ):
-    - gọi điện trong 30 phút
-    - gửi SMS ngay
-    - gửi email xác nhận/ưu đãi
-    - chuyển nhân viên xử lý
-    - nhắc lại sau 24 giờ
-    - thêm vào chiến dịch chăm sóc
-- Khi thiếu thông tin liên quan đến đặt phòng (ví dụ: số đêm, số khách, loại phòng), gợi mở bằng câu thân thiện kiểu:
-  "Anh/chị dự định ở mấy đêm và đi bao nhiêu người để em tư vấn phù hợp hơn ạ?"
-  
-- Luôn **ĐẢM BẢO**:
-  * Không in thêm văn bản ngoài JSON.
-  * Trường 'message vẫn là văn bản thân thiện để hiển thị cho khách (không vượt quá 3 câu).
-  * Nếu yêu cầu xin thông tin, dùng các câu nhắc đã nêu ở trên (exact phrasing recommended).
-
-
+  * Khi xin phone/email kèm text consent: "Anh/chị cho em xin email để em gửi xác nhận & ưu đãi nhanh nhé — thông tin chỉ dùng để xác nhận đặt phòng và chăm sóc, không chia sẻ bên thứ ba."
+  * Nếu lịch đặt/nhận phòng không rõ, để checkin/checkout là null.
+  * bookingIntent: AI phải tự tính điểm theo weights:
+    - contactProvided: +30 (phone/email)
+    - dateProvided: +20
+    - nightsOrGuests: +10
+    - priceOrRateQuestion: +10
+    - explicitBookingPhrase: +25
+    - urgencyWord: +10
+    - repeatedQuestions: +8
+    - negativeSignal: -15
+  * Clamp score 0..100. Map score -> category: >=75 high; 50..74 medium; <50 low.
+  * bookingIntent.reasons: list các lý do ngắn (tiếng Việt) dẫn tới điểm.
+  * recommendedAction: chọn 1 trong: call_within_30min, sms_immediate, send_email_offer, assign_to_agent, remind_after_24h, add_to_nurture_campaign
 - KHÔNG IN THÊM GÌ NGOÀI JSON.
 `.trim();
 
@@ -475,41 +396,23 @@ ${messagesText}
     } else {
       // Some minimal validation/clamp on AI-provided bookingIntent
       const bi = bookingIntentFromAI;
-      // ✅ Tính điểm theo trọng số
-      let rawScore = 0;
-
-      if (bi.hasContactInfo) rawScore += 30; // có SĐT/email
-      if (bi.hasCheckinCheckout) rawScore += 20; // có ngày nhận/trả phòng
-      if (bi.hasNightsOrGuests) rawScore += 10; // có số đêm/số khách
-      if (bi.hasPriceOrPromoQuestion) rawScore += 10; // hỏi giá/phòng/khuyến mãi
-      if (bi.hasClearBookingIntent) rawScore += 25; // ý định đặt phòng rõ ràng
-      if (bi.hasUrgency) rawScore += 10; // có tính khẩn cấp
-      if (bi.hasRepeatedQuestions) rawScore += 8; // hỏi lặp lại
-      if (bi.hasNegativeSignal) rawScore -= 15; // không quan tâm / từ chối
-
-      // ✅ Giới hạn điểm 0–100
-      const score = Math.max(0, Math.min(100, Math.round(rawScore)));
-
-      // ✅ Ánh xạ điểm sang mức độ quan tâm (4 bậc)
-      let category: BookingIntent['category'];
-      if (score >= 75) category = 'Rất cao';
-      else if (score >= 50) category = 'Cao';
-      else if (score >= 25) category = 'Trung bình';
-      else category = 'Thấp';
+      const score = Number.isFinite(bi.score)
+        ? Math.max(0, Math.min(100, Math.round(bi.score)))
+        : 0;
+      let category: BookingIntent['category'] = 'low';
+      if (score >= 75) category = 'high';
+      else if (score >= 50) category = 'medium';
+      else category = 'low';
 
       const reasons = Array.isArray(bi.reasons) ? bi.reasons.map(String) : [];
-
-      // ✅ Hành động đề xuất theo mức độ quan tâm
       const recommendedAction =
         typeof bi.recommendedAction === 'string'
           ? bi.recommendedAction
-          : category === 'Rất cao'
-            ? 'Gọi ngay lập tức'
-            : category === 'Cao'
-              ? 'Gọi lại trong 30 phút'
-              : category === 'Trung bình'
-                ? 'Gửi email chào giá'
-                : 'Đưa vào danh sách chăm sóc dài hạn';
+          : category === 'high'
+            ? 'call_within_30min'
+            : category === 'medium'
+              ? 'send_email_offer'
+              : 'add_to_nurture_campaign';
 
       booking.bookingIntent = {
         score,

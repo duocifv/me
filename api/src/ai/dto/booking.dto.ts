@@ -6,7 +6,7 @@ import { z } from 'zod';
  */
 export const BookingIntentSchema = z.object({
   score: z.number().int().min(0).max(100),
-  category: z.enum(['low', 'medium', 'high']),
+  category: z.enum(['Thấp', 'Trung bình', 'Cao', 'Rất cao']),
   reasons: z.array(z.string()),
   recommendedAction: z.string(), // e.g. 'call_within_30min' | 'send_email_offer' | ...
 });

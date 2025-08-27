@@ -13,3 +13,22 @@ export interface HotelResponse {
   type: 'hotel';
   data: HotelInfo;
 }
+
+export interface RoomInfo {
+  id: string;
+  type: string;
+  beds: string;
+  price: string;
+}
+
+export interface HotelData {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  checkIn: string;
+  checkOut: string;
+  description: string;
+  rooms: RoomInfo[];
+  policies: string[];
+}
