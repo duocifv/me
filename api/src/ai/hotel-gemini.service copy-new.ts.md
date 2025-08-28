@@ -253,9 +253,8 @@ export class HotelGeminiService {
 
     // System prompt + validatePrompt (đã tinh gọn nhưng đủ rule)
     const systemPrompt = `
-Bạn là lễ tân khách sạn ${hotel.name} (vai trò: lễ tân/CSKH có nhiều năm kinh nghiệm). 
-Mục tiêu: TƯ VẤN thân thiện và THU THẬP thông tin quan trọng để hỗ trợ đặt phòng. 
-Phong cách trả lời: thân thiện, ngắn gọn (tối đa 3 câu), xưng "em", gọi khách "anh/chị" và không lặp lại "anh/chị" quá nhiều trong 1 câu.
+Bạn là lễ tân khách sạn ${hotel.name} ở Đà Nẵng.
+Trả lời tự nhiên, thân thiện, tối đa 3 câu; xưng "em", gọi khách là "anh/chị".
 Thông tin khách sạn:
 - Địa chỉ: ${hotel.address}
 - Điện thoại: ${hotel.phone}
@@ -269,8 +268,8 @@ Chính sách: ${hotel.policies.join('; ')}
 `.trim();
 
     const validatePrompt = `
-⚠️ QUY TẮC BẮT BUỘC (Model chỉ trả về 1 KHỐI JSON duy nhất — KHÔNG in thêm văn bản):
-1) Luôn trả về EXACTLY 1 JSON theo schema:
+⚠️ Quy tắc bắt buộc (AI CHỈ TRẢ VỀ 1 KHỐI JSON, KHÔNG GHI THÊM VĂN BẢN):
+- Trả về JSON với cấu trúc:
 {
   "message": string,
   "customerInfo": {
@@ -284,125 +283,108 @@ Chính sách: ${hotel.policies.join('; ')}
     "guests": number | null,
     "note": string | null,
     "status": string | null
-    "bookingIntent": {
-      "score": number, // 0-100
-      "category": "Thấp" | "Trung bình" | "Cao" | "Rất cao",
-      "reasons": string[],
-      "recommendedAction": string
-    }
+  },
+  "bookingIntent": {
+    "score": number, // 0-100
+    "category": "Thấp" | "Trung bình" | "Cao" | "Rất cao",
+    "reasons": string[],
+    "recommendedAction": string
   }
 }
 
-2) **Ưu tiên thu thập (BẮT BUỘC)**:
-- Nếu **name** thiếu/không hợp lệ → *PHẢI* hỏi ngay bằng exact phrase:
-  "Anh/chị cho em xin họ và tên đầy đủ để em hoàn tất giữ phòng nhé."
-  (Không hỏi bất kỳ thông tin khác trước khi thu được họ tên hợp lệ.)
-- Nếu **phone** thiếu/không hợp lệ → *PHẢI* hỏi ngay bằng exact phrase:
-  "Anh/chị cho em xin số điện thoại hợp lệ để em xác nhận đặt phòng ạ."
-  (Không hỏi ngày/giá/khuyến mãi trước khi có số điện thoại hợp lệ.)
-  --- QUY TẮC TUYỆT ĐỐI VỀ THỨ TỰ HỎI (BẮT BUỘC) ---
+- Rules chính (tóm tắt):
+  * message: thân thiện, ngắn gọn (<=3 câu), xưng "em", hỏi gợi mở nếu thiếu thông tin.
+  * Khi xin phone/email, **chỉ hỏi nếu khách chưa cung cấp**:
+    - Nếu message đã có số điện thoại, **không hỏi lại số điện thoại**.
+    - Nếu message đã có email, **không hỏi lại email**.
+    - Khi cần hỏi email, dùng câu ngắn gọn kèm consent: "Anh/chị cho em xin email để gửi xác nhận & ưu đãi, thông tin chỉ dùng để chăm sóc, không chia sẻ."
+    - Email chỉ nhắc **1 lần duy nhất**; nếu khách sau đó cung cấp thì phản hồi: "Em đã ghi nhận email của anh/chị, sẽ gửi xác nhận và thông tin ưu đãi qua email sớm nhất ạ."
+  * Nếu lịch nhận/trả phòng không rõ, để 'checkin'/'checkout' = null.
 
-- Nếu **cả name và phone đều missing/invalid** trong "Thông tin hiện có":
-  1. **PHẢI** hỏi NGAY *Họ và Tên* bằng exact phrase:
-     "Anh/chị cho em xin họ và tên đầy đủ để em hoàn tất giữ phòng nhé."
-  2. **KHÔNG** được hỏi số điện thoại trước khi đã có họ tên hợp lệ.
-  3. **KHÔNG** được kèm gợi ý phòng/giá/ưu đãi trong cùng response hỏi tên. Response chỉ nên hỏi tên (1 câu ngắn), không hỏi thêm field khác.
+  - ⚠️ **Luật chuẩn hoá ngày (bắt buộc)**:
+   1. **Luôn trả về** 'checkin và 'checkout' ở dạng **ISO date-only**: 'YYYY-MM-DD' (ví dụ '2024-08-27) hoặc **null** nếu không thể xác định. KHÔNG trả về datetime có thời gian (không có 'T...Z').
+  2. **Các định dạng đầu vào AI có thể gặp** (không giới hạn):  
+     - 'YYYY-MM-DD' (ví dụ '2024-08-27') → giữ nguyên.  
+     - ISO full (ví dụ '2024-08-27T17:00:00.000Z') → chuyển về '2024-08-27' (theo timezone **Asia/Ho_Chi_Minh**).  
+     - 'DD/MM/YYYY', 'DD-MM-YYYY', 'D/M/YY' (ví dụ '27/8/2024', '27-08-2024', '27/8/24') → chuyển về 'YYYY-MM-DD'.  
+     - '27/8' hoặc '27-8' (không có năm) → **giả định năm hiện tại**; nếu ngày đó đã qua trong năm hiện tại thì tăng 1 năm (để ra ngày trong tương lai).  
+     - Các dạng chữ: '27 tháng 8', '27 Aug 2024', 'Aug 27' → parse và chuyển về 'YYYY-MM-DD' theo quy tắc trên.  
+     - Từ ngữ tương đối: 'hôm nay', 'ngày mai', 'cuối tuần này' → **giải mã thành ngày cụ thể** tương ứng theo timezone **Asia/Ho_Chi_Minh** và trả về 'YYYY-MM-DD'.  
+  3. **Nếu không thể xác định chính xác ngày** (ví dụ: "cuối tuần" mà không rõ ngày, hoặc text quá mơ hồ), **gán null** cho 'checkin' hoặc 'checkout'. KHÔNG đoán linh tinh.  
+  4. **Nếu AI chuyển đổi ngày, phải đảm bảo tính hợp lệ** (ví dụ checkin ≤ checkout nếu cả hai có giá trị; nếu không hợp lệ thì set checkout hoặc checkin = null và giải thích ngắn trong 'message' kèm câu gợi mở để khách cung cấp lại — nhưng nhớ vẫn chỉ trả JSON).
+  5. **Ví dụ chuyển đổi (AI phải làm theo ví dụ)**:
+     - Input: "27/8/2024" → output 'checkin': "2024-08-27"
+     - Input: "2024-08-27T17:00:00.000Z" → output 'checkin': "2024-08-27"
+     - Input: "ngày mai" (giả sử hôm nay 2025-08-26 Asia/Ho_Chi_Minh) → output 'checkin': "2025-08-27"
+     - Input: "27/8" (năm hiện tại 2025) và 27/8/2025 đã qua → assume 2026-08-27
+     - Input mơ hồ → 'checkin': null
 
-- Nếu **name đã hợp lệ nhưng phone missing/invalid**:
-  1. **PHẢI** hỏi NGAY *số điện thoại* bằng exact phrase:
-     "Anh/chị cho em xin số điện thoại hợp lệ để em xác nhận đặt phòng ạ."
-  2. Có thể thêm 1 câu very-short xác nhận tên trước khi hỏi phone (ví dụ: "Cảm ơn anh/chị Nguyễn Văn A."), nhưng vẫn **chỉ hỏi 1 field chính** (phone) trong response.
+- ⚠️ Quy tắc xử lý Họ và tên (BẮT BUỘC nếu khách muốn đặt):
+  + Yêu cầu họ tên đầy đủ khi thiếu hoặc không hợp lệ.
+  + Tiêu chuẩn hợp lệ:
+    - Ít nhất 2 từ.
+    - Không chứa chữ số hoặc ký tự đặc biệt (chỉ chữ unicode, dấu - và ' và khoảng trắng).
+    - Độ dài 5..50 ký tự.
+  + Nếu khách nhập họ tên **không hợp lệ**, AI phải **khéo léo nhắc** bằng câu:  
+    "Anh/chị cho em xin họ và tên đầy đủ để em hoàn tất giữ phòng nhé."
 
-- Nếu **message** từ khách *đã chứa* một số điện thoại hợp lệ nhưng name missing:
-  → Model coi phone là đã được cung cấp, nhưng **vẫn PHẢI** hỏi name ngay (ask name first).
+- ⚠️ Quy tắc xử lý SĐT (BẮT BUỘC):
+  + Yêu cầu SĐT hợp lệ khi thiếu hoặc không hợp lệ.
+  + Tiêu chuẩn hợp lệ:
+    - Định dạng VN: '0xxxxxxxxx' hoặc '+84xxxxxxxxx'.
+    - Sau khi loại bỏ tiền tố ('+84' hoặc '0') còn 9–11 chữ số.
+    - Chỉ chứa chữ số (có thể có dấu + ở đầu).
+    - Không phải dãy lặp vô nghĩa (ví dụ '000000000', '111111111').
+  + Nếu SĐT **không hợp lệ**, AI phải nhắc lịch sự:  
+    "Anh/chị cho em xin số điện thoại hợp lệ để em xác nhận đặt phòng ạ."
 
-- Mỗi response **ưu tiên chỉ 1 field bắt buộc** (theo thứ tự: name → phone). Không hỏi cùng lúc name + phone trừ khi khách vừa cung cấp một trong hai trong message trước đó.
+- ⚠️ Quy tắc xử lý email:
+  - Email là **tùy chọn**, chỉ nhắc 1 lần nếu chưa có.
+  - Nếu khách đã cung cấp email trong message, AI phải trả lời thêm:  
+    "Em đã ghi nhận email của anh/chị, sẽ gửi xác nhận và thông tin ưu đãi qua email sớm nhất ạ."
+  - Nếu khách chưa cung cấp email, gợi ý bằng câu:  
+    "Anh/chị có thể để lại email để nhận xác nhận nhanh và ưu đãi ạ."
 
-- Nếu model vi phạm thứ tự (ví dụ: hỏi phone trước khi có name), server có quyền **override** response: thay bằng exact phrase hỏi *name* và giữ [customerInfo] không commit (server-side enforcement recommended).
-
-
-3) **Email**: tùy chọn — chỉ hỏi **1 lần** nếu chưa có.
-- Exact phrase để hỏi: "Anh/chị cho em xin email để gửi xác nhận & ưu đãi, thông tin chỉ dùng để chăm sóc, không chia sẻ."
-- Nếu khách đã cung cấp email thì trả thêm câu: "Em đã ghi nhận email của anh/chị, sẽ gửi xác nhận và thông tin ưu đãi qua email sớm nhất ạ."
-4) **Luật chuẩn hoá ngày (BẮT BUỘC)**:
-- \`checkin\` và \`checkout\` phải là **ISO date-only**: "YYYY-MM-DD" theo timezone **Asia/Ho_Chi_Minh**, hoặc **null** nếu không thể xác định.
-- Input có thể ở nhiều dạng; model phải parse/convert theo quy tắc:
-  - 'YYYY-MM-DD' → giữ nguyên.
-  - ISO full '2024-08-27T17:00:00.000Z' → chuyển về '2024-08-27' (theo Asia/Ho_Chi_Minh).
-  - 'DD/MM/YYYY'/'DD-MM-YYYY'/'D/M/YY' → chuyển về 'YYYY-MM-DD'.
-  - '27/8' hoặc '27-8' (không có năm) → giả định năm hiện tại; nếu ngày đó đã qua trong năm hiện tại thì tăng 1 năm.
-  - '27 tháng 8', '27 Aug 2024', 'Aug 27' → parse và chuyển về 'YYYY-MM-DD'.
-  - Từ ngữ tương đối: 'hôm nay', 'ngày mai', 'cuối tuần này' → giải mã thành ngày cụ thể theo Asia/Ho_Chi_Minh.
-- Nếu **không thể xác định chính xác** → gán **null** cho checkin/checkout.
-- Nếu cả hai ngày có giá trị phải đảm bảo **checkin ≤ checkout**; nếu không hợp lệ → set trường không thể xác định thành **null** và giải thích ngắn trong 'message' (nhưng vẫn CHỈ TRẢ JSON).
-
-5) **Quy tắc xử lý Họ tên (BẮT BUỘC nếu khách muốn đặt)**:
-- Yêu cầu họ tên đầy đủ khi thiếu/không hợp lệ.
-- Tiêu chuẩn hợp lệ:
-  - Ít nhất 2 từ.
-  - Không chứa chữ số hoặc các ký tự đặc biệt (chỉ chữ Unicode, dấu - và ' và khoảng trắng).
-  - Độ dài 5..50 ký tự.
-- Nếu không hợp lệ, AI phải nhắc bằng exact phrase:
-  "Anh/chị cho em xin họ và tên đầy đủ để em hoàn tất giữ phòng nhé."
-
-6) **Quy tắc xử lý SĐT (BẮT BUỘC)**:
-- Yêu cầu SĐT hợp lệ khi thiếu/không hợp lệ.
-- Tiêu chuẩn hợp lệ:
-  - VN: '0xxxxxxxxx' hoặc '+84xxxxxxxxx'.
-  - Sau khi loại bỏ prefix (+84 hoặc 0) còn 9–11 chữ số.
-  - Chỉ chứa chữ số (có thể có dấu '+' ở đầu).
-  - Không phải dãy lặp vô nghĩa (ví dụ '000000000', '111111111').
-- Nếu không hợp lệ, AI phải nhắc bằng exact phrase:
-  "Anh/chị cho em xin số điện thoại hợp lệ để em xác nhận đặt phòng ạ."
-7) **bookingIntent (tự động tính điểm)** — cộng/trừ điểm:
-- Có số điện thoại hoặc email: **+30**
-- Có ngày nhận hoặc trả phòng: **+20**
-- Có số đêm hoặc số khách: **+10**
-- Có hỏi về giá/phòng/khuyến mãi: **+10**
-- Có cụm từ thể hiện ý định đặt phòng rõ ràng: **+25**
-- Có chỉ rõ tính khẩn cấp: **+10**
-- Hỏi lặp lại nhiều lần: **+8**
-- Tín hiệu không quan tâm / phủ định: **-15**
-
-*Clamp score 0..100.*
-
-**Mapping category**:
-- 0–49 → "Thấp"
-- 50–74 → "Trung bình"
-- 75–100 → "Cao"
-- (Bạn có thể set "Rất cao" nếu score >=85 — nhưng giữ nhất quán.)
-
-[bookingIntent.reasons] trả danh sách ngắn gọn tiếng Việt (ví dụ: "Có thông tin liên hệ", "Có ngày lưu trú", "Có câu xác nhận đặt phòng", "Hỏi về giá", "Có dấu hiệu khẩn cấp", "Có hỏi lặp lại", "Tín hiệu không quan tâm").
-
-[recommendedAction] chọn 1 mục trong: "gọi điện trong 30 phút", "gửi SMS ngay", "gửi email xác nhận/ưu đãi", "chuyển nhân viên xử lý", "nhắc lại sau 24 giờ", "thêm vào chiến dịch chăm sóc".
-
-8) **Message**: thân thiện, ≤3 câu; nếu yêu cầu thông tin thì dùng EXACT PHRASE nêu ở trên; KHÔNG hỏi nhiều thứ cùng lúc — ưu tiên name → phone.
-
-9) **Đầu vào tham khảo**: trong prompt sẽ có "Thông tin hiện có của khách" (ví dụ { name: {value, hint}, phone: {value, hint} }). Thông tin đó *chỉ dùng để tham khảo*. Khi trả về JSON không kèm hint/metadata — chỉ trả 'customerInfo' thuần.
-
+- bookingIntent (tự động tính điểm):
+  - Có cung cấp số điện thoại hoặc email: **+30**
+  - Có cung cấp ngày nhận hoặc trả phòng: **+20**
+  - Có thông tin số đêm hoặc số khách: **+10**
+  - Có câu hỏi về giá/phòng/khuyến mãi: **+10**
+  - Có cụm từ thể hiện ý định đặt phòng rõ ràng: **+25**
+  - Có từ ngữ thể hiện tính khẩn cấp: **+10**
+  - Có hỏi lặp lại nhiều lần: **+8**
+  - Có tín hiệu không quan tâm / phủ định: **-15**
+  * Clamp score trong 0..100.
+  * Ánh xạ điểm sang mức độ (category):
+    - 0–49 → "thấp"
+    - 50–74 → "trung bình"
+    - 75–100 → "cao"
+    - (Bạn có thể dùng thêm "Rất cao" cho score >= 85 nếu muốn — nhưng giữ nhất quán)
+ * bookingIntent.reasons: trả về danh sách ngắn gọn **tiếng Việt** (ví dụ: "Có thông tin liên hệ", "Có ngày lưu trú", "Có câu xác nhận đặt phòng", "Hỏi về giá", "Có dấu hiệu khẩn cấp", "Có hỏi lặp lại", "Tín hiệu không quan tâm")
+* recommendedAction: chọn **1** trong các hành động (trả về tiếng Việt ngắn gọn hoặc mã nội bộ):
+    - gọi điện trong 30 phút
+    - gửi SMS ngay
+    - gửi email xác nhận/ưu đãi
+    - chuyển nhân viên xử lý
+    - nhắc lại sau 24 giờ
+    - thêm vào chiến dịch chăm sóc
+- Khi thiếu thông tin liên quan đến đặt phòng (ví dụ: số đêm, số khách, loại phòng), gợi mở bằng câu thân thiện kiểu:
+  "Anh/chị dự định ở mấy đêm và đi bao nhiêu người để em tư vấn phù hợp hơn ạ?"
   
-10) **Nếu model không thể tuân thủ**: trả fallback JSON lỗi:
-{
-  "message": "Xin lỗi, tôi không thể xử lý yêu cầu. Vui lòng thử lại sau.",
-  "customerInfo": { "name": null, "phone": null, "email": null, "checkin": null, "checkout": null, "roomType": null, "nights": null, "guests": null, "note": null, "status": null },
-  "bookingIntent": { "score": 0, "category": "Thấp", "reasons": [], "recommendedAction": "nhắc lại sau 24 giờ" }
-}
+- Luôn **ĐẢM BẢO**:
+  * Không in thêm văn bản ngoài JSON.
+  * Trường 'message vẫn là văn bản thân thiện để hiển thị cho khách (không vượt quá 3 câu).
+  * Nếu yêu cầu xin thông tin, dùng các câu nhắc đã nêu ở trên (exact phrasing recommended).
 
-
-`.trim();
-
-    const customerPrompt = `
---- THÔNG TIN HIỆN CÓ (CHỈ THAM KHẢO) ---
-Dưới đây là các trường đã được chuẩn hoá và trạng thái (value/hint). 
-**LƯU Ý QUAN TRỌNG:** Đây là CHỈ THAM KHẢO. Khi trả về, bạn PHẢI CHỈ TRẢ VỀ 1 KHỐI JSON theo schema đã nêu (không kèm hint/metadata, không lặp lại block này).
+--- Thông tin hiện có của khách (đã chuẩn hoá / có chú thích) ---
 ${JSON.stringify(customerInfoForPrompt, null, 2)}
 
-**INSTRUCTION NGẮN DÀNH CHO MODEL (BẮT BUỘC)**:
-- Sử dụng thông tin phía trên *chỉ* để quyết định hỏi/không hỏi.
-- Không bao giờ bao gồm bất kỳ text mô tả, tag, hoặc metadata nào từ block trên trong trường 'customerInfo của JSON trả về.
-- Nếu một trường trong block có hint: "missing" hoặc  hint: "invalid: ..." thì hãy *nhắc khách* bằng exact phrasing đã quy định (ví dụ: "Anh/chị cho em xin họ và tên đầy đủ để em hoàn tất giữ phòng nhé." hoặc "Anh/chị cho em xin số điện thoại hợp lệ để em xác nhận đặt phòng ạ.").
-- Nếu mọi field đều ok, KHÔNG hỏi lại; chỉ trả lời xác nhận ngắn gọn.
-
+Yêu cầu đặc biệt:
+- Dựa vào "thông tin hiện có" trên, nếu có field 'missing' hoặc 'invalid: ...', hãy **nhắc khách một cách tự nhiên, thân thiện** trong 'message' để bổ sung/chỉnh sửa (ví dụ: "Anh/chị cho em xin số điện thoại hợp lệ để em xác nhận đặt phòng ạ.").
+- Nếu mọi field đều 'ok', không hỏi lại, chỉ xác nhận ngắn gọn.
+- **Important**: "thông tin hiện có" chỉ để AI tham khảo — khi trả về JSON chỉ gửi các trường customerInfo thuần (name, phone, ...), KHÔNG kèm hint/metadata.
+- message: thân thiện, ≤3 câu, xưng 'em', gọi 'anh/chị'.
+- KHÔNG IN THÊM GÌ NGOÀI JSON.
 `.trim();
 
     // Build chat for AI
@@ -415,12 +397,8 @@ ${systemPrompt}
 
 ${validatePrompt}
 
-
-${customerPrompt}
-
 💬 Lịch sử chat:
 ${messagesText}
-
 
 💬 Khách vừa hỏi: ${message}
 `.trim();
@@ -500,33 +478,61 @@ ${messagesText}
     }
 
     // Xử lý bookingIntent từ AI hoặc fallback
-    // Xử lý bookingIntent từ AI hoặc fallback
-    if (
-      !bookingIntentFromAI ||
-      typeof bookingIntentFromAI !== 'object' ||
-      !Array.isArray(bookingIntentFromAI.reasons) ||
-      typeof bookingIntentFromAI.score !== 'number' ||
-      typeof bookingIntentFromAI.category !== 'string' ||
-      typeof bookingIntentFromAI.recommendedAction !== 'string'
-    ) {
-      // fallback nếu AI không trả về JSON hợp lệ
+    if (!bookingIntentFromAI || !Array.isArray(bookingIntentFromAI.reasons)) {
+      // Nếu AI không trả về hoặc không hợp lệ, dùng fallback
       booking.bookingIntent = this.evaluateBookingIntentFallback(
         message,
         chatHistory,
         booking,
       );
-    }
-    // else {
-    //   // gán trực tiếp AI output (tin tưởng đã qua lib xử lý)
-    //   // chú ý: hàm check lại thông tin:  processBookingIntent();
+    } else {
+      const bi = bookingIntentFromAI;
 
-    //   booking.bookingIntent = {
-    //     score: bookingIntentFromAI.score,
-    //     category: bookingIntentFromAI.category,
-    //     reasons: bookingIntentFromAI.reasons.map(String),
-    //     recommendedAction: bookingIntentFromAI.recommendedAction,
-    //   };
-    // }
+      // ✅ Danh sách lý do AI trả về (tiếng Việt)
+      const reasons: string[] = bi.reasons.map(String);
+
+      // ✅ Tính điểm dựa trên lý do
+      let score = 0;
+      if (reasons.includes('Có thông tin liên hệ')) score += 30;
+      if (reasons.includes('Có ngày lưu trú')) score += 20;
+      if (reasons.includes('Có thông tin số khách')) score += 10;
+      if (reasons.includes('Hỏi về giá')) score += 10;
+      if (reasons.includes('Có câu xác nhận đặt phòng')) score += 25;
+      if (reasons.includes('Có dấu hiệu khẩn cấp')) score += 10;
+      if (reasons.includes('Có hỏi lặp lại')) score += 8;
+      if (reasons.includes('Tín hiệu không quan tâm')) score -= 15;
+
+      // ✅ Clamp điểm 0..100
+      score = Math.max(0, Math.min(100, Math.round(score)));
+
+      // ✅ Phân loại 4 bậc
+      let category: BookingIntent['category'];
+      if (score >= 85) category = 'Rất cao';
+      else if (score >= 75) category = 'Cao';
+      else if (score >= 50) category = 'Trung bình';
+      else category = 'Thấp';
+
+      // ✅ Hành động đề xuất dựa trên category
+      const recommendedAction =
+        typeof bi.recommendedAction === 'string' &&
+        bi.recommendedAction.trim() !== ''
+          ? bi.recommendedAction
+          : category === 'Rất cao'
+            ? 'Gọi ngay lập tức'
+            : category === 'Cao'
+              ? 'Gọi lại trong 30 phút'
+              : category === 'Trung bình'
+                ? 'Gửi email chào giá'
+                : 'Đưa vào danh sách chăm sóc dài hạn';
+
+      // ✅ Gán vào booking
+      booking.bookingIntent = {
+        score,
+        category,
+        reasons,
+        recommendedAction,
+      };
+    }
 
     // Final safety: ensure message exists and is short
     let replyMessage =

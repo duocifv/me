@@ -41,6 +41,22 @@ export class ChatService implements OnModuleDestroy {
   }
 
   /**
+   * Tìm provisional theo sessionId (trả về record hoặc null)
+   */
+  private findProvisionalBySession(
+    sessionId?: string | null,
+  ): ProvisionalRecord | null {
+    if (!sessionId) return null;
+    const now = Date.now();
+    for (const rec of this.provisional.values()) {
+      if (rec.sessionId === sessionId && rec.expiresAt > now) {
+        return rec;
+      }
+    }
+    return null;
+  }
+
+  /**
    * handleMessage
    * - message, chatHistory: from UI
    * - options: optional object { sessionId?, idempotencyKey? } (keeps compatibility)
@@ -62,20 +78,27 @@ export class ChatService implements OnModuleDestroy {
     const idempotencyKey = options?.idempotencyKey ?? null;
 
     try {
-      // 1) call AI
-      const aiReply = await this.gemini.chatHotel(message, chatHistory);
-      console.log('AI reply:', aiReply);
+      // If we have a provisional for this session, pass its booking as customerInfo to AI
+      const provForSession = this.findProvisionalBySession(sessionId);
+      const customerInfoToPass = provForSession ? provForSession.booking : null;
 
+      // 1) call AI (pass existing partial booking so AI can gently ask for missing fields)
+      const aiReply = await this.gemini.chatHotel(
+        message,
+        chatHistory,
+        customerInfoToPass,
+      );
       this.logger.debug(
         `AI reply for session ${sessionId || '-'}: ${JSON.stringify(aiReply)}`,
       );
+      console.log('AI reply:', aiReply);
 
       // Ensure aiReply structure
       if (!aiReply || typeof aiReply !== 'object' || !aiReply.customerInfo) {
         this.logger.warn('AI trả về không có customerInfo, lưu provisional');
         const prov = await this.saveProvisional({
           sessionId,
-          booking: {},
+          booking: {}, // nothing parsed
           idempotencyKey,
         });
         return {
@@ -169,28 +192,45 @@ export class ChatService implements OnModuleDestroy {
         }
       } else {
         // 2b) invalid/incomplete: save provisional
-        const aiReply = await this.gemini.chatHotel(message, chatHistory, booking.customerInfo);
         this.logger.warn(
           'Booking data không hợp lệ: ',
           parseResult.error.format(),
         );
+
         // attempt to keep AI-provided fields (normalized) where possible
         const cleaned: PartialBooking = this.normalizePartialBooking(
           aiReply.customerInfo,
         );
+
+        // lấy danh sách field errors từ zod.flatten()
+        const flat = parseResult.error.flatten
+          ? parseResult.error.flatten()
+          : null;
+        const fieldErrors = flat && flat.fieldErrors ? flat.fieldErrors : {};
+        const invalidFields = Object.keys(fieldErrors).filter(
+          (k) =>
+            Array.isArray((fieldErrors as any)[k]) &&
+            (fieldErrors as any)[k].length > 0,
+        );
+
         const prov = await this.saveProvisional({
           sessionId,
           booking: cleaned,
           idempotencyKey,
         });
 
-        // Reply should still be AI's message (which likely asks for more info)
+        // Reply should be AI's message (AI will already ask naturally because we pass provisional into prompt)
+        // put invalidFields into note so agent/UI can surface the exact missing fields if needed
+        const note = invalidFields.length
+          ? `missing_fields: ${invalidFields.join(',')}`
+          : 'provisional_saved';
+
         return {
           success: true,
           reply: aiReply.message,
           provisionalId: prov.id,
           committed: false,
-          note: 'provisional_saved',
+          note,
         };
       }
     } catch (err) {
