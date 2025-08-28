@@ -244,7 +244,11 @@ export class HotelGeminiService {
     message: string,
     chatHistory: ChatHistoryItem[],
     customerInfo: Partial<BookingDto> | null = null,
-  ): Promise<{ message: string; customerInfo: BookingDto }> {
+  ): Promise<{
+    message: string;
+    customerInfo: BookingDto;
+    shouldCommit: boolean;
+  }> {
     console.log('customerInfo to AI:', customerInfo);
 
     // 🔹 Lấy dữ liệu khách sạn
@@ -290,7 +294,8 @@ Chính sách: ${hotel.policies.join('; ')}
       "reasons": string[],
       "recommendedAction": string
     }
-  }
+  },
+  "shouldCommit": boolean
 }
 
 2) **Ưu tiên thu thập (BẮT BUỘC)**:
@@ -388,6 +393,12 @@ Chính sách: ${hotel.policies.join('; ')}
   "bookingIntent": { "score": 0, "category": "Thấp", "reasons": [], "recommendedAction": "nhắc lại sau 24 giờ" }
 }
 
+11) **shouldCommit (flag do AI đánh giá)**:
+- Giá trị = true khi và chỉ khi:
+  - Đã có **name** và **phone** hợp lệ, VÀ
+  - Khách thể hiện rõ ràng ý định xác nhận / đặt phòng (ví dụ: "ok đặt phòng", "giữ phòng cho tôi", "xác nhận", "đặt luôn").
+- Trong mọi trường hợp khác (khách mới chỉ hỏi, còn thiếu name/phone, hoặc chưa confirm) → shouldCommit = false.
+- Các field khác như checkin, checkout, roomType: nếu khách cung cấp thì ghi nhận; nếu chưa có vẫn có thể commit (miễn là name+phone đã hợp lệ và có confirm).
 
 `.trim();
 
@@ -444,7 +455,7 @@ ${messagesText}
 
     // Chuẩn hoá customerInfo vào BookingDto
     const ci = parsedRaw.customerInfo || {};
-    const bookingIntentFromAI = parsedRaw.bookingIntent || null;
+    const bookingIntentFromAI = parsedRaw.customerInfo.bookingIntent || null;
 
     const booking: BookingDto = {
       name: ci.name ? String(ci.name).trim() : null,
@@ -547,6 +558,7 @@ ${messagesText}
     return {
       message: replyMessage,
       customerInfo: booking,
+      shouldCommit: parsedRaw.shouldCommit === true,
     };
   }
 
