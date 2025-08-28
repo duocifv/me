@@ -14,6 +14,7 @@ import { GroqService } from './groq-formatter.service';
 import { HotelGeminiService } from './hotel-gemini.service';
 import { SheetsService } from './sheets.service';
 import { ChatService } from './chat.service';
+import { TelegramService } from './telegram.service';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ChatService } from './chat.service';
     HotelGeminiService,
     SheetsService,
     ChatService,
+    TelegramService,
   ],
   exports: [AIService],
 })

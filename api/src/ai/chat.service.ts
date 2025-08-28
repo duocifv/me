@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { HotelGeminiService } from './hotel-gemini.service';
 import { SheetsService } from './sheets.service';
 import { BookingSchema, PartialBooking, BookingDto } from './dto/booking.dto';
+import { TelegramService } from './telegram.service';
 
 type ProvisionalRecord = {
   id: string;
@@ -29,6 +30,7 @@ export class ChatService implements OnModuleDestroy {
   constructor(
     private readonly gemini: HotelGeminiService,
     private readonly sheets: SheetsService,
+    private readonly telegram: TelegramService,
   ) {
     // start cleanup loop
     this.cleanupInterval = setInterval(() => this.cleanupExpired(), 60 * 1000);
@@ -121,6 +123,22 @@ export class ChatService implements OnModuleDestroy {
           // mark committed
           this.committedKeys.add(dedupeKey);
           this.logger.log(`Booking committed (dedupeKey=${dedupeKey})`);
+          await this.telegram.sendMessage(
+            `📢 *Booking mới* 📢
+👤 Tên: ${booking.name}
+📞 Điện thoại: ${booking.phone}
+📧 Email: ${booking.email ?? '-'}
+🏨 Check-in: ${booking.checkin ?? '-'}
+🏨 Check-out: ${booking.checkout ?? '-'}
+🛏️ Loại phòng: ${booking.roomType ?? '-'}
+🌙 Số đêm: ${booking.nights ?? '-'}
+👥 Khách: ${booking.guests ?? '-'}
+📝 Ghi chú: ${booking.note ?? '-'}
+⚡ Trạng thái: ${booking.status ?? '-'}
+🎯 Mức độ quan tâm: ${booking.bookingIntent?.category ?? '-'}
+🔍 Lý do: ${booking.bookingIntent?.reasons?.join(', ') ?? '-'}
+✅ Gợi ý hành động: ${booking.bookingIntent?.recommendedAction ?? '-'}`,
+          );
 
           // if any provisional related to this dedupeKey, remove it
           this.removeProvisionalByIdempotencyKey(idempotencyKey, booking);
