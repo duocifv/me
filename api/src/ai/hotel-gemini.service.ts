@@ -455,7 +455,7 @@ ${messagesText}
 
     // Chuẩn hoá customerInfo vào BookingDto
     const ci = parsedRaw.customerInfo || {};
-    const bookingIntentFromAI = parsedRaw.customerInfo.bookingIntent || null;
+    const bookingIntentFromAI = parsedRaw.bookingIntent || null;
 
     const booking: BookingDto = {
       name: ci.name ? String(ci.name).trim() : null,
