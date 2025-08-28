@@ -21,7 +21,7 @@ export class ChatService implements OnModuleDestroy {
   private readonly logger = new Logger(ChatService.name);
 
   private commitScheduler = createCommitScheduler(); // 1 instance cho service
-  private readonly IDLE_DELAY = 5000; // 5s (đổi thành 10000 cho 10s nếu muốn)
+  private readonly IDLE_DELAY = 10000; // 5s (đổi thành 10000 cho 10s nếu muốn)
 
   // in-memory provisional records and committed keys (simple dedupe)
   private provisional = new Map<string, ProvisionalRecord>();
@@ -146,17 +146,17 @@ export class ChatService implements OnModuleDestroy {
         // 5) try to commit to Sheets
         try {
           // booking là BookingDto phù hợp với createBooking
-          if (aiReply.shouldCommit === true) {
-            const key = sessionId ?? dedupeKey; // dùng sessionId ưu tiên, fallback dedupeKey
-            const commitFn = async () => {
-              try {
-                await this.sheets.createBooking(booking);
-                // mark committed
-                this.committedKeys.add(dedupeKey);
-                this.logger.log(`Booking committed (dedupeKey=${dedupeKey})`);
+          // if (aiReply.shouldCommit === true) {
+          const key = sessionId ?? dedupeKey; // dùng sessionId ưu tiên, fallback dedupeKey
+          const commitFn = async () => {
+            try {
+              await this.sheets.createBooking(booking);
+              // mark committed
+              this.committedKeys.add(dedupeKey);
+              this.logger.log(`Booking committed (dedupeKey=${dedupeKey})`);
 
-                await this.telegram.sendMessage(
-                  `📢 *Booking mới* 📢
+              await this.telegram.sendMessage(
+                `📢 *Booking mới* 📢
 👤 Tên: ${booking.name}
 📞 Điện thoại: ${booking.phone}
 📧 Email: ${booking.email ?? '-'}
@@ -170,17 +170,17 @@ export class ChatService implements OnModuleDestroy {
 🎯 Mức độ quan tâm: ${booking.bookingIntent?.category ?? '-'}
 🔍 Lý do: ${booking.bookingIntent?.reasons?.join(', ') ?? '-'}
 ✅ Gợi ý hành động: ${booking.bookingIntent?.recommendedAction ?? '-'}`,
-                );
-              } catch (err) {
-                this.logger.error('Auto-commit error', err);
-                // optional: re-schedule, alert admin, or save provisional for manual retry
-              }
-            };
+              );
+            } catch (err) {
+              this.logger.error('Auto-commit error', err);
+              // optional: re-schedule, alert admin, or save provisional for manual retry
+            }
+          };
 
-            // schedule commit after IDLE_DELAY ms; subsequent schedule(key,...) calls within delay will reset timer
-            this.commitScheduler.schedule(key, commitFn, this.IDLE_DELAY);
-            // if any provisional related to this dedupeKey, remove it
-          }
+          // schedule commit after IDLE_DELAY ms; subsequent schedule(key,...) calls within delay will reset timer
+          this.commitScheduler.schedule(key, commitFn, this.IDLE_DELAY);
+          // if any provisional related to this dedupeKey, remove it
+          // }
           this.removeProvisionalByIdempotencyKey(idempotencyKey, booking);
           return {
             success: true,
