@@ -243,6 +243,7 @@ export class HotelGeminiService {
   async chatHotel(
     message: string,
     chatHistory: ChatHistoryItem[],
+    customerInfo: BookingDto | null,
   ): Promise<{ message: string; customerInfo: BookingDto }> {
     // 🔹 Lấy dữ liệu khách sạn
     const hotel = await this.getHotelData();
@@ -287,6 +288,10 @@ Chính sách: ${hotel.policies.join('; ')}
     "recommendedAction": string
   }
 }
+
+**Lưu ý bắt buộc**
+- Đây là thông tin khách đã cung cấp hãy kiểm tra nếu sai hoặc thiếu thì nói khách bổ sung:
+${JSON.stringify(customerInfo || {}, null, 2)}
 
 - Rules chính (tóm tắt):
   * message: thân thiện, ngắn gọn (<=3 câu), xưng "em", hỏi gợi mở nếu thiếu thông tin.

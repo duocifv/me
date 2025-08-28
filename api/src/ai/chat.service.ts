@@ -169,6 +169,7 @@ export class ChatService implements OnModuleDestroy {
         }
       } else {
         // 2b) invalid/incomplete: save provisional
+        const aiReply = await this.gemini.chatHotel(message, chatHistory, booking.customerInfo);
         this.logger.warn(
           'Booking data không hợp lệ: ',
           parseResult.error.format(),
