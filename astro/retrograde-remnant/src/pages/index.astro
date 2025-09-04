@@ -1,0 +1,90 @@
+---
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import FormattedDate from "../components/FormattedDate.astro";
+
+interface BlogItem {
+  title: string;
+  description: string;
+}
+
+interface Blog {
+  id: number;
+  title: string;
+  intro: string;
+  items: BlogItem[];
+  createdAt: string;
+}
+
+// Lấy dữ liệu từ API
+const posts: Blog[] = await fetch(
+  "https://vegetable-container.onrender.com/v1/agent/blogs"
+)
+  .then((res) => res.json())
+  .catch(() => []);
+
+// Hàm tính thời gian đọc
+const calculateReadTime = (intro: string, items: BlogItem[]) => {
+  const words =
+    intro.split(" ").length +
+    items.reduce(
+      (acc, item) =>
+        acc + item.title.split(" ").length + item.description.split(" ").length,
+      0
+    );
+  return Math.ceil(words / 200);
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Novu Blog</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-[#fcfcfc] font-['Inter'] text-gray-800">
+    <Header />
+
+    <main class="container mx-auto px-4 py-12">
+      <div class="text-center mb-16">
+        <h1 class="text-4xl font-bold mb-4">Novu Blog</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Discover insights, stories, and ideas from our team
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {
+          posts.map((post) => (
+            <article class="blog-card bg-white rounded-lg overflow-hidden shadow-md">
+              <div class="h-48 bg-gradient-to-r from-[#f4953f] to-[#f6bc88]" />
+              <div class="p-6">
+                <span class="text-sm text-gray-500">
+                  <FormattedDate date={new Date(post.createdAt)} />
+                  {" • "}
+                  {calculateReadTime(post.intro, post.items)} min read
+                </span>
+                <h3 class="text-xl font-semibold mt-2 mb-3">{post.title}</h3>
+                <p class="text-gray-600 mb-4">{post.intro}</p>
+                <a
+                  href={`/blog/${post.id}`}
+                  class="read-more-btn inline-block px-4 py-2 bg-[#f4953f] text-white rounded-md"
+                >
+                  Read More
+                </a>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </main>
+
+    <Footer />
+  </body>
+</html>
