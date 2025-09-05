@@ -33,6 +33,7 @@ import { MqttModule } from './mqtt/mqtt.module';
 import { ScheduleTaskModule } from './schedule/schedule.module';
 import { AIModule } from './ai/ai.module';
 import { AgentModule } from './agent/agent.module';
+import { BotsModule } from './bots/bots.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { AgentModule } from './agent/agent.module';
     DeviceModule,
     ScheduleTaskModule,
     AgentModule,
+    BotsModule,
     // SettingsModule,
     // DashboardModule,
     // NotificationModule,
