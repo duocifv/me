@@ -1,12 +1,8 @@
-5 mẹo Lifehack & Mẹo học/nghề ngắn gọn (Vietnamese)
+[TIP 001]  
+Uống một cốc nước ấm vào buổi sáng giúp cơ thể tỉnh táo và hỗ trợ hệ tiêu hoá.  
 
-1. Pomodoro (25/5): Tập trung 25 phút, nghỉ 5 phút. Lặp lại 4 lần rồi nghỉ dài 15-30 phút.
-2. To-Do 3 việc quan trọng: Mỗi ngày chỉ chọn 3 việc quan trọng nhất để hoàn thành.
-3. Ghi chú 2 câu: Sau mỗi buổi học/đọc, viết 2 câu tóm tắt trọng tâm để ghi nhớ.
-4. Quy tắc 2 phút: Nếu việc nào làm trong 2 phút, làm ngay không để dồn.
-5. Lập checklist trước khi ngủ: Viết 3 việc sáng mai sẽ làm để giảm procrasination.
-6. Tắt thông báo không cần thiết: Giảm nhiễu để nâng cao tập trung.
-7. Học xen kẽ ngắn (spaced repetition): Ôn lại nội dung sau 1 ngày, 1 tuần, 1 tháng.
-8. Sử dụng mẫu (template): Tạo template email, note, checklist để tiết kiệm thời gian.
-9. Học qua làm (project-based): Áp dụng ngay kiến thức bằng mini-project.
-10. Nghỉ đúng cách: Đi bộ 10 phút, uống nước, mắt nghỉ 20-20-20 (20s nhìn xa mỗi 20 phút).
+[TIP 002]  
+Đặt mật khẩu theo công thức: Tên riêng + số + ký tự đặc biệt → vừa dễ nhớ vừa khó đoán.  
+
+[TIP 003]  
+Dùng Pomodoro (25 phút tập trung, 5 phút nghỉ) để tăng năng suất học tập và làm việc.  

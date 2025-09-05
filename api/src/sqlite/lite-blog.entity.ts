@@ -20,6 +20,27 @@ export class LiteBlog {
   @Column({ type: 'json' })
   items: { title: string; description: string }[];
 
+  @Column({ type: 'text', default: '' })
+  markdown: string;
+
+  @Column({ unique: true })
+  slug: string;
+
+  @Column({ type: 'json', nullable: true })
+  og: {
+    image?: string;
+    description?: string;
+  };
+
+  @Column({ type: 'json', nullable: true })
+  metadata: {
+    sourceType?: 'local' | 'web';
+    modelVersion?: string;
+    pipelineVersion?: string;
+    keywordDensity?: number;
+    [key: string]: any;
+  };
+
   @CreateDateColumn()
   createdAt: Date;
 }

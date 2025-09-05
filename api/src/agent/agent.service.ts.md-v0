@@ -5,9 +5,10 @@ import { Repository } from 'typeorm';
 import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
-import slugify from 'slugify';
 
-// LangChain v0.3 imports
+import { LiteBlog } from 'src/sqlite/lite-blog.entity';
+
+// LangChain v0.3 imports (runnables + parsers + models + memory + tools)
 import { RunnableSequence, Runnable } from '@langchain/core/runnables';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { StructuredOutputParser } from '@langchain/core/output_parsers';
@@ -15,9 +16,19 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { BufferMemory } from 'langchain/memory';
 import { SerpAPI } from '@langchain/community/tools/serpapi';
 
-// LlamaIndex
+// LlamaIndex imports (kept as before)
 import { Document, VectorStoreIndex } from 'llamaindex';
-import { LiteBlog } from 'src/sqlite/lite-blog.entity';
+
+/**
+ * NOTE:
+ * - Install required packages:
+ *   npm i @langchain/core @langchain/google-genai @langchain/community zod llavaindex ...
+ * - Set GEMINI_API_KEY (or other model API key) in env.
+ *
+ * This implementation follows LangChain docs for StructuredOutputParser,
+ * but uses a small TypeScript-safe cast to avoid "excessively deep" type inference
+ * issues in some TS toolchains (see inline comment below).
+ */
 
 /* ----------------------------
    Schema & Parser (Zod)
@@ -34,12 +45,21 @@ const zodSchema = z.object({
 });
 
 export type BlogSchema = z.infer<typeof zodSchema>;
+
+/**
+ * LangChain docs show:
+ *   const parser = StructuredOutputParser.fromZodSchema(zodSchema)
+ * However, in some TypeScript setups this triggers "excessively deep instantiation".
+ * To be robust across environments, we call via `any` cast to avoid TS compiler recursion.
+ *
+ * Runtime behavior remains the same (parser created from zod schema).
+ */
 const blogParser = (StructuredOutputParser as any).fromZodSchema(
   zodSchema,
 ) as StructuredOutputParser<any>;
 
 /* ----------------------------
-   Helper types
+   Helper types for fallback docs
    ---------------------------- */
 type SimpleDoc = { id: string; text: string; metadata?: Record<string, any> };
 interface QueryEngine {
@@ -69,31 +89,42 @@ export class AgentService implements OnModuleInit {
   }
 
   /* ----------------------------
-     Init LLM runnables
+     Init LLM runnables (prompts -> model -> parser)
      ---------------------------- */
   private initLLMRunnables() {
+    if (!process.env.GEMINI_API_KEY) {
+      console.warn('⚠️ GEMINI_API_KEY not set — Gemini model may not work.');
+    }
+
+    // instantiate model (Google Gemini example). Replace / configure as needed.
     const model = new ChatGoogleGenerativeAI({
       model: 'gemini-1.5-flash',
       apiKey: process.env.GEMINI_API_KEY ?? '',
       temperature: 0,
     });
 
-    const draftPrompt = ChatPromptTemplate.fromTemplate(`
+    // Use placeholder {format_instructions} and pass it at invoke-time
+    const draftTemplate = `
 You are a professional Vietnamese content writer.
 Write a full Vietnamese blog post about: "{topic}".
 Reference context: {context}
 
 {format_instructions}
-`);
+`;
 
-    const seoPrompt = ChatPromptTemplate.fromTemplate(`
+    const seoTemplate = `
 Optimize this blog for SEO while keeping a friendly Vietnamese tone.
 Input draft JSON: {draft}
 
 {format_instructions}
 Return optimized JSON with same structure.
-`);
+`;
 
+    const draftPrompt = ChatPromptTemplate.fromTemplate(draftTemplate);
+    const seoPrompt = ChatPromptTemplate.fromTemplate(seoTemplate);
+
+    // Build runnables for draft and seo pipelines. We use prompt -> model -> parser as per docs.
+    // RunnableSequence.from([...]) is a simple way to chain steps.
     this.draftRunnable = RunnableSequence.from([
       draftPrompt,
       model,
@@ -104,6 +135,12 @@ Return optimized JSON with same structure.
       model,
       blogParser,
     ]) as unknown as Runnable;
+
+    // Log format instructions for debugging (useful during development).
+    console.log(
+      'Blog parser format instructions:',
+      blogParser.getFormatInstructions(),
+    );
   }
 
   /* ----------------------------
@@ -114,18 +151,22 @@ Return optimized JSON with same structure.
   }
 
   /* ----------------------------
-     LlamaIndex (local docs)
+     LlamaIndex (local docs) - fallback to keyword search
      ---------------------------- */
   private async initLlama() {
     const candidates = [
       path.resolve(process.cwd(), 'data'),
       path.resolve(process.cwd(), 'src', 'agent', 'data'),
+      path.resolve(__dirname, 'data'),
+      path.resolve(__dirname, '..', 'data'),
     ];
+
     const dirPath = candidates.find(
       (p) => fs.existsSync(p) && fs.statSync(p).isDirectory(),
     );
 
     if (!dirPath) {
+      console.warn('⚠️ data/ folder not found — fallback to empty docs');
       this.simpleDocs = [];
       this.queryEngine = this.buildKeywordQueryEngine();
       return;
@@ -150,6 +191,7 @@ Return optimized JSON with same structure.
       const index = await VectorStoreIndex.fromDocuments(documents);
       this.queryEngine = index.asQueryEngine();
     } catch {
+      // fallback to keyword-based simple engine
       this.simpleDocs = files.map((file) => {
         const content = fs.readFileSync(path.join(dirPath, file), 'utf-8');
         return { id: file, text: content, metadata: { source: file } };
@@ -192,7 +234,7 @@ Return optimized JSON with same structure.
   }
 
   /* ----------------------------
-     Web context
+     Get web context (SerpAPI)
      ---------------------------- */
   private async getContextFromWeb(query: string): Promise<string> {
     if (!process.env.SERPAPI_API_KEY) return '';
@@ -202,73 +244,40 @@ Return optimized JSON with same structure.
       if (!result) return '';
       if (typeof result === 'string') return result;
       return JSON.stringify(result).slice(0, 4000);
-    } catch {
+    } catch (err) {
+      console.warn('SerpAPI search failed:', err);
       return '';
     }
   }
 
   /* ----------------------------
-     Content Checker
-     ---------------------------- */
-  private runContentChecks(blog: BlogSchema) {
-    if (blog.title.length > 70) {
-      throw new Error('❌ Title dài quá 70 ký tự');
-    }
-    if (blog.intro.length < 50) {
-      throw new Error('❌ Intro quá ngắn');
-    }
-
-    const sensitiveWords = ['cấm', 'nhạy cảm'];
-    for (const word of sensitiveWords) {
-      if (blog.intro.includes(word)) {
-        throw new Error(`❌ Phát hiện từ nhạy cảm: ${word}`);
-      }
-    }
-
-    const wordCount = blog.items
-      .map((i) => i.paragraph.split(/\s+/).length)
-      .reduce((a, b) => a + b, 0);
-    const keywordCount = blog.items
-      .map((i) => (i.paragraph.match(/AI/gi) || []).length)
-      .reduce((a, b) => a + b, 0);
-    const keywordDensity = wordCount ? keywordCount / wordCount : 0;
-
-    return { keywordDensity };
-  }
-
-  /* ----------------------------
-     Convert BlogSchema → Markdown
-     ---------------------------- */
-  private toMarkdown(blog: BlogSchema): string {
-    let md = `# ${blog.title}\n\n`;
-    md += `${blog.intro}\n\n`;
-    blog.items.forEach((it) => {
-      md += `## ${it.subheading}\n\n${it.paragraph}\n\n`;
-    });
-    return md.trim();
-  }
-
-  /* ----------------------------
-     Generate blog
+     Generate blog: draft -> seo -> parse -> map -> save
+     Returns a single LiteBlog record
      ---------------------------- */
   async generateBlog(topic: string): Promise<LiteBlog> {
     if (!this.draftRunnable || !this.seoRunnable)
       throw new Error('Runnables not initialized');
 
+    // 1. context from local docs
     let context = '';
     if (this.queryEngine) {
       const ctx = await this.queryEngine.query({ query: topic });
       context = ctx?.response ?? '';
     }
+
+    // 2. additional web context
     const webCtx = await this.getContextFromWeb(topic);
     if (webCtx) context += '\n' + webCtx;
 
+    // 3. draft (invoke the runnable) — truyền format_instructions
     const formatInstructions = blogParser.getFormatInstructions?.() ?? '';
     const draftRaw = await this.draftRunnable.invoke({
       topic,
       context,
       format_instructions: formatInstructions,
     });
+
+    // 4. seo refine (pass draft as string or object depending on returned type) — truyền format_instructions
     const draftForSeo =
       typeof draftRaw === 'string' ? draftRaw : JSON.stringify(draftRaw);
     const seoRaw = await this.seoRunnable.invoke({
@@ -276,50 +285,45 @@ Return optimized JSON with same structure.
       format_instructions: formatInstructions,
     });
 
+    // 5. normalize parsed output into BlogSchema
+    // runnable + parser chain may return either an object or a JSON string depending on runtime,
+    // so we handle both cases.
     let parsed: BlogSchema;
     if (typeof seoRaw === 'string') {
-      parsed = JSON.parse(seoRaw) as BlogSchema;
+      try {
+        parsed = JSON.parse(seoRaw) as BlogSchema;
+      } catch {
+        throw new Error('Failed to parse SEO runnable output as JSON');
+      }
     } else {
       parsed = seoRaw as unknown as BlogSchema;
     }
 
-    // ✅ Run ContentChecker
-    const { keywordDensity } = this.runContentChecks(parsed);
-
-    // ✅ Markdown + Slug + OG
-    const markdown = this.toMarkdown(parsed);
-    const slug = slugify(parsed.title, { lower: true, strict: true });
-    const og = {
-      image: `https://dummyimage.com/1200x630/000/fff&text=${encodeURIComponent(parsed.title)}`,
-      description: parsed.intro.slice(0, 150),
-    };
-
-    const entityData: Partial<LiteBlog> = {
+    // 6. map parsed shape -> LiteBlog entity shape (entity expects items.title/description)
+    const entityData = {
       title: parsed.title,
       intro: parsed.intro,
       items: parsed.items.map((it) => ({
         title: it.subheading,
         description: it.paragraph,
       })),
-      markdown,
-      slug,
-      og,
-      metadata: {
-        sourceType: webCtx ? 'web' : 'local',
-        modelVersion: 'gemini-1.5-flash',
-        pipelineVersion: 'seo-v1',
-        keywordDensity,
-      },
     };
 
     const blogEntity = this.blogRepo.create(entityData);
-    return await this.blogRepo.save(blogEntity);
+    const saved = await this.blogRepo.save(blogEntity);
+    return saved;
   }
 
+  /* ----------------------------
+     Get all blogs
+     ---------------------------- */
   async getAllBlogs(): Promise<LiteBlog[]> {
     return this.blogRepo.find({ order: { createdAt: 'DESC' } });
   }
 
+  /* ----------------------------
+     Simple chatWithMemory helper
+     ---------------------------- */
   async chatWithMemory(sessionId: string, userInput: string) {
     if (!this.memory) throw new Error('Memory not initialized');
 
@@ -338,6 +342,7 @@ Human: {input}
 AI:
 `);
 
+    // create chat model locally so we don't refer to a missing top-level model variable
     const chatModel = new ChatGoogleGenerativeAI({
       model: 'gemini-1.5-flash',
       apiKey: process.env.GEMINI_API_KEY ?? '',
@@ -349,6 +354,7 @@ AI:
       input: userInput,
     });
 
+    // persist to memory
     await this.memory.saveContext(
       { input: userInput },
       { output: typeof resp === 'string' ? resp : JSON.stringify(resp) },
