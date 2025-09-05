@@ -343,11 +343,15 @@ Return the improved markdown with headings, spacing, and highlighted sections fo
     const enhancedMarkdown = this.markdownRunnable
       ? await this.markdownRunnable.invoke({ markdown })
       : markdown;
-    const finalMarkdown =
-      typeof enhancedMarkdown === 'string'
-        ? enhancedMarkdown
-        : JSON.stringify(enhancedMarkdown, null, 2);
+    let finalMarkdown: string;
 
+    if (typeof enhancedMarkdown === 'string') {
+      finalMarkdown = enhancedMarkdown;
+    } else if (enhancedMarkdown?.kwargs?.content) {
+      finalMarkdown = enhancedMarkdown.kwargs.content;
+    } else {
+      finalMarkdown = JSON.stringify(enhancedMarkdown, null, 2);
+    }
     const slug = slugify(parsed.title, { lower: true, strict: true });
 
     // ✅ OG metadata
