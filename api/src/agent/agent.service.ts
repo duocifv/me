@@ -340,18 +340,32 @@ Return the improved markdown with headings, spacing, and highlighted sections fo
 
     // ✅ Markdown + Slug + OG
     const markdown = this.toMarkdown(parsed);
-    const enhancedMarkdown = this.markdownRunnable
-      ? await this.markdownRunnable.invoke({ markdown })
-      : markdown;
+
     let finalMarkdown: string;
 
-    if (typeof enhancedMarkdown === 'string') {
-      finalMarkdown = enhancedMarkdown;
-    } else if (enhancedMarkdown?.kwargs?.content) {
-      finalMarkdown = enhancedMarkdown.kwargs.content;
+    if (this.markdownRunnable) {
+      const enhancedMarkdown = await this.markdownRunnable.invoke({ markdown });
+
+      // Nếu trả về mảng message (LangChain v0.3 thường là AIMessage[])
+      if (Array.isArray(enhancedMarkdown)) {
+        finalMarkdown = enhancedMarkdown[0]?.kwargs?.content ?? markdown;
+      }
+      // Nếu là object AIMessage
+      else if (enhancedMarkdown?.kwargs?.content) {
+        finalMarkdown = enhancedMarkdown.kwargs.content;
+      }
+      // Nếu đã là string
+      else if (typeof enhancedMarkdown === 'string') {
+        finalMarkdown = enhancedMarkdown;
+      }
+      // fallback
+      else {
+        finalMarkdown = markdown;
+      }
     } else {
-      finalMarkdown = JSON.stringify(enhancedMarkdown, null, 2);
+      finalMarkdown = markdown;
     }
+
     const slug = slugify(parsed.title, { lower: true, strict: true });
 
     // ✅ OG metadata
