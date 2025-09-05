@@ -1,26 +1,32 @@
+//docs.langchain.com/oss/javascript/langchain-quickstart
+
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-
-import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { RunnableSequence } from '@langchain/core/runnables';
-import { JsonOutputParser } from '@langchain/core/output_parsers';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-
-import { Document, VectorStoreIndex } from 'llamaindex';
 import * as fs from 'fs';
 import * as path from 'path';
 
 import { LiteBlog } from 'src/sqlite/lite-blog.entity';
 
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { RunnableSequence } from '@langchain/core/runnables';
+import { JsonOutputParser } from '@langchain/core/output_parsers';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { LLMChain, ConversationChain } from '@langchain/chains';
+import { BufferMemory } from '@langchain/memory';
+import { initializeAgentExecutor } from '@langchain/agents';
+import { SerpAPI } from '@langchain/tools';
+
+import { Document, VectorStoreIndex } from 'llamaindex';
+
 type SimpleDoc = { id: string; text: string; metadata?: Record<string, any> };
 
 @Injectable()
 export class AgentService implements OnModuleInit {
-  private chain: RunnableSequence | null = null;
+  private draftChain: LLMChain | null = null;
+  private seoChain: LLMChain | null = null;
+  private conversation: ConversationChain | null = null;
   private queryEngine: any | null = null;
-
-  // fallback local documents for keyword search
   private simpleDocs: SimpleDoc[] = [];
 
   constructor(
@@ -29,12 +35,13 @@ export class AgentService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.initChain();
-    await this.initLlama(); // builds either vector index or fallback keyword index
+    await this.initLLMChains();
+    await this.initMemory();
+    await this.initLlama();
   }
 
-  // --- LangChain chain with JsonOutputParser ---
-  private async initChain() {
+  // --- 1. Prompt Templates + Chains ---
+  private async initLLMChains() {
     if (!process.env.GEMINI_API_KEY) {
       console.warn('⚠️ GEMINI_API_KEY not set — Gemini model may not work.');
     }
@@ -44,29 +51,53 @@ export class AgentService implements OnModuleInit {
       apiKey: process.env.GEMINI_API_KEY ?? '',
     });
 
-    const prompt = ChatPromptTemplate.fromTemplate(`
-You are a professional Vietnamese content writer. Write a full **Vietnamese blog post** about the topic: "{topic}".
-- Reference context: {context}
-- The blog must be **SEO-friendly**, engaging, informative, and easy to read.
-- Include:
-  - A catchy **title**
-  - A short **introduction**
-  - 3-5 **sections**, each with:
-      - A **subheading**
-      - Detailed **paragraphs** (explanations, tips, examples)
-      - Optional **image suggestion or description** for each section
-  - A **conclusion** summarizing the key points
-  - Include **SEO keywords naturally** in headings and content
-- Use **friendly, professional Vietnamese**. 
-- Ensure the article is complete and readable, like a real blog post.
-- Do not output any instructions or notes outside the article content.
-    `);
+    const draftPrompt = ChatPromptTemplate.fromTemplate(`
+You are a professional Vietnamese content writer. Write a full Vietnamese blog post about: "{topic}".
+Reference context: {context}
+Output in JSON with keys: title, intro, items (subheading + paragraph)
+`);
+
+    const seoPrompt = ChatPromptTemplate.fromTemplate(`
+Optimize this blog for SEO while keeping Vietnamese friendly tone.
+Input draft JSON: {draft}
+Return optimized JSON with same structure
+`);
 
     const parser = new JsonOutputParser();
-    this.chain = RunnableSequence.from([prompt, model, parser]);
+
+    this.draftChain = new LLMChain({
+      llm: model,
+      prompt: draftPrompt,
+    });
+
+    this.seoChain = new LLMChain({
+      llm: model,
+      prompt: seoPrompt,
+    });
+
+    this.chain = RunnableSequence.from([
+      this.draftChain,
+      this.seoChain,
+      parser,
+    ]);
   }
 
-  // --- Build index: try VectorStoreIndex, else fallback to keyword index ---
+  // --- 2. Memory ---
+  private async initMemory() {
+    const model = new ChatGoogleGenerativeAI({
+      model: 'gemini-1.5-flash',
+      apiKey: process.env.GEMINI_API_KEY ?? '',
+    });
+
+    const memory = new BufferMemory();
+
+    this.conversation = new ConversationChain({
+      llm: model,
+      memory,
+    });
+  }
+
+  // --- 3. LlamaIndex / fallback keyword ---
   private async initLlama() {
     const candidates = [
       path.resolve(process.cwd(), 'data'),
@@ -75,174 +106,118 @@ You are a professional Vietnamese content writer. Write a full **Vietnamese blog
       path.resolve(__dirname, '..', 'data'),
     ];
 
-    console.log('LlamaIndex — checking candidate data paths:');
-    candidates.forEach((p) => console.log('  -', p));
-
     const dirPath = candidates.find(
       (p) => fs.existsSync(p) && fs.statSync(p).isDirectory(),
     );
 
     if (!dirPath) {
-      console.warn(
-        '⚠️ data/ folder not found — skipping LlamaIndex init and fallback to empty docs',
-      );
-      this.simpleDocs = [];
-      this.queryEngine = this.buildKeywordQueryEngine(); // empty engine
-      return;
-    }
-
-    console.log('LlamaIndex dirPath:', dirPath);
-
-    const files = fs
-      .readdirSync(dirPath)
-      .filter((f) => fs.statSync(path.join(dirPath, f)).isFile());
-    if (files.length === 0) {
-      console.warn('⚠️ data/ is empty — skipping LlamaIndex init');
+      console.warn('⚠️ data/ folder not found — fallback to empty docs');
       this.simpleDocs = [];
       this.queryEngine = this.buildKeywordQueryEngine();
       return;
     }
 
-    // read docs
+    const files = fs
+      .readdirSync(dirPath)
+      .filter((f) => fs.statSync(path.join(dirPath, f)).isFile());
+
+    if (files.length === 0) {
+      this.simpleDocs = [];
+      this.queryEngine = this.buildKeywordQueryEngine();
+      return;
+    }
+
     const documents: Document[] = files.map((file) => {
       const content = fs.readFileSync(path.join(dirPath, file), 'utf-8');
       return new Document({ text: content, metadata: { source: file } });
     });
 
-    // try vector index (may throw if embedModel not set)
     try {
       const index = await VectorStoreIndex.fromDocuments(documents);
       this.queryEngine = index.asQueryEngine();
-      console.log('✅ VectorStoreIndex built — using vector queryEngine');
-      return;
-    } catch (err) {
-      console.warn(
-        '⚠️ Could not build VectorStoreIndex (will fallback to keyword index).',
-      );
-      console.warn('Details:', err?.message ?? err);
-      // build simple docs array for keyword search fallback
+    } catch {
       this.simpleDocs = files.map((file) => {
         const content = fs.readFileSync(path.join(dirPath, file), 'utf-8');
         return { id: file, text: content, metadata: { source: file } };
       });
       this.queryEngine = this.buildKeywordQueryEngine();
-      console.log(
-        '✅ Fallback keyword index is ready (no embeddings required)',
-      );
     }
   }
 
-  // --- simple keyword query engine ---
   private buildKeywordQueryEngine() {
-    // returns object with same .query API used earlier
     return {
       query: async ({ query }: { query: string }) => {
         if (!query || this.simpleDocs.length === 0) return { response: '' };
-
-        const qTokens = this.tokenize(query);
+        const qTokens = query.toLowerCase().split(/\W+/).filter(Boolean);
         const scores = this.simpleDocs.map((d) => {
-          const text = d.text.toLowerCase();
           let score = 0;
-          for (const t of qTokens) {
-            // count occurrences roughly
+          const text = d.text.toLowerCase();
+          qTokens.forEach((t) => {
             let idx = text.indexOf(t);
             while (idx !== -1) {
-              score += 1;
+              score++;
               idx = text.indexOf(t, idx + t.length);
             }
-          }
+          });
           return { doc: d, score };
         });
-
-        // sort by score desc
         scores.sort((a, b) => b.score - a.score);
-
-        // take top 3 non-zero
         const top = scores.filter((s) => s.score > 0).slice(0, 3);
-        if (top.length === 0) {
-          // no match — fallback to returning short concatenation of first 2 docs
-          const fallback = this.simpleDocs
-            .slice(0, 2)
-            .map((d) => `Source: ${d.id}\n${this.truncate(d.text, 400)}`)
-            .join('\n\n');
-          return { response: fallback };
-        }
-
         const response = top
-          .map((s) => `Source: ${s.doc.id}\n${this.truncate(s.doc.text, 800)}`)
+          .map((s) => `Source: ${s.doc.id}\n${s.doc.text.slice(0, 800)}...`)
           .join('\n\n');
         return { response };
       },
     };
   }
 
-  private tokenize(text: string) {
-    return text
-      .toLowerCase()
-      .split(/\W+/)
-      .filter(Boolean)
-      .map((t) => (t.length > 2 ? t : t)); // keep short tokens too
+  // --- 4. Agent Tool example: search external web ---
+  private async getContextFromWeb(query: string): Promise<string> {
+    if (!process.env.SERPAPI_API_KEY) return '';
+    const searchTool = new SerpAPI(process.env.SERPAPI_API_KEY);
+    const executor = await initializeAgentExecutor(
+      [searchTool],
+      new ChatGoogleGenerativeAI({
+        model: 'gemini-1.5-flash',
+        apiKey: process.env.GEMINI_API_KEY ?? '',
+      }),
+      'zero-shot-react-description',
+    );
+    const result = await executor.call({ input: query });
+    return result.output_text ?? '';
   }
 
-  private truncate(text: string, maxLen: number) {
-    if (!text) return '';
-    if (text.length <= maxLen) return text;
-    return text.slice(0, maxLen) + '...';
-  }
-
-  // --- Generate blog: will use context from either vector queryEngine or keyword fallback ---
+  // --- Generate blog ---
   async generateBlog(topic: string): Promise<LiteBlog> {
-    if (!this.chain) throw new Error('LLM chain not initialized');
+    if (!this.draftChain || !this.seoChain)
+      throw new Error('Chains not initialized');
 
-    // get context
+    // 1. Lấy context từ LlamaIndex hoặc fallback keyword
     let context = '';
     if (this.queryEngine) {
-      try {
-        const ctx = await this.queryEngine.query({ query: topic });
-        context = ctx?.response ?? '';
-      } catch (err) {
-        console.warn(
-          '⚠️ Error querying index — continuing with empty context:',
-          err?.message ?? err,
-        );
-        context = '';
-      }
+      const ctx = await this.queryEngine.query({ query: topic });
+      context = ctx?.response ?? '';
     }
 
-    // call chain
-    let data: any;
+    // 2. Lấy thêm context từ web (Tool/Agent)
+    context += '\n' + (await this.getContextFromWeb(topic));
+
+    // 3. Draft blog
+    const draft = await this.draftChain.run({ topic, context });
+
+    // 4. Optimize SEO
+    const finalData = await this.seoChain.run({ draft });
+
+    // 5. Parse JSON
+    let blogJson;
     try {
-      data = await this.chain.invoke({ topic, context });
-    } catch (err) {
-      console.error('❌ Error invoking LLM chain:', err);
-      throw new Error('Failed to generate blog from AI');
+      blogJson =
+        typeof finalData === 'string' ? JSON.parse(finalData) : finalData;
+    } catch {
+      blogJson = { title: topic, intro: '', items: [] };
     }
 
-    // chain.invoke may return parsed object or string, handle both
-    if (typeof data === 'string') {
-      try {
-        data = JSON.parse(data);
-      } catch {
-        throw new Error('LLM returned invalid JSON');
-      }
-    } else if (
-      data &&
-      typeof data === 'object' &&
-      'text' in data &&
-      typeof data.text === 'string'
-    ) {
-      try {
-        data = JSON.parse(data.text);
-      } catch {
-        /* leave as-is */
-      }
-    }
-
-    const title = data?.title ?? topic;
-    const intro = data?.intro ?? '';
-    const items = Array.isArray(data?.items) ? data.items : [];
-
-    const blog = this.blogRepo.create({ title, intro, items });
+    const blog = this.blogRepo.create(blogJson);
     return this.blogRepo.save(blog);
   }
 
