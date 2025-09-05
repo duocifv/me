@@ -346,7 +346,7 @@ Return the improved markdown with headings, spacing, and highlighted sections fo
     const finalMarkdown =
       typeof enhancedMarkdown === 'string'
         ? enhancedMarkdown
-        : (enhancedMarkdown ?? JSON.stringify(enhancedMarkdown));
+        : JSON.stringify(enhancedMarkdown, null, 2);
 
     const slug = slugify(parsed.title, { lower: true, strict: true });
 

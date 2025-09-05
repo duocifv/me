@@ -31,7 +31,6 @@ export class ImageService {
         },
       },
     );
-    console.log('response img 3::', response);
 
     if (response.status === 200) {
       const filePath = `./public/images/${filename}`;
