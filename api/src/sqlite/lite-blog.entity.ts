@@ -41,6 +41,9 @@ export class LiteBlog {
     [key: string]: any;
   };
 
+  @Column({ nullable: true })
+  coverImage: string;
+
   @CreateDateColumn()
   createdAt: Date;
 }

@@ -18,6 +18,7 @@ import { SerpAPI } from '@langchain/community/tools/serpapi';
 // LlamaIndex
 import { Document, VectorStoreIndex } from 'llamaindex';
 import { LiteBlog } from 'src/sqlite/lite-blog.entity';
+import { ImageService } from './image.service';
 
 /* ----------------------------
    Schema & Parser (Zod)
@@ -53,6 +54,7 @@ interface QueryEngine {
 export class AgentService implements OnModuleInit {
   private draftRunnable: Runnable | null = null;
   private seoRunnable: Runnable | null = null;
+  private markdownRunnable: Runnable | null = null;
   private memory: BufferMemory | null = null;
   private queryEngine: QueryEngine | null = null;
   private simpleDocs: SimpleDoc[] = [];
@@ -60,11 +62,13 @@ export class AgentService implements OnModuleInit {
   constructor(
     @InjectRepository(LiteBlog, 'sqlite')
     private blogRepo: Repository<LiteBlog>,
+    private imageService: ImageService,
   ) {}
 
   async onModuleInit() {
     this.initLLMRunnables();
     this.initMemory();
+    this.initMarkdownChain();
     await this.initLlama();
   }
 
@@ -247,6 +251,51 @@ Return optimized JSON with same structure.
     });
     return md.trim();
   }
+  /* ----------------------------
+     Generate Image
+     ---------------------------- */
+  private async generateBlogImage(
+    parsed: BlogSchema,
+    slug: string,
+  ): Promise<string> {
+    // Dịch tiêu đề và intro sang English (có thể tạm dùng template)
+    // const titleEn = `Blog about: ${parsed.title}`;
+    // const introEn = `Short description: ${parsed.intro}`;
+    // const imagePrompt = `${titleEn}\n${introEn}`;
+
+    const imagePrompt = 'Lighthouse on a cliff overlooking the ocean';
+
+    try {
+      return await this.imageService.generateImage(imagePrompt, `${slug}.webp`);
+    } catch (err) {
+      console.error('❌ Image generation failed:', err);
+      // fallback image
+      return `https://dummyimage.com/1200x630/000/fff&text=${encodeURIComponent(parsed.title)}`;
+    }
+  }
+
+  private initMarkdownChain() {
+    const model = new ChatGoogleGenerativeAI({
+      model: 'gemini-1.5-flash',
+      apiKey: process.env.GEMINI_API_KEY ?? '',
+      temperature: 0,
+    });
+
+    const mdPrompt = ChatPromptTemplate.fromTemplate(`
+You are a professional Vietnamese content writer.
+Improve the blog markdown to be more readable, visually appealing, and SEO friendly.
+
+Input markdown content:
+{markdown}
+
+Return the improved markdown with headings, spacing, and highlighted sections for UI display.
+`);
+
+    this.markdownRunnable = RunnableSequence.from([
+      mdPrompt,
+      model,
+    ]) as unknown as Runnable;
+  }
 
   /* ----------------------------
      Generate blog
@@ -264,11 +313,15 @@ Return optimized JSON with same structure.
     if (webCtx) context += '\n' + webCtx;
 
     const formatInstructions = blogParser.getFormatInstructions?.() ?? '';
+
+    // 1️⃣ Tạo draft
     const draftRaw = await this.draftRunnable.invoke({
       topic,
       context,
       format_instructions: formatInstructions,
     });
+
+    // 2️⃣ SEO chain
     const draftForSeo =
       typeof draftRaw === 'string' ? draftRaw : JSON.stringify(draftRaw);
     const seoRaw = await this.seoRunnable.invoke({
@@ -276,24 +329,35 @@ Return optimized JSON with same structure.
       format_instructions: formatInstructions,
     });
 
-    let parsed: BlogSchema;
-    if (typeof seoRaw === 'string') {
-      parsed = JSON.parse(seoRaw) as BlogSchema;
-    } else {
-      parsed = seoRaw as unknown as BlogSchema;
-    }
+    // 3️⃣ Parse SEO output
+    const parsed: BlogSchema =
+      typeof seoRaw === 'string'
+        ? JSON.parse(seoRaw)
+        : (seoRaw as unknown as BlogSchema);
 
     // ✅ Run ContentChecker
     const { keywordDensity } = this.runContentChecks(parsed);
 
     // ✅ Markdown + Slug + OG
     const markdown = this.toMarkdown(parsed);
+    const enhancedMarkdown = this.markdownRunnable
+      ? await this.markdownRunnable.invoke({ markdown })
+      : markdown;
+    const finalMarkdown =
+      typeof enhancedMarkdown === 'string'
+        ? enhancedMarkdown
+        : (enhancedMarkdown ?? JSON.stringify(enhancedMarkdown));
+
     const slug = slugify(parsed.title, { lower: true, strict: true });
+
+    // ✅ OG metadata
+    const coverImagePath = await this.generateBlogImage(parsed, slug);
     const og = {
-      image: `https://dummyimage.com/1200x630/000/fff&text=${encodeURIComponent(parsed.title)}`,
+      image: coverImagePath,
       description: parsed.intro.slice(0, 150),
     };
 
+    // 5️⃣ Lưu vào DB
     const entityData: Partial<LiteBlog> = {
       title: parsed.title,
       intro: parsed.intro,
@@ -301,7 +365,7 @@ Return optimized JSON with same structure.
         title: it.subheading,
         description: it.paragraph,
       })),
-      markdown,
+      markdown: finalMarkdown,
       slug,
       og,
       metadata: {
@@ -310,6 +374,7 @@ Return optimized JSON with same structure.
         pipelineVersion: 'seo-v1',
         keywordDensity,
       },
+      coverImage: coverImagePath,
     };
 
     const blogEntity = this.blogRepo.create(entityData);
