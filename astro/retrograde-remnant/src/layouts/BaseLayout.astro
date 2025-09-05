@@ -1,0 +1,154 @@
+---
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+
+// BaseLayout.astro
+const { seo } = Astro.props;
+// seo: { title, description, url, image, imageAlt, publishedAt, modifiedAt, authorName, keywords, lang, isDraft }
+const siteName = "Your Site Name";
+const twitterHandle = "@YourTwitter";
+const publisherLogo = "https://yourdomain.com/logo-512.png";
+const canonical = seo.url;
+const isoPublished = seo.publishedAt
+  ? new Date(seo.publishedAt).toISOString()
+  : null;
+const isoModified = seo.modifiedAt
+  ? new Date(seo.modifiedAt).toISOString()
+  : isoPublished;
+
+/* JSON-LD Article */
+const articleLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": canonical,
+  },
+  headline: seo.title,
+  description: seo.description,
+  image: [seo.image],
+  author: {
+    "@type": "Person",
+    name: seo.authorName,
+  },
+  publisher: {
+    "@type": "Organization",
+    name: siteName,
+    logo: {
+      "@type": "ImageObject",
+      url: publisherLogo,
+    },
+  },
+  datePublished: isoPublished,
+  dateModified: isoModified,
+};
+
+/* BreadcrumbList example */
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: "https://yourdomain.com/",
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Blog",
+      item: "https://yourdomain.com/blogs",
+    },
+    {
+      "@type": "ListItem",
+      position: 3,
+      name: seo.title,
+      item: canonical,
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang={seo.lang || "vi"}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <title>{seo.title} — {siteName}</title>
+    <meta name="description" content={seo.description} />
+    <meta name="keywords" content={seo.keywords || ""} />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Prevent indexing for drafts -->
+    {
+      seo.isDraft ? (
+        <meta name="robots" content="noindex, nofollow" />
+      ) : (
+        <meta name="robots" content="index, follow" />
+      )
+    }
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:locale" content={seo.lang || "vi_VN"} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={seo.title} />
+    <meta property="og:description" content={seo.description} />
+    <meta property="og:image" content={seo.image} />
+    <meta property="og:image:alt" content={seo.imageAlt} />
+    {
+      isoPublished && (
+        <meta property="article:published_time" content={isoPublished} />
+      )
+    }
+    {
+      isoModified && (
+        <meta property="article:modified_time" content={isoModified} />
+      )
+    }
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content={twitterHandle} />
+    <meta name="twitter:title" content={seo.title} />
+    <meta name="twitter:description" content={seo.description} />
+    <meta name="twitter:image" content={seo.image} />
+
+    <!-- Preconnect / Preload (fonts, critical origins) -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="font"
+      href="/fonts/YourFont.woff2"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Manifest / theme-color (PWA) -->
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <!-- JSON-LD -->
+    <!-- Dùng set:html (Astro) để chèn raw JSON-LD -->
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(articleLd).replace(/</g, "\\u003c")}
+    />
+
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(breadcrumbs).replace(/</g, "\\u003c")}
+    />
+
+    <!-- optional: analytics (defer, respect DNT) -->
+    <!-- <script async src="...analytics.js"></script> -->
+    <slot name="head" />
+  </head>
+  <body>
+    <Header />
+    <main><slot /></main>
+    <Footer />
+  </body>
+</html>

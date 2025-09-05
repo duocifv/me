@@ -1,0 +1,98 @@
+---
+import FormattedDate from "../components/FormattedDate.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import "../styles/global.css";
+import "../styles/markdown.css";
+import type { Blog, BlogItem } from "../types/blog";
+import { marked } from "marked";
+
+export async function getStaticPaths() {
+  const posts: Blog[] = await fetch(
+    "https://vegetable-container.onrender.com/v1/agent/blogs"
+  )
+    .then((res) => res.json())
+    .catch(() => []);
+
+  return posts.map((post) => ({
+    params: { blogs: post.slug },
+  }));
+}
+
+const posts: Blog[] = await fetch(
+  "https://vegetable-container.onrender.com/v1/agent/blogs"
+)
+  .then((res) => res.json())
+  .catch(() => []);
+
+// read time function (giữ nguyên)
+const calculateReadTime = (intro: string, items: BlogItem[]) => {
+  const words =
+    intro.split(" ").length +
+    items.reduce(
+      (acc, item) =>
+        acc + item.title.split(" ").length + item.description.split(" ").length,
+      0
+    );
+  return Math.ceil(words / 200);
+};
+
+const { blogs: slug } = Astro.params;
+const post = posts.find((p) => p.slug === slug);
+
+if (!post) {
+  throw new Error("Blog not found");
+}
+
+const readTime = calculateReadTime(post.intro, post.items);
+const markdownHtml = post.markdown ? marked(post.markdown) : "";
+
+/* ----------------------------
+  SEO object (dễ update / reuse)
+   - đảm bảo image, dates, author có dữ liệu
+----------------------------*/
+const siteUrl = "https://yourdomain.com"; // <- chỉnh lại domain thật
+const postUrl = `${siteUrl}/blogs/${post.slug}`;
+const seo = {
+  title: post.title,
+  description: post.intro || post.title,
+  url: postUrl,
+  image: post.coverImage || `${siteUrl}/og-default.png`,
+  imageAlt: post.title,
+  publishedAt: post.createdAt,
+  modifiedAt: post.createdAt || post.createdAt,
+  //   authorName: post.author?.name || "Tên tác giả",
+  readTime,
+  //   keywords: (post.tags || []).join(", "),
+  lang: "vi", // hoặc lấy từ post nếu multilingual
+  //   isDraft: !!post.draft, // nếu có flag draft
+};
+---
+
+<BaseLayout seo={seo}>
+  <article class="markdown-content" lang={seo.lang}>
+    <!-- Thêm width/height nếu có, lazy loading, decoding -->
+    <img
+      src={post.coverImage}
+      alt={seo.imageAlt}
+      class="cover-image"
+      loading="lazy"
+      decoding="async"
+      width="1200"
+      height="630"
+      fetchpriority={readTime <= 1 ? "high" : "auto"}
+      srcset={`${post.coverImage}?w=400 400w, ${post.coverImage}?w=800 800w, ${post.coverImage}?w=1200 1200w`}
+      sizes="(max-width: 800px) 100vw, 1200px"
+    />
+
+    <p>
+      <FormattedDate date={new Date(post.createdAt)} /> · {readTime} min read
+    </p>
+
+    {/* Render markdown từ JSON */}
+    {
+      markdownHtml && (
+        <section class="markdown-content" set:html={markdownHtml} />
+      )
+    }
+  </article>
+</BaseLayout>
