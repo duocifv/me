@@ -1,21 +1,21 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <cstdint>
 
-// ✅ Thông tin WiFi
-const char* ssid     = "Mai Lan";
-const char* password = "1234567899";
+// WiFi
+const char* WIFI_SSID = "Mai Lan T2";
+const char* WIFI_PASS = "1234567899";
 
-// Chu kỳ gửi dữ liệu
-const uint32_t SENSOR_INTERVAL = 1 * 60 * 1000; 
-const uint32_t CAMERA_INTERVAL = 1 * 60 * 1000; 
 
-// Cấu hình MQTT Broker
-const char *MQTT_HOST = "c53388ae7eaf409088a2a30c9f69a351.s1.eu.hivemq.cloud";
-const char *MQTT_USER = "duocnv2";
-const char *MQTT_PASS = "Bao132132!!";
+// MQTT (TLS)
+const char* MQTT_HOST = "c53388ae7eaf409088a2a30c9f69a351.s1.eu.hivemq.cloud";
+const char* MQTT_USER = "duocnv2";
+const char* MQTT_PASS = "Bao132132!!";
 const int MQTT_PORT = 8883;
-const char *MQTT_PROTOCOL = "mqtts";
+
+
+#define DEVICE_ID "node01" // phải là chuỗi hằng
+#define SENSOR_INTERVAL 10000 // 10 giây (ms)
+
 
 #endif // CONFIG_H

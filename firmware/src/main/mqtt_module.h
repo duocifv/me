@@ -1,163 +1,97 @@
 #ifndef MQTT_MODULE_H
 #define MQTT_MODULE_H
 
-#include <WiFiClientSecure.h>
+#include <Arduino.h>
+#include <WiFiClientSecureBearSSL.h>
 #include <PubSubClient.h>
-#include <functional>
 #include <ArduinoJson.h>
 #include "config.h"
 
 class MQTTModule {
 public:
-  MQTTModule()
-    : client(secureClient) {}
+  MQTTModule() : _client(_secureClient) {}
 
-  void begin(std::function<void(char *, uint8_t *, unsigned int)> userCallback) {
-    callbackFunc = std::move(userCallback);
-    secureClient.setInsecure();
-    client.setServer(MQTT_HOST, MQTT_PORT);
-    client.setCallback(callbackFunc);
-  }
-
-  void begin(const char *host, int port, std::function<void(char *, uint8_t *, unsigned int)> userCallback) {
-    callbackFunc = std::move(userCallback);
-    secureClient.setInsecure();
-    client.setServer(host, port);
-    client.setCallback(callbackFunc);
+  void begin(std::function<void(char *, uint8_t *, unsigned int)> cb) {
+    _secureClient.setInsecure();   // ⚠️ chỉ để test, production nên dùng CA
+    _client.setServer(MQTT_HOST, MQTT_PORT);
+    _client.setCallback([cb](char *t, byte *p, unsigned int l) { cb(t, p, l); });
+    _client.setBufferSize(512);
   }
 
   void loop() {
-    unsigned long now = millis();
-
-    if (!client.connected()) {
-      if (now - lastReconnectAttempt > reconnectInterval) {
-        lastReconnectAttempt = now;
+    if (!_client.connected()) {
+      unsigned long now = millis();
+      if (now - _lastReconnect >= 5000) {
+        _lastReconnect = now;
         reconnect();
       }
     } else {
-      client.loop();
-
-      
+      _client.loop();
     }
-  }
-
-  bool publish(const char *topic, const char *payload) {
-    return client.connected() && client.publish(topic, payload);
-  }
-
-  bool publish(const char *topic, const char *payload, size_t length) {
-    return client.connected() && client.publish(topic, payload, length);
-  }
-
-  void subscribe(const char *topic) {
-    if (client.connected()) {
-      client.subscribe(topic);
-    }
-  }
-
-  bool publishBinary(const char *topic, const uint8_t *payload, size_t length) {
-    return client.connected() && client.publish(topic, payload, length);
-  }
-
-  void publishScreenState(bool pumpOn, bool ledOn, bool fanOn) {
-    StaticJsonDocument<128> doc;
-    doc["pumpOn"] = pumpOn;
-    doc["ledOn"] = ledOn;
-    doc["fanOn"] = fanOn;
-    char buf[128];
-    size_t len = serializeJson(doc, buf);
-    publish("esp32/control", buf, len);
-  }
-
-  void publishSensorData(float waterTemp, float envTemp, float envHum) {
-    StaticJsonDocument<128> doc;
-    doc["waterTemperature"] = roundf(waterTemp * 10) / 10;
-    doc["ambientTemperature"] = roundf(envTemp * 10) / 10;
-    doc["humidity"] = roundf(envHum * 10) / 10;
-    char buf[128];
-    size_t len = serializeJson(doc, buf);
-    publish("esp32/sensors", buf, len);
-  }
-
-  bool publishCameraImageBase64(const char *base64Image) {
-    if (!client.connected())
-      return false;
-
-    const size_t chunkSize = 120;
-    size_t totalLen = strlen(base64Image);
-    size_t totalChunks = (totalLen + chunkSize - 1) / chunkSize;
-    unsigned long imageId = millis();
-
-    char chunkBuf[chunkSize + 1];
-    char jsonBuf[300];
-    StaticJsonDocument<400> doc;
-
-    for (size_t i = 0; i < totalChunks; ++i) {
-      size_t start = i * chunkSize;
-      size_t len = min(chunkSize, totalLen - start);
-
-
-      memcpy(chunkBuf, base64Image + start, len);
-      chunkBuf[len] = '\0';
-
-      doc.clear();
-      doc["id"] = imageId;
-      doc["index"] = i;
-      doc["total"] = totalChunks;
-      doc["data"] = chunkBuf;
-
-
-      size_t n = serializeJson(doc, jsonBuf);
-      if (!client.publish("esp32/camera", jsonBuf, n)) {
-        return false;
-      }
-      delay(100);
-    }
-    return true;
-  }
-
-  void publishError(const char *errorMsg) {
-    StaticJsonDocument<256> doc;
-    doc["message"] = errorMsg;
-    char buf[256];
-    size_t len = serializeJson(doc, buf);
-    publish("esp32/errors", buf, len);
   }
 
   void publishPing() {
     publish("esp32/ping", "1");
   }
 
+  void publishError(const char *msg) {
+    StaticJsonDocument<128> doc;
+    doc["error"] = msg;
+    char buf[128];
+    size_t len = serializeJson(doc, buf);
+    publish("esp32/errors", buf, len);
+  }
+
+  bool publishSensor(float waterTemp, float airTemp, float humidity) {
+    if (!_client.connected()) return false;
+
+    StaticJsonDocument<192> doc;
+    doc["waterTemp"] = isnan(waterTemp) ? 0 : waterTemp;
+    doc["airTemp"]   = isnan(airTemp)   ? 0 : airTemp;
+    doc["humidity"]  = isnan(humidity)  ? 0 : humidity;
+
+    char buf[192];
+    size_t n = serializeJson(doc, buf);
+    return _client.publish("esp32/control", buf, n);
+  }
+
+  bool publishRaw(const char *payload, size_t n) {
+    return _client.connected() ? _client.publish("esp32/control", payload, n) : false;
+  }
+
 private:
-  WiFiClientSecure secureClient;
-  PubSubClient client;
-  std::function<void(char *, uint8_t *, unsigned int)> callbackFunc;
-
-  unsigned long lastReconnectAttempt = 0;
-  const unsigned long reconnectInterval = 5000;
-
-  unsigned long lastPingTime = 0;
-  const unsigned long pingInterval = 10000;  // Gửi ping mỗi 10 giây
+  BearSSL::WiFiClientSecure _secureClient;
+  PubSubClient _client;
+  unsigned long _lastReconnect = 0;
 
   void reconnect() {
     if (WiFi.status() != WL_CONNECTED) {
-      Serial.println("⚠️ WiFi chưa sẵn sàng, bỏ qua MQTT reconnect.");
+      Serial.println("⚠️ WiFi not ready, skip MQTT reconnect.");
       return;
     }
 
-    String clientId = "ESP32Client-";
-    clientId += String(random(0xffff), HEX);  // 👈 tạo clientId ngẫu nhiên
-
-    if (client.connect(clientId.c_str(), MQTT_USER, MQTT_PASS)) {
+    String clientId = "ESP32-" + String(random(0xffff), HEX);
+    if (_client.connect(clientId.c_str(), MQTT_USER, MQTT_PASS)) {
       Serial.println("✅ MQTT Connected!");
-      client.subscribe("esp32/control");
+      _client.subscribe("esp32/control");
       Serial.println("📡 Subscribed to: esp32/control");
 
-      // Gửi tín hiệu báo online
-      publish("esp32/health", "on");
+      // Báo online
+      _client.publish("esp32/control", "{\"status\":\"online\"}");
     } else {
-      Serial.print("❌ MQTT Failed, rc=");
-      Serial.println(client.state());
+      Serial.printf("❌ MQTT Failed, rc=%d\n", _client.state());
+    }
+  }
+
+  void publish(const char *topic, const char *payload) {
+    if (_client.connected()) {
+      _client.publish(topic, payload);
+    }
+  }
+
+  void publish(const char *topic, const char *payload, size_t len) {
+    if (_client.connected()) {
+      _client.publish(topic, payload, len);
     }
   }
 };

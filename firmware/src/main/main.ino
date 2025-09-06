@@ -1,237 +1,88 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
+#include "config.h"
+
 #include "wifi_module.h"
 #include "mqtt_module.h"
-#include "expander_relay.h"
-#include "config.h"
+#include "relay_module.h"
+#include "dht_module.h"
 #include "ds18b20_module.h"
-#include "camera_module.h"
-#include "led_indicator.h"
-#include "mbedtls/base64.h"
 
-WifiModule wifi(ssid, password);
+// ==== Relay pins ====
+#define RELAY_FAN_COOL D1
+#define RELAY_FAN_VENT D2
+#define RELAY_LED      D5
+#define RELAY_PUMP     D6
+
+// ==== Modules ====
+WifiModule wifi(WIFI_SSID, WIFI_PASS);
 MQTTModule mqtt;
+DHTModule dht(D4);       // ví dụ DHT22 nối chân D4
+DS18B20Module ds18(D3);  // ví dụ DS18B20 nối chân D3
 
-ExpanderRelay fanRelay(0);
-ExpanderRelay ledRelay(1);
-ExpanderRelay pumpRelay(2);
-
-DS18B20Module tempSensor;
-CameraModule cameraModule;
-LedIndicator led;
-
-unsigned long lastSensor = 0, lastCamera = 0;
-
-bool sensorEnabled = false, cameraEnabled = false;
-
-float ambientTemp = 1, humidity = 1, waterTemp = 1;
-
-unsigned long lastCameraTrigger = 0;             // Thời điểm chụp ảnh gần nhất
-const uint32_t CAMERA_COOLDOWN = 5 * 60 * 1000;  // 10 phút (tính bằng ms)
-
-
-bool initRelays() {
-  if (!ExpanderRelay::beginBus()) {
-    led.blink(3, 200);
-    return false;
-  }
-  fanRelay.off();
-  ledRelay.off();
-  pumpRelay.off();
-  return true;
-}
-
-bool initSensors() {
-  tempSensor.begin();
-  return tempSensor.isFound();
-}
-
-bool initCamera() {
-  return cameraModule.begin();
-}
-
-
-// global ở đầu file .ino
-void reportError(const char *msg) {
+float reportError(const char *msg) {
   mqtt.publishError(msg);
+  Serial.println(msg);
+  return NAN;   // để gán được cho float
 }
 
 
-// =======================
-// 📩 Xử lý dữ liệu từ MQTT
-// =======================
-void onMqttMessage(char *topic, byte *payload, unsigned int length) {
-  Serial.println("📩 MQTT message received");
-  Serial.print("📦 Topic: ");
-  Serial.println(topic);
-  Serial.print("📦 Raw payload: ");
-  Serial.write(payload, length);
-  Serial.println();
+// ==== MQTT callback ====
+void mqttCallback(char *topic, uint8_t *payload, unsigned int length) {
+  Serial.printf("📩 MQTT [%s]: ", topic);
+
+  char buf[256];
+  if (length >= sizeof(buf)) length = sizeof(buf) - 1;
+  memcpy(buf, payload, length);
+  buf[length] = '\0';
+  Serial.println(buf);
 
   StaticJsonDocument<256> doc;
-  DeserializationError err = deserializeJson(doc, payload, length);
-  if (err) {
-    Serial.print("❌ JSON parse error: ");
-    Serial.println(err.c_str());
+  if (deserializeJson(doc, buf)) {
+    Serial.println("❌ JSON parse failed");
     return;
   }
 
+  // Chỉ xử lý topic esp32/control
   if (strcmp(topic, "esp32/control") == 0) {
-    if (doc.containsKey("fanOn")) {
-      bool fan = doc["fanOn"];
-      fanRelay.set(fan);
-      Serial.print("🔧 Fan: ");
-      Serial.println(fan ? "ON" : "OFF");
-    }
-    if (doc.containsKey("ledOn")) {
-      bool led = doc["ledOn"];
-      ledRelay.set(led);
-      Serial.print("🔧 LED: ");
-      Serial.println(led ? "ON" : "OFF");
-    }
-    if (doc.containsKey("pumpOn")) {
-      bool pump = doc["pumpOn"];
-      pumpRelay.set(pump);
-      Serial.print("🔧 Pump: ");
-      Serial.println(pump ? "ON" : "OFF");
-    }
-    if (doc.containsKey("sensor")) {
-      sensorEnabled = doc["sensor"];
-      Serial.print("🔧 Sensor publish: ");
-      Serial.println(sensorEnabled ? "ENABLED" : "DISABLED");
-    }
-    if (doc.containsKey("camera")) {
-      bool cameraTrigger = doc["camera"];
+    // ==== Relay control ====
+    if (doc.containsKey("fanCool")) relaySet(RELAY_FAN_COOL, doc["fanCool"]);
+    if (doc.containsKey("fanVent")) relaySet(RELAY_FAN_VENT, doc["fanVent"]);
+    if (doc.containsKey("led"))     relaySet(RELAY_LED, doc["led"]);
+    if (doc.containsKey("pump"))    relaySet(RELAY_PUMP, doc["pump"]);
 
-      if (cameraTrigger) {
-        unsigned long now = millis();
-        if (now - lastCameraTrigger >= CAMERA_COOLDOWN || lastCameraTrigger == 0) {
-          Serial.println("📸 Camera trigger received ✅");
-          sendCameraImage();        // 👉 Chụp ảnh ngay lập tức
-          lastCameraTrigger = now;  // Ghi lại thời điểm chụp
-        } else {
-          Serial.println("⏱️ Camera trigger IGNORED ❌ (chưa đủ 10 phút)");
-        }
-      }
+    // ==== Sensor request ====
+    if (doc.containsKey("sensors") && doc["sensors"] == true) {
+      dht.update();
+      float waterTemp = ds18.getTemperature();
+      float airTemp   = dht.available() ? dht.getTemperature() : reportError("getTemperature:no data");
+      float hum       = dht.available() ? dht.getHumidity()    : reportError("getTemperature:no data");
+
+      // publish sensor vào đúng topic esp32/control
+      mqtt.publishSensor(waterTemp, airTemp, hum);
     }
   }
-  Serial.println("✅ Relays updated from MQTT");
+
+   Serial.println("✅ Relays updated from MQTT");
 
   mqtt.publishPing();
 }
 
-
-
-
-void sendSensorData() {
-
-  float t = tempSensor.getTemperature();
-  if (isnan(t)) {
-    waterTemp = 0;
-    reportError("DS18B20:no data");
-  } else {
-    waterTemp = t;
-  }
-
-  mqtt.publishSensorData(waterTemp, ambientTemp, humidity);
-  Serial.println("📤 Sensor data sent");
-}
-
-
-
-void sendCameraImage() {
-  camera_fb_t *fb = cameraModule.capture();
-  if (!fb) {
-    delay(100);
-    fb = cameraModule.capture();
-  }
-
-  if (!fb) {
-    reportError("Camera:capture fail");
-    return;
-  }
-
-  Serial.printf("📸 Image captured: %d bytes\n", fb->len);
-
-  // 1. Tính kích thước buffer Base64 cần thiết
-  size_t raw_len = fb->len;
-  size_t b64_len = 0;
-  mbedtls_base64_encode(nullptr, 0, &b64_len, fb->buf, raw_len);
-  // giờ b64_len chứa độ dài cần cấp phát
-
-  // 2. Cấp phát buffer và encode
-  char *b64_buf = (char *)malloc(b64_len + 1);
-  if (!b64_buf) {
-    reportError("Memory: malloc failed");
-    cameraModule.release(fb);
-    return;
-  }
-  if (mbedtls_base64_encode((unsigned char *)b64_buf, b64_len, &b64_len,
-                            fb->buf, raw_len)
-      != 0) {
-    reportError("Base64: encode failed");
-    free(b64_buf);
-    cameraModule.release(fb);
-    return;
-  }
-  b64_buf[b64_len] = '\0';  // null-terminate
-
-  mqtt.publishCameraImageBase64(b64_buf);
-
-  Serial.println("✅ Camera image (Base64) published");
-
-
-  // 4. Giải phóng bộ nhớ
-  free(b64_buf);
-  cameraModule.release(fb);
-}
-
-// =======================
-// 🔧 Setup
-// =======================
-
+// ==== setup ====
 void setup() {
   Serial.begin(115200);
-  delay(1000);
+  delay(100);
 
+  wifi.connect();
+  relayBegin(RELAY_FAN_COOL, RELAY_FAN_VENT, RELAY_LED, RELAY_PUMP);
 
-  // Kết nối Wi-Fi
-  Serial.print("WiFi: ");
-  // if (!wifi.connect()) {
-  //   Serial.println("❌ Failed");
-  //   while (true)
-  //     delay(1000);
-  // }
-  if (!wifi.connect()) {
-    Serial.println("❌ Failed");
-    led.blink(3, 100);
-    delay(1000);
-    ESP.restart();
-  }
-  Serial.println("✓ Connected");
+  dht.begin();
+  ds18.begin();
 
-  if (!initRelays()) reportError("PCF8574:no init");
-  if (!initSensors()) reportError("DS18B20:no data");
-  if (!initCamera()) reportError("Camera:init fail");
-
-  mqtt.begin(onMqttMessage);
-  mqtt.subscribe("esp32/control");
-  Serial.print("Setup ok !!");
+  mqtt.begin(mqttCallback);
 }
 
-// =======================
-// 🔁 Loop chính
-// =======================
-
+// ==== loop ====
 void loop() {
-
-  // Duy trì kết nối MQTT
+  wifi.loop();
   mqtt.loop();
-
-  if (sensorEnabled && (millis() - lastSensor > SENSOR_INTERVAL)) {
-    lastSensor = millis();
-    sendSensorData();
-  }
-
-  delay(50);
 }

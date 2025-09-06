@@ -4,59 +4,53 @@
 #include <Arduino.h>
 #include <DHT.h>
 
-#define DHTPIN 16        // GPIO dùng để đọc DHT22
-#define DHTTYPE DHT22    // Kiểu cảm biến
+#ifndef DHT_DEFAULT_TYPE
+  #define DHT_DEFAULT_TYPE DHT22
+#endif
 
 class DHTModule {
 private:
     DHT dht;
-    unsigned long lastReadTime;
     float lastTemp;
     float lastHum;
-    bool hasValidData;
+    unsigned long lastRead;
+    bool hasData;
 
-    // Kiểm tra dữ liệu có nằm trong khoảng hợp lý không
-    bool isValid(float val) {
-        return !isnan(val) && val > -40 && val < 100;
+    bool isValid(float v) const {
+        return !isnan(v);
     }
 
 public:
-    DHTModule() :
-        dht(DHTPIN, DHTTYPE),
-        lastReadTime(0),
-        lastTemp(NAN),
-        lastHum(NAN),
-        hasValidData(false) {}
+    explicit DHTModule(uint8_t pin, uint8_t type = DHT_DEFAULT_TYPE)
+      : dht(pin, type), lastTemp(NAN), lastHum(NAN),
+        lastRead(0), hasData(false) {}
 
     void begin() {
         dht.begin();
-        lastReadTime = 0;
-        hasValidData = false;
     }
 
-    // Cập nhật giá trị nếu đã qua 2s
+    // Chỉ đọc tối đa 1 lần / 2s
     void update() {
         unsigned long now = millis();
-        if (now - lastReadTime >= 2000 || !hasValidData) {
+        if (now - lastRead >= 2000 || !hasData) {
             float t = dht.readTemperature();
             float h = dht.readHumidity();
 
             if (isValid(t) && isValid(h)) {
                 lastTemp = t;
                 lastHum  = h;
-                hasValidData = true;
+                hasData = true;
             } else {
-                Serial.println("❌ DHT22: Dữ liệu không hợp lệ hoặc lỗi đọc.");
-                hasValidData = false;
+                hasData = false;
+                Serial.println("❌ DHT đọc lỗi hoặc không hợp lệ");
             }
-
-            lastReadTime = now;
+            lastRead = now;
         }
     }
 
     float getTemperature() const { return lastTemp; }
-    float getHumidity() const { return lastHum; }
-    bool hasData() const { return hasValidData; }
+    float getHumidity()   const { return lastHum; }
+    bool available() const { return hasData; }
 };
 
 #endif // DHT_MODULE_H
