@@ -58,7 +58,6 @@ export class ApiClient {
    */
   private async refreshToken(): Promise<void> {
     const fingerprint = await getFingerprint();
-    console.log("AccessToken login state:", this.storage.is());
 
     if (!this.refreshPromise) {
       this.refreshPromise = (async () => {
@@ -67,7 +66,7 @@ export class ApiClient {
             accessToken: string;
           }>("POST", "/auth/token", {
             credentials: "include",
-            timeout: 8000,
+            timeout: 30000,
             headers: {
               "X-Device-Fingerprint": fingerprint,
             },
@@ -109,7 +108,6 @@ export class ApiClient {
     // if (process.env.NODE_ENV === "development") {
     //   console.log("AccessToken:", this.accessToken);
     // }
-    console.log("AccessToken:", this.storage.token());
     const accessToken = this?.storage?.token();
     if (accessToken && isTokenExpiringSoon(accessToken)) {
       await this.refreshToken();

@@ -9,12 +9,18 @@ import { AIService } from './ai.service';
 import { OpenRouterAnalysisService } from './ai-analysis.service';
 import { GeminiService } from './gemini-formatter.service';
 import { MedalpacaService } from './medalpaca.service';
+import { LiteMedical } from 'src/sqlite/lite-medical.entity';
+import { GroqService } from './groq-formatter.service';
+import { HotelGeminiService } from './hotel-gemini.service';
+import { SheetsService } from './sheets.service';
+import { ChatService } from './chat.service';
+import { TelegramService } from './telegram.service';
 
 @Module({
   imports: [
     forwardRef(() => MqttModule),
     ScheduleTaskModule,
-    TypeOrmModule.forFeature([LiteAiScheduleLog], 'sqlite'),
+    TypeOrmModule.forFeature([LiteAiScheduleLog, LiteMedical], 'sqlite'),
   ],
   controllers: [AIController],
   providers: [
@@ -22,6 +28,11 @@ import { MedalpacaService } from './medalpaca.service';
     GeminiService,
     OpenRouterAnalysisService,
     MedalpacaService,
+    GroqService,
+    HotelGeminiService,
+    SheetsService,
+    ChatService,
+    TelegramService,
   ],
   exports: [AIService],
 })

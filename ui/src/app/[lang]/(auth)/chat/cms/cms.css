@@ -1,0 +1,135 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+  display: block;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 0;
+  color: #333;
+  display: block;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.status {
+  margin: 8px 0;
+  color: var(--muted);
+}
+
+.status.error {
+  color: #ff6a6a;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 1;
+}
+
+.table tbody tr:hover {
+  background: var(--row);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+}
+
+.content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 540px;
+}
+
+.footer {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  h1 {
+    font-size: 22px;
+  }
+
+  .container {
+    padding: 16px;
+  }
+}
+
+
+
+.tbl-id {
+  width: 60px;
+  /* ID thường ngắn */
+}
+
+.tbl-name {
+  width: 200px;
+  /* Họ và tên cần rộng */
+}
+
+.tbl-phone {
+  width: 150px;
+  /* Số điện thoại vừa phải */
+}
+
+.tbl-in,
+.tbl-out {
+  width: 130px;
+  /* Ngày check-in/out */
+}
+
+.tbl-number {
+  width: 120px;
+  /* Số lượng khách */
+}
+
+.tbl-room {
+  width: 150px;
+  /* Loại phòng */
+}
+
+.tbl-action {
+  width: 120px;
+  /* Nút Edit/Delete */
+}

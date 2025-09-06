@@ -32,6 +32,8 @@ import { DeviceModule } from './device/device.module';
 import { MqttModule } from './mqtt/mqtt.module';
 import { ScheduleTaskModule } from './schedule/schedule.module';
 import { AIModule } from './ai/ai.module';
+import { AgentModule } from './agent/agent.module';
+import { BotsModule } from './bots/bots.module';
 
 @Module({
   imports: [
@@ -64,6 +66,7 @@ import { AIModule } from './ai/ai.module';
       rootPath: join(__dirname, '..', 'uploads'),
     }),
     // TerminusModule,
+    AgentModule,
     MqttModule,
     AIModule,
     CoreModule,
@@ -76,6 +79,8 @@ import { AIModule } from './ai/ai.module';
     HydroponicsModule,
     DeviceModule,
     ScheduleTaskModule,
+    AgentModule,
+    BotsModule,
     // SettingsModule,
     // DashboardModule,
     // NotificationModule,

@@ -1,17 +1,7 @@
 "use client";
-/*
- * loginState.ts
- * Utility methods for persisting the user's login status in localStorage
- */
 
-/**
- * Key under which the login status is stored in localStorage
- */
 const LOGIN_STATE_KEY = "IS_LOGGED_IN";
 
-/**
- * Provides methods to read, write, and clear the user's login status.
- */
 export const loginState = {
   /**
    * Checks if the user is currently marked as logged in.
@@ -30,9 +20,6 @@ export const loginState = {
     }
   },
 
-  /**
-   * Marks the user as logged in.
-   */
   getToken() {
     if (typeof window === "undefined") return null;
 
@@ -46,9 +33,7 @@ export const loginState = {
       return null;
     }
   },
-  /**
-   * Marks the user as logged in.
-   */
+
   setLoggedIn(token: string): void {
     console.log("token token", token);
     if (typeof window === "undefined") return;
@@ -62,9 +47,6 @@ export const loginState = {
     }
   },
 
-  /**
-   * Clears the login status, marking the user as logged out.
-   */
   clear(): void {
     if (typeof window === "undefined") return;
     try {

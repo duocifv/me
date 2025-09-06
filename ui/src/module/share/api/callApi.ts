@@ -17,7 +17,7 @@ export const callApi = async <T>(
     params = {},
     body,
     headers = {},
-    timeout = 5000,
+    timeout = 30000,
     fallback = null,
     credentials = "include",
     responseType = "json",
@@ -29,7 +29,6 @@ export const callApi = async <T>(
   statusText?: string;
   failed?: zodValidation;
 }> => {
-  console.log("timeouttimeouttimeouttimeouttimeouttimeouttimeout", timeout);
   const url = makeUrl(path, params);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);

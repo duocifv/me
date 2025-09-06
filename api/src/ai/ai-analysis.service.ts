@@ -131,21 +131,20 @@ export class OpenRouterAnalysisService {
       this.buildAiScheduleFeedbackPrompt(5),
     ]);
     const [camera] = await this.mqttService.findAllCamera();
-    const sensor = await this.mqttService.findLastSensor();
-    const scheduleOld =
-      await this.scheduleService.getScheduleByDevice('device-001');
-
-    const scheduleOldText = JSON.stringify(
-      scheduleOld.map((s) => ({
-        device: s.device,
-        times: s.times.map((t) => ({
-          start: t.start,
-          end: t.end,
-        })),
-      })),
-      null,
-      2, // đẹp mắt: indent 2 spaces
-    );
+    // const sensor = await this.mqttService.findLastSensor();
+    // const scheduleOld =
+    //   await this.scheduleService.getScheduleByDevice('device-001');
+    // const scheduleOldText = JSON.stringify(
+    //   scheduleOld.map((s) => ({
+    //     device: s.device,
+    //     times: s.times.map((t) => ({
+    //       start: t.start,
+    //       end: t.end,
+    //     })),
+    //   })),
+    //   null,
+    //   2, // đẹp mắt: indent 2 spaces
+    // );
     const prompt = `
 📌 Bạn là một chuyên gia AI thủy canh ebb & flow với nền tảng kỹ thuật cao.
 
@@ -167,6 +166,44 @@ ${feedbackSection}
 1. Xác định giai đoạn sinh trưởng hiện tại dựa trên logs, feedback, và dữ liệu môi trường.  
 2. Tính toán lượng nước cần thiết/ngày, số lần và thời lượng tưới phù hợp.  
 3. Đưa ra khung giờ tưới ưu tiên (sáng sớm, chiều mát).
+
+### Yêu cầu trả về:
+- Văn bản phân tích chi tiết, không cần JSON.
+`;
+
+    const body: {
+      model: string;
+      messages: { role: 'user' | 'system' | 'assistant'; content: string }[];
+    } = {
+      model: 'openai/gpt-oss-20b:free',
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    };
+
+    const text = await this.chatWithOpenRouter(body);
+
+    return text;
+  }
+
+  async analyzeMedical(report: string): Promise<string> {
+    const apiKey = this.config.get<string>('OPENROUTER_API_KEY');
+    if (!apiKey) throw new Error('⚠️ Thiếu OPENROUTER_API_KEY');
+
+    const prompt = `
+Bạn là chuyên gia y khoa. Dưới đây là thông tin bệnh nhân:
+### ${report} ###
+Hãy soạn một trả lời Y KHOA CÓ CẤU TRÚC bao gồm các mục sau:
+Tóm tắt ngắn về triệu chứng và tiền sử bệnh.
+Những chẩn đoán khả dĩ (differential diagnoses), kèm ước lượng mức độ khả năng (cao, trung bình, thấp).
+Các xét nghiệm hoặc thăm khám cần thiết, phân loại theo mức độ ưu tiên.
+Phác đồ xử trí hoặc điều trị đề xuất, bao gồm xử trí cấp cứu nếu cần.
+Các dấu hiệu cảnh báo (red flags) cần lưu ý.
+Ghi chú về giới hạn thông tin và khuyến cáo bệnh nhân nên khám bác sĩ chuyên khoa để được chẩn đoán chính xác.
+Trả lời ngắn gọn, rõ ràng, dùng bullet points hoặc danh sách số. Không đưa ra kết luận tuyệt đối, nên kèm mức độ chắc chắn.
 
 ### Yêu cầu trả về:
 - Văn bản phân tích chi tiết, không cần JSON.

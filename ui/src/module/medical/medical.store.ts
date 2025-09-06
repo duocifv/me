@@ -3,17 +3,24 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import { DetailedSymptoms, MedicalHistory, PatientInfo } from "./medical.type";
+import {
+  DetailedSymptoms,
+  MedicalHistory,
+  PatientInfo,
+  UserFriendlyAnalysisDto,
+} from "./medical.type";
 
 export interface MedicalState {
   detailedSymptoms: DetailedSymptoms;
   patientInfo: PatientInfo;
   medicalHistory: MedicalHistory;
   basicSymptoms: string[];
+  resultsStep: UserFriendlyAnalysisDto;
   setDetailedSymptoms: (data: DetailedSymptoms) => void;
   setPatientInfo: (data: PatientInfo) => void;
   setMedicalHistory: (data: MedicalHistory) => void;
   setBasicSymptoms: (data: string[]) => void;
+  setResultsSteps: (data: UserFriendlyAnalysisDto) => void;
 }
 
 export const useMedicalStore = create<MedicalState>()(
@@ -43,10 +50,21 @@ export const useMedicalStore = create<MedicalState>()(
         familyHistory: [],
       },
       basicSymptoms: [],
+      resultsStep: {
+        explanation: "",
+        user_friendly_summary: "",
+        management_advice: "",
+        red_flags: "",
+        confidence_level: "",
+        diagnosis: "",
+        severity: "",
+        confidence_percent: 0,
+      },
       setDetailedSymptoms: (detailedSymptoms) => set({ detailedSymptoms }),
       setPatientInfo: (patientInfo) => set({ patientInfo }),
       setMedicalHistory: (medicalHistory) => set({ medicalHistory }),
       setBasicSymptoms: (basicSymptoms) => set({ basicSymptoms }),
+      setResultsSteps: (resultsStep) => set({ resultsStep }),
     })),
     { name: "DeviceConfigStore" }
   )

@@ -1,0 +1,81 @@
+---
+import "../styles/global.css";
+import FormattedDate from "../components/FormattedDate.astro";
+import type { Blog, BlogItem } from "../types/blog";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const posts: Blog[] = await fetch(
+  "https://vegetable-container.onrender.com/v1/agent/blogs"
+)
+  .then((res) => res.json())
+  .catch(() => []);
+
+// Hàm tính thời gian đọc
+const calculateReadTime = (intro: string, items: BlogItem[]) => {
+  const words =
+    intro.split(" ").length +
+    items.reduce(
+      (acc, item) =>
+        acc + item.title.split(" ").length + item.description.split(" ").length,
+      0
+    );
+  return Math.ceil(words / 200);
+};
+
+/* ----------------------------
+  SEO object (dễ update / reuse)
+   - đảm bảo image, dates, author có dữ liệu
+----------------------------*/
+const siteUrl = "https://yourdomain.com"; // <- chỉnh lại domain thật
+const seo = {
+  title: "Novu",
+  description: "hello",
+  url: siteUrl,
+  image: `${siteUrl}/og-default.png`,
+  imageAlt: "Novu",
+  //   keywords: (post.tags || []).join(", "),
+  lang: "vi", // hoặc lấy từ post nếu multilingual
+  //   isDraft: !!post.draft, // nếu có flag draft
+};
+---
+
+<BaseLayout seo={seo}>
+  <main class="container mx-auto px-4 py-12">
+    <div class="text-center mb-16">
+      <h1 class="text-4xl font-bold mb-4">Novu Blog</h1>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        Discover insights, stories, and ideas from our team
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {
+        posts.map((post) => (
+          <article class="blog-card bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
+            <a href={post.slug}>
+              <div class="h-48 bg-gradient-to-r from-[#f4953f] to-[#f6bc88]" />
+              <div class="p-6 flex flex-col justify-between h-full">
+                <div>
+                  <span class="text-sm text-gray-500">
+                    <FormattedDate date={new Date(post.createdAt)} />
+                    {" • "}
+                    {calculateReadTime(post.intro, post.items)} min read
+                  </span>
+                  <h3 class="text-xl font-semibold mt-2 mb-3">{post.title}</h3>
+                  <div class="text-gray-700 mb-4 prose max-w-full" />
+                  {post.intro}
+                </div>
+                <a
+                  href={`${post.slug}`}
+                  class="read-more-btn mt-auto inline-block px-4 py-2 bg-[#f4953f] text-white rounded-md hover:bg-[#f67c2e] transition-colors duration-200"
+                >
+                  Read More
+                </a>
+              </div>
+            </a>
+          </article>
+        ))
+      }
+    </div>
+  </main>
+</BaseLayout>

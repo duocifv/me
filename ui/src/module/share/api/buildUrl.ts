@@ -6,7 +6,6 @@ export const makeUrl = (
   path: string,
   params?: ReqParams | unknown[]
 ): string => {
-  // nếu front-end đóng gói object trong 'params', hãy lấy luôn cái bên trong
   let realParams = params as unknown;
   if (realParams && typeof realParams === "object" && "params" in realParams) {
     realParams = realParams.params;
@@ -38,8 +37,6 @@ export const makeUrl = (
       searchParams.append(key, String(value));
       return;
     }
-
-    // các object con khác bỏ qua
   });
 
   const qs = searchParams.toString();

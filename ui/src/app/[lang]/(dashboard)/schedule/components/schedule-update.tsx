@@ -28,7 +28,7 @@ export function ScheduleUpdate() {
 
   return (
     <Dialog open={!!item} onOpenChange={() => updateItem(null)}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[70vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>Cập nhật lịch thiết bị</DialogTitle>
         </DialogHeader>

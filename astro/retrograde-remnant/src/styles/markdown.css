@@ -1,0 +1,242 @@
+:root {
+    /* Brand colors */
+    --bg: #fcfcfc;
+    --primary: #f4953f;
+    --secondary: #f4a257;
+    --accent: #f5af6f;
+    --highlight: #f6bc88;
+
+    /* Derived & utility colors */
+    --text: #111827;
+    /* main text (dark) */
+    --muted: #374151;
+    /* paragraph / secondary text */
+    --heading: #1f2937;
+    /* headings */
+    --code-bg: rgba(246, 188, 136, 0.06);
+    /* subtle bg for inline code */
+    --blockquote-bg: rgba(244, 149, 63, 0.06);
+    /* subtle bg for blockquotes */
+    --hr: rgba(31, 41, 55, 0.06);
+    --link-hover: #d67a2f;
+    /* slightly darker primary for hover */
+    --max-width: 900px;
+    --radius: 0.5rem;
+    --container-padding: 1rem;
+}
+
+/* Page-level theme */
+html,
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Roboto', system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+}
+
+/* Optional site accents (header/footer) */
+.site-header,
+.site-footer {
+    background: linear-gradient(90deg, rgba(244, 149, 63, 0.06), rgba(245, 175, 111, 0.03));
+    border-top: 1px solid rgba(31, 41, 55, 0.03);
+    color: var(--heading);
+}
+
+/* Markdown Content Styles (themed) */
+.markdown-content {
+    max-width: var(--max-width);
+    margin: 2rem auto;
+    padding: 0 var(--container-padding);
+    font-family: 'Inter', 'Roboto', sans-serif;
+    line-height: 1.8;
+    color: var(--text);
+    background: transparent;
+}
+
+/* Headings */
+.markdown-content h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 2rem 0 1rem;
+    color: var(--heading);
+    /* subtle brand underline */
+    position: relative;
+    padding-bottom: 0.45rem;
+}
+
+.markdown-content h1::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 6px;
+    width: 120px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    opacity: 0.95;
+    transform: translateY(6px);
+}
+
+.markdown-content h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 1.5rem 0 1rem;
+    color: var(--heading);
+}
+
+.markdown-content h3 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin: 1.2rem 0 0.8rem;
+    color: var(--heading);
+}
+
+/* Paragraphs */
+.markdown-content p {
+    margin: 1rem 0;
+    font-size: 1rem;
+    color: var(--muted);
+}
+
+/* Links (use brand primary) */
+.markdown-content a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.18s ease, transform 0.12s ease;
+}
+
+.markdown-content a:hover,
+.markdown-content a:focus {
+    color: var(--link-hover);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+    margin: 1rem 0 1rem 1.5rem;
+}
+
+.markdown-content li {
+    margin: 0.5rem 0;
+}
+
+/* Blockquotes: brand left border + subtle bg */
+.markdown-content blockquote {
+    border-left: 4px solid var(--secondary);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--heading);
+    font-style: italic;
+    background-color: var(--blockquote-bg);
+    border-radius: 0.35rem;
+}
+
+/* Inline code */
+.markdown-content code {
+    background-color: var(--code-bg);
+    padding: 0.18rem 0.4rem;
+    border-radius: 0.3rem;
+    font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+    font-size: 0.95rem;
+    color: var(--text);
+    border: 1px solid rgba(31, 41, 55, 0.03);
+}
+
+/* Code blocks */
+.markdown-content pre {
+    background: linear-gradient(180deg, rgba(31, 41, 55, 0.95), rgba(17, 24, 39, 0.95));
+    color: #f8fafc;
+    padding: 1rem;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    margin: 1rem 0;
+    font-family: 'Fira Code', ui-monospace, monospace;
+    font-size: 0.95rem;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 6px 18px rgba(17, 24, 39, 0.06);
+}
+
+/* Images */
+.markdown-content img {
+    max-width: 100%;
+    margin: 1.5rem 0;
+    border-radius: 0.5rem;
+    display: block;
+    object-fit: cover;
+}
+
+/* Horizontal Rule */
+.markdown-content hr {
+    border: none;
+    border-top: 1px solid var(--hr);
+    margin: 2rem 0;
+}
+
+/* Small utilities for badges/buttons inside markdown */
+.markdown-content .badge {
+    display: inline-block;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), rgba(245, 175, 111, 0.14));
+    color: var(--heading);
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 1px solid rgba(31, 41, 55, 0.03);
+}
+
+.markdown-content .btn {
+    display: inline-block;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.6rem;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 6px 16px rgba(244, 149, 63, 0.12);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.markdown-content .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(244, 149, 63, 0.14);
+}
+
+/* Responsive tweaks */
+@media (max-width: 640px) {
+    .markdown-content {
+        padding: 0 0.75rem;
+    }
+
+    .markdown-content h1 {
+        font-size: 2rem;
+    }
+
+    .markdown-content h2 {
+        font-size: 1.6rem;
+    }
+}
+
+/* Optional: dark mode support (nice-to-have) */
+/* @media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0b1220;
+        --text: #e6eef8;
+        --muted: #cbd5e1;
+        --heading: #f8fafc;
+        --hr: rgba(255, 255, 255, 0.06);
+    }
+
+    body {
+        background: var(--bg);
+        color: var(--text);
+    }
+
+    .markdown-content pre {
+        background: linear-gradient(180deg, rgba(8, 10, 15, 0.95), rgba(16, 18, 23, 0.95));
+    }
+} */

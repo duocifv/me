@@ -5,71 +5,78 @@ import {
 } from '@nestjs/common';
 import axios from 'axios';
 import { GeminiService } from './gemini-formatter.service';
+import { OpenRouterAnalysisService } from './ai-analysis.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { LiteMedical } from 'src/sqlite/lite-medical.entity';
+import { Repository } from 'typeorm';
+import { GroqService } from './groq-formatter.service';
 
 @Injectable()
 export class MedalpacaService {
   private readonly apiUrl = 'https://nvduocfpt-duoc2.hf.space/ask';
-  constructor(private readonly geminiService: GeminiService) {}
+  constructor(
+    private readonly geminiService: GeminiService,
+    private readonly analysisService: OpenRouterAnalysisService,
+    private readonly groqService: GroqService,
+    @InjectRepository(LiteMedical, 'sqlite')
+    private readonly medicalRepo: Repository<LiteMedical>,
+  ) {}
 
   async convertGeminiToPrompMedalpacat(analysisText: string) {
-    // 1. Dùng Gemini soạn lại đoạn văn thô thành đoạn văn chuẩn y khoa ngắn gọn, cô đọng
     const geminiPrompt = `
-### Instruction:
-Bạn là chuyên gia y khoa. Đoạn văn sau đây chứa thông tin y khoa thô. Hãy SOẠN LẠI thành một đoạn mô tả / tóm tắt y khoa chuẩn, ngắn gọn, dễ hiểu, gồm:
-- Tóm tắt triệu chứng chính (thời gian khởi phát, mức độ, yếu tố tăng/giảm)
-- Những yếu tố tiền sử bệnh quan trọng
-- Không kèm câu hỏi, chỉ tóm tắt thông tin để dễ đọc và chuẩn.
-Đoạn văn thô:
-${analysisText}
-### Response:
-`;
-
+Medical expert. Extract only clinical symptoms (onset, duration, severity, triggers/relievers, associated symptoms) 
+from the raw text. Output in compressed medical English, no questions, no history.
+Raw: ${analysisText}
+`.trim();
     const rewritten = await this.geminiService.chatWithGeminiRaw(geminiPrompt);
 
-    if (typeof rewritten !== 'string' || rewritten.trim() === '') {
-      throw new InternalServerErrorException(
-        'Gemini trả về không phải text hoặc trống',
-      );
+    if (
+      !rewritten ||
+      typeof rewritten !== 'string' ||
+      rewritten.trim().length < 5
+    ) {
+      throw new InternalServerErrorException('Gemini output empty or invalid.');
     }
 
-    // 2. Dùng đoạn văn đã soạn lại làm phần <đoạn văn thô> để tạo prompt gửi MedAlpaca
     const medAlpacaPrompt = `
 ### Instruction:
-Bạn là chuyên gia y khoa. Dưới đây là thông tin bệnh nhân:
+${rewritten}
 
-"${rewritten.trim()}"
-
-Hãy soạn một trả lời Y KHOA CÓ CẤU TRÚC bao gồm các mục sau:
-1. Tóm tắt ngắn về triệu chứng và tiền sử bệnh.
-2. Những chẩn đoán khả dĩ (differential diagnoses), kèm ước lượng mức độ khả năng (cao, trung bình, thấp).
-3. Các xét nghiệm hoặc thăm khám cần thiết, phân loại theo mức độ ưu tiên.
-4. Phác đồ xử trí hoặc điều trị đề xuất, bao gồm xử trí cấp cứu nếu cần.
-5. Các dấu hiệu cảnh báo (red flags) cần lưu ý.
-6. Ghi chú về giới hạn thông tin và khuyến cáo bệnh nhân nên khám bác sĩ chuyên khoa để được chẩn đoán chính xác.
-
-Trả lời ngắn gọn, rõ ràng, dùng bullet points hoặc danh sách số. Không đưa ra kết luận tuyệt đối, nên kèm mức độ chắc chắn.
-
+Diagnosis, severity (mild/moderate/severe), confidence %.
 ### Response:
-`;
+`.trim();
 
     return medAlpacaPrompt;
   }
 
   async ask(text: string) {
-    console.log('Gemini raw response:', text);
     if (!text) {
       throw new NotFoundException('Bạn phải gửi trường "text" trong body.');
     }
 
     const prompt = await this.convertGeminiToPrompMedalpacat(text);
+    console.log('prompt Medalpa:', prompt);
     try {
       const response = await axios.post<{ output: string }>(this.apiUrl, {
         text: prompt,
       });
-      return response.data;
+      if (response?.data) {
+        const analysisResult = await this.groqService.chatJson(
+          response?.data?.output,
+        );
+        await this.medicalRepo.save({
+          analysisResult: JSON.stringify(analysisResult),
+        });
+
+        return analysisResult;
+      }
     } catch {
-      // Có thể log error chi tiết nếu muốn
       throw new NotFoundException('Lỗi khi gọi API AI bên ngoài');
     }
+  }
+  async getAllAnalysisResults(): Promise<LiteMedical[]> {
+    return this.medicalRepo.find({
+      order: { createdAt: 'DESC' }, // tùy chọn sắp xếp mới nhất lên trước
+    });
   }
 }

@@ -95,17 +95,18 @@ ${analysisText}
 
 ### Mục tiêu chính (tưới – pump):
 1. Pump phải cấp đủ lượng nước/ngày do Deepseek đề xuất.  
-2. Số lần: 4–6 lần/ngày, mỗi lần 8–12 phút.  
-3. Ngừng ít nhất 20 phút giữa các lần để ngăn ngập úng.  
+2. Số lần: 6–8 lần/ngày, mỗi lần 12–15 phút.  
+3. Ngừng ít nhất 15 phút giữa các lần để ngăn ngập úng.  
 4. Khung giờ ưu tiên tưới: **05:30–08:30** và **16:00–19:00** (có thể dời ±5 phút nếu thiếu).  
 
 ### Lịch quạt (fan) & LED giữ nguyên:
-- Fan: 6–8 lần/ngày, mỗi lần 5–8 phút, khung giờ 06:00–08:00, 09:00–15:00, 17:00–19:00.  
-- LED: 6–8 lần/ngày, mỗi lần 90–120 phút, tổng 10–14 giờ/ngày, chạy cùng fan.
+- Fan: 10–12 lần/ngày, mỗi lần 10–15 phút, khung giờ 06:00–08:00, 09:00–15:00, 17:00–19:00.  
+- LED: 6–8 lần/ngày, mỗi lần 90–120 phút, tổng 10–14 giờ/ngày, chạy cùng fan, **khung giờ ưu tiên 05:00–17:00, không bật giờ tối**.
 
 ### Quy tắc chung:
 - Pump không chạy cùng lúc với fan/LED  
 - Fan và LED có thể chạy đồng thời  
+- LED chỉ được bật trong khung giờ 06:00–17:00, tuyệt đối không bật sau 17:00  
 - Nghỉ tối thiểu giữa mọi phiên bật (bất kể thiết bị): 10 phút  
 
 ### Định dạng JSON trả về (chỉ mỗi JSON, không giải thích):
