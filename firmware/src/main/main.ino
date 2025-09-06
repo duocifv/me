@@ -39,13 +39,17 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length) {
   // Chỉ xử lý topic esp32/control
   if (strcmp(topic, "esp32/control") == 0) {
     // ==== Relay control ====
-    if (doc.containsKey("fanCool")) relaySet(RELAY_FAN_COOL, doc["fanCool"]);
-    if (doc.containsKey("fanVent")) relaySet(RELAY_FAN_VENT, doc["fanVent"]);
-    if (doc.containsKey("led")) relaySet(RELAY_LED, doc["led"]);
-    if (doc.containsKey("pump")) relaySet(RELAY_PUMP, doc["pump"]);
+    // Ép kiểu rõ ràng bằng .as<bool>() để tránh ambiguity
+    if (doc.containsKey("fanCool")) relaySetFanCool(doc["fanCool"].as<bool>());
+    if (doc.containsKey("fanVent")) relaySetFanVent(doc["fanVent"].as<bool>());
+    if (doc.containsKey("led"))     relaySetLed(doc["led"].as<bool>());
+    if (doc.containsKey("pump"))    relaySetPump(doc["pump"].as<bool>());
+
+    // In trạng thái hiện tại (debug)
+    relayPrintStatus();
 
     // ==== Sensor request ====
-    if (doc["sensors"] == true) {
+    if (doc.containsKey("sensors") && doc["sensors"].as<bool>() == true) {
       // Kiểm tra kết nối WiFi và MQTT
       if (WiFi.status() == WL_CONNECTED && mqtt.isConnected()) {
         dht.update();
@@ -70,7 +74,10 @@ void setup() {
   delay(100);
 
   wifi.connect();
-  relayBegin(RELAY_FAN_COOL, RELAY_FAN_VENT, RELAY_LED, RELAY_PUMP);
+
+  // CHÚ Ý: relayBegin(fanVentPin, fanCoolPin, ledPin, pumpPin)
+  // Gọi đúng thứ tự để không gán nhầm pin!
+  relayBegin(RELAY_FAN_VENT, RELAY_FAN_COOL, RELAY_LED, RELAY_PUMP);
 
   dht.begin();
   ds18.begin();
@@ -86,11 +93,8 @@ void loop() {
   bool online = wifi.isConnected() && mqtt.isConnected();
 
   if (!online) {
-    // Nếu mất WiFi hoặc MQTT thì tắt hết relay
-    relaySet(RELAY_FAN_COOL, LOW);
-    relaySet(RELAY_FAN_VENT, LOW);
-    relaySet(RELAY_LED, LOW);
-    relaySet(RELAY_PUMP, LOW);
+    // Nếu mất WiFi hoặc MQTT thì tắt hết relay — dùng API module mới
+    relayOffAll();
 
     // Báo lỗi cảm biến
     Serial.println("⚠️ Offline: sensor data not published");

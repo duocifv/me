@@ -5,7 +5,7 @@
 #include <DHT.h>
 
 #ifndef DHT_DEFAULT_TYPE
-  #define DHT_DEFAULT_TYPE DHT22
+    #define DHT_DEFAULT_TYPE DHT11 //   #define DHT_DEFAULT_TYPE DHT22
 #endif
 
 class DHTModule {

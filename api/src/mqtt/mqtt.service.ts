@@ -38,7 +38,7 @@ export class MqttService implements OnModuleInit {
 
     @InjectRepository(LiteSensors, 'sqlite')
     private readonly sensorsRepo: Repository<LiteSensors>,
-  ) {}
+  ) { }
 
   onModuleInit() {
     const protocol = this.config.get<'mqtt' | 'mqtts' | 'ws' | 'wss'>(
@@ -292,12 +292,12 @@ export class MqttService implements OnModuleInit {
   }
 
   async createError(dto: ErrorDto): Promise<LiteErrors> {
-  const message = dto?.message?.trim() || 'Unknown error'; // fallback nếu rỗng
-  return await this.errorsRepo.save({
-    message,
-    createdAt: nowVNDate(),
-  });
-}
+    const message = dto?.message?.trim() || 'Unknown error'; // fallback nếu rỗng
+    return await this.errorsRepo.save({
+      message,
+      createdAt: nowVNDate(),
+    });
+  }
 
 
   async deleteError() {
