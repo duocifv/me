@@ -132,11 +132,11 @@ export class ScheduleController {
     return { success: true };
   }
 
-  @Get('cron-status')
-  getCronStatus() {
-    return {
-      message: 'Cron is running',
-      runCount: this.cronTask.getRunCount(),
-    };
-  }
+  // @Get('cron-status')
+  // getCronStatus() {
+  //   return {
+  //     message: 'Cron is running',
+  //     runCount: this.cronTask.getRunCount(),
+  //   };
+  // }
 }
