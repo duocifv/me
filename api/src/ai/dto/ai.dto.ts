@@ -2,10 +2,11 @@ import { z } from 'zod';
 
 // 🎯 Enum các loại thiết bị hợp lệ
 export const DeviceTypeSchema = z.enum([
-  'pumpOn',
-  'fanOn',
-  'ledOn',
-  'sensor',
+  'pump',
+  'fanVent',
+  'fanCool',
+  'led',
+  'sensors',
   'camera',
 ]);
 export type DeviceType = z.infer<typeof DeviceTypeSchema>;

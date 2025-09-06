@@ -6,10 +6,11 @@ import {
 } from 'typeorm';
 
 export enum DeviceType {
-  PUMP = 'pumpOn',
-  FAN = 'fanOn',
-  LED = 'ledOn',
-  SENSOR = 'sensor',
+  PUMP = 'pump',
+  FAN_VENT = 'fanVent',
+  FAN_COOL = 'fanCool',
+  LED = 'led',
+  SENSORS = 'sensors',
   CAMERA = 'camera',
 }
 

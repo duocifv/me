@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 // Enum để tái sử dụng và rõ ràng hơn
 export const DeviceTypeEnum = z.enum([
+  'pump',
   'fanCool',
   'fanVent',
-  'pump',
   'led',
   'sensors',
   'camera',
