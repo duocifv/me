@@ -7,24 +7,18 @@
 #include "dht_module.h"
 #include "ds18b20_module.h"
 
-// ==== Relay pins ====
-#define RELAY_FAN_COOL D1
-#define RELAY_FAN_VENT D2
-#define RELAY_LED      D5
-#define RELAY_PUMP     D6
-
 // ==== Modules ====
 WifiModule wifi(WIFI_SSID, WIFI_PASS);
 MQTTModule mqtt;
-DHTModule dht(D4);       // ví dụ DHT22 nối chân D4
-DS18B20Module ds18(D3);  // ví dụ DS18B20 nối chân D3
+DHTModule dht(PIN_DHT);
+DS18B20Module ds18(PIN_DS18);
 
+// ==== Báo lỗi ====
 float reportError(const char *msg) {
   mqtt.publishError(msg);
   Serial.println(msg);
-  return NAN;   // để gán được cho float
+  return NAN;  // vẫn trả về số cho JSON (NaN được Json coi như null)
 }
-
 
 // ==== MQTT callback ====
 void mqttCallback(char *topic, uint8_t *payload, unsigned int length) {
@@ -47,23 +41,26 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length) {
     // ==== Relay control ====
     if (doc.containsKey("fanCool")) relaySet(RELAY_FAN_COOL, doc["fanCool"]);
     if (doc.containsKey("fanVent")) relaySet(RELAY_FAN_VENT, doc["fanVent"]);
-    if (doc.containsKey("led"))     relaySet(RELAY_LED, doc["led"]);
-    if (doc.containsKey("pump"))    relaySet(RELAY_PUMP, doc["pump"]);
+    if (doc.containsKey("led")) relaySet(RELAY_LED, doc["led"]);
+    if (doc.containsKey("pump")) relaySet(RELAY_PUMP, doc["pump"]);
 
     // ==== Sensor request ====
-    if (doc.containsKey("sensors") && doc["sensors"] == true) {
-      dht.update();
-      float waterTemp = ds18.getTemperature();
-      float airTemp   = dht.available() ? dht.getTemperature() : reportError("getTemperature:no data");
-      float hum       = dht.available() ? dht.getHumidity()    : reportError("getTemperature:no data");
+    if (doc["sensors"] == true) {
+      // Kiểm tra kết nối WiFi và MQTT
+      if (WiFi.status() == WL_CONNECTED && mqtt.isConnected()) {
+        dht.update();
+        float waterTemp = ds18.getTemperature();
+        float airTemp = dht.available() ? dht.getTemperature() : reportError("airTemp:no data");
+        float hum = dht.available() ? dht.getHumidity() : reportError("humidity:no data");
 
-      // publish sensor vào đúng topic esp32/control
-      mqtt.publishSensor(waterTemp, airTemp, hum);
+        mqtt.publishSensor(waterTemp, airTemp, hum);
+      } else {
+        Serial.println(F("[WARN] WiFi/MQTT not connected -> skip sensor read"));
+      }
     }
   }
 
-   Serial.println("✅ Relays updated from MQTT");
-
+  Serial.println("✅ Relays updated from MQTT");
   mqtt.publishPing();
 }
 
@@ -85,4 +82,17 @@ void setup() {
 void loop() {
   wifi.loop();
   mqtt.loop();
+
+  bool online = wifi.isConnected() && mqtt.isConnected();
+
+  if (!online) {
+    // Nếu mất WiFi hoặc MQTT thì tắt hết relay
+    relaySet(RELAY_FAN_COOL, LOW);
+    relaySet(RELAY_FAN_VENT, LOW);
+    relaySet(RELAY_LED, LOW);
+    relaySet(RELAY_PUMP, LOW);
+
+    // Báo lỗi cảm biến
+    Serial.println("⚠️ Offline: sensor data not published");
+  }
 }
