@@ -11,7 +11,7 @@ export class LiteErrors {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'text', nullable: false })
   message: string;
 
   @CreateDateColumn()
