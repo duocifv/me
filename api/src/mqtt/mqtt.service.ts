@@ -292,8 +292,13 @@ export class MqttService implements OnModuleInit {
   }
 
   async createError(dto: ErrorDto): Promise<LiteErrors> {
-    return await this.errorsRepo.save({ ...dto, createdAt: nowVNDate() });
-  }
+  const message = dto?.message?.trim() || 'Unknown error'; // fallback nếu rỗng
+  return await this.errorsRepo.save({
+    message,
+    createdAt: nowVNDate(),
+  });
+}
+
 
   async deleteError() {
     await this.errorsRepo.clear();
