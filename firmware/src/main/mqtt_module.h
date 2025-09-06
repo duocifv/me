@@ -39,11 +39,12 @@ public:
 
   void publishError(const char *msg) {
     StaticJsonDocument<128> doc;
-    doc["error"] = msg;
+    doc["message"] = msg;
     char buf[128];
     size_t len = serializeJson(doc, buf);
     publish("esp32/errors", buf, len);
   }
+
 
   bool isConnected() {
     return _client.connected();
