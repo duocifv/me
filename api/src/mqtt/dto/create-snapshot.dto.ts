@@ -2,7 +2,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSnapshotDto {
-  @ApiProperty() waterTemperature: number;
-  @ApiProperty() ambientTemperature: number;
+  @ApiProperty() waterTemp: number;
+  @ApiProperty() airTemp: number;
   @ApiProperty() humidity: number;
 }

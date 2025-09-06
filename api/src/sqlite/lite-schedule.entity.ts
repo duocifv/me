@@ -22,7 +22,7 @@ export class LiteSchedule {
   deviceId: string;
 
   @Column()
-  device: 'pumpOn' | 'fanOn' | 'ledOn' | 'sensor' | 'camera';
+  device: 'pump' | 'fanCool' | 'fanVent' | 'led' | 'sensors' | 'camera';
 
   @Column('simple-json')
   times: { start: string; end: string }[];

@@ -18,10 +18,11 @@ import { nowVNDate } from 'src/shared/utils/time';
 export class ScheduleService {
   public health: boolean = false;
   private latestConfig: UpdateControlDto = {
-    pumpOn: false,
-    ledOn: false,
-    fanOn: false,
-    sensor: false,
+    pump: false,
+    led: false,
+    fanCool: false,
+    fanVent: false,
+    sensors: false,
     camera: false,
   };
 
@@ -115,10 +116,11 @@ export class ScheduleService {
     const schedules = await this.scheduleRepo.find({ where: { deviceId } });
 
     const activeStates: Record<DeviceType, boolean> = {
-      pumpOn: false,
-      fanOn: false,
-      ledOn: false,
-      sensor: false,
+      pump: false,
+      fanVent: false,
+      fanCool: false,
+      led: false,
+      sensors: false,
       camera: false,
     };
 

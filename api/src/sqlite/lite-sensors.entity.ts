@@ -11,10 +11,10 @@ export class LiteSensors {
   id: number;
 
   @Column('float')
-  waterTemperature: number;
+  waterTemp: number;
 
   @Column('float')
-  ambientTemperature: number;
+  airTemp: number;
 
   @Column('float')
   humidity: number;
