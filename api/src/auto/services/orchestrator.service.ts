@@ -38,7 +38,7 @@ export class OrchestratorService {
     for (const step of steps) {
       console.log('step', step);
       const res = await this.agent.run(step);
-      results.push(res.output);
+      results.push(res);
     }
 
     // 4️⃣ Nếu không có sản phẩm
@@ -70,9 +70,9 @@ export class OrchestratorService {
     // 7️⃣ Kết quả enriched
     const enriched: ChatResultDto[] = [
       {
-        price: (inv?.output as any)?.price ?? null,
-        stock: (inv?.output as any)?.stock ?? null,
-        reviews: Array.isArray(rev?.output) ? (rev.output as any) : [],
+        price: (inv as any)?.price ?? null,
+        stock: (inv as any)?.stock ?? null,
+        reviews: Array.isArray(rev) ? (rev as any) : [],
       },
     ];
 

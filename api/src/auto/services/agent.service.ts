@@ -13,54 +13,83 @@ import {
   ChatPromptTemplate,
   MessagesPlaceholder,
 } from '@langchain/core/prompts';
+import { RunnableSequence } from '@langchain/core/runnables';
+import { StringOutputParser } from '@langchain/core/output_parsers';
 
 @Injectable()
 export class AgentService implements OnModuleInit {
   private agentExecutor: AgentExecutor;
-
+  private chain: RunnableSequence;
   constructor(
     private readonly llm: LLMService,
     private readonly rag: RAGService,
   ) {}
 
   async onModuleInit() {
-    const tools = [
-      checkStockTool,
-      getPriceTool,
-      searchTool,
-      ragSearchTool(this.rag),
-    ];
+    // const tools = [
+    //   checkStockTool,
+    //   getPriceTool,
+    //   searchTool,
+    //   ragSearchTool(this.rag),
+    // ];
 
-    // Prompt bắt buộc phải có agent_scratchpad
+    // Prompt yêu cầu Gemini chọn tool
     const prompt = ChatPromptTemplate.fromMessages([
       [
         'system',
-        'Bạn là một trợ lý thông minh, hãy chọn tool phù hợp để trả lời người dùng.',
+        `Bạn là trợ lý thông minh. Chọn tool phù hợp và trả về kết quả cuối cùng cho người dùng.
+         Tool có sẵn: 
+         - search
+         - ragSearch
+         - checkStock
+         - getPrice
+         
+         ⚠️ Chỉ trả về text (không trả JSON, không trả object).`,
       ],
       ['human', '{input}'],
-      new MessagesPlaceholder('agent_scratchpad'),
     ]);
 
-    const agent = await createOpenAIFunctionsAgent({
-      llm: this.llm.gemini, // LLMService trả về model
-      tools,
+    this.chain = RunnableSequence.from([
       prompt,
-    });
+      this.llm.gemini, // ✅ Gemini
+      new StringOutputParser(), // ép luôn output thành string
+    ]);
 
-    this.agentExecutor = new AgentExecutor({
-      agent,
-      tools,
-    });
+    // const agent = await createOpenAIFunctionsAgent({
+    //   llm: this.llm.gemini, // LLMService trả về model
+    //   tools,
+    //   prompt,
+    // });
+
+    // this.agentExecutor = new AgentExecutor({
+    //   agent,
+    //   tools,
+    // });
   }
 
-  async run(query: string): Promise<{ output: string | string[] }> {
-    const result = await this.agentExecutor.invoke({ input: query });
-    console.log('result', result);
+  async run(query: string): Promise<{ output: string }> {
+    try {
+      const thought = await this.chain.invoke({ input: query });
+      console.log('🤖 LLM chọn:', thought);
 
-    // Nếu output là string thì giữ nguyên, nếu là object thì chuyển thành array
-    if (Array.isArray(result.output)) {
-      return { output: result.output };
+      // Ví dụ LLM có thể trả: "Dùng tool getPrice với input: Powder Canister"
+      let output = '';
+      if (thought.includes('getPrice')) {
+        output = await getPriceTool.invoke(query);
+      } else if (thought.includes('checkStock')) {
+        output = await checkStockTool.invoke(query);
+      } else if (thought.includes('ragSearch')) {
+        output = await ragSearchTool(this.rag).invoke(query);
+      } else if (thought.includes('search')) {
+        output = await searchTool.invoke(query);
+      } else {
+        output = thought; // fallback: trả thẳng câu trả lời LLM
+      }
+
+      return { output: String(output) };
+    } catch (err) {
+      console.error('invoke error:', err);
+      return { output: 'Xin lỗi, tôi gặp lỗi khi xử lý.' };
     }
-    return { output: String(result.output ?? '') };
   }
 }
