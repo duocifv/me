@@ -34,6 +34,7 @@ import { ScheduleTaskModule } from './schedule/schedule.module';
 import { AIModule } from './ai/ai.module';
 import { AgentModule } from './agent/agent.module';
 import { BotsModule } from './bots/bots.module';
+import { AutoModule } from './auto/auto.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { BotsModule } from './bots/bots.module';
     ScheduleTaskModule,
     AgentModule,
     BotsModule,
+    AutoModule,
     // SettingsModule,
     // DashboardModule,
     // NotificationModule,
