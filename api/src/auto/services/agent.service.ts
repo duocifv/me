@@ -1,96 +1,66 @@
 // ai/agent.service.ts
-import { Injectable } from '@nestjs/common';
-import { MCPService } from './mcp.service';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { AgentExecutor, createOpenAIFunctionsAgent } from 'langchain/agents';
 import { RAGService } from './rag.service';
-
-export interface Agent {
-  name: string;
-  role: string;
-  act: (input: string) => Promise<any>;
-}
-
-export class SimpleAgent implements Agent {
-  constructor(
-    public name: string,
-    public role: string,
-    private fn: (input: string) => Promise<any> | any,
-  ) {}
-
-  act(input: string) {
-    return this.fn(input);
-  }
-}
+import {
+  checkStockTool,
+  getPriceTool,
+  ragSearchTool,
+  searchTool,
+} from './mcp.service';
+import { LLMService } from './llm.service';
+import {
+  ChatPromptTemplate,
+  MessagesPlaceholder,
+} from '@langchain/core/prompts';
 
 @Injectable()
-export class AgentService {
-  private agents: Agent[];
-
-  // map từ tên sản phẩm sang productId của DummyJSON
-  private productMap: Record<string, number> = {
-    mascara: 1,
-    lipstick: 2,
-    'lash-princess': 1,
-    // có thể thêm nhiều sản phẩm khác
-  };
+export class AgentService implements OnModuleInit {
+  private agentExecutor: AgentExecutor;
 
   constructor(
-    private readonly mcp: MCPService,
+    private readonly llm: LLMService,
     private readonly rag: RAGService,
-  ) {
-    // Khởi tạo các agent
-    this.agents = [
-      new SimpleAgent('SalesAgent', 'Tư vấn bán hàng', async (q: string) => {
-        return await this.rag.search(q); // trả về array products
-      }),
-      new SimpleAgent(
-        'InventoryAgent',
-        'Kiểm tra kho và giá',
-        async (id: any) => {
-          if (!id) return { stock: null, price: null };
+  ) {}
 
-          const stock = await this.mcp.checkStock(id);
-          const price = await this.mcp.getPrice(id);
-          return { stock: stock.stock, price: price.price };
-        },
-      ),
-      new SimpleAgent(
-        'ReviewAgent',
-        'Lấy đánh giá sản phẩm',
-        async (id: any) => {
-          // const id = this.productMap[itemName];
-          if (!id) return [];
-          const product = await this.rag.getById(id);
-          return product?.reviews ?? [];
-        },
-      ),
+  async onModuleInit() {
+    const tools = [
+      checkStockTool,
+      getPriceTool,
+      searchTool,
+      ragSearchTool(this.rag),
     ];
+
+    // Prompt bắt buộc phải có agent_scratchpad
+    const prompt = ChatPromptTemplate.fromMessages([
+      [
+        'system',
+        'Bạn là một trợ lý thông minh, hãy chọn tool phù hợp để trả lời người dùng.',
+      ],
+      ['human', '{input}'],
+      new MessagesPlaceholder('agent_scratchpad'),
+    ]);
+
+    const agent = await createOpenAIFunctionsAgent({
+      llm: this.llm.gemini, // LLMService trả về model
+      tools,
+      prompt,
+    });
+
+    this.agentExecutor = new AgentExecutor({
+      agent,
+      tools,
+    });
   }
 
-  async collaborate(inputs: Record<string, any>) {
-    console.log('collaborate inputs', inputs);
-    const results = await Promise.all(
-      Object.entries(inputs).map(async ([agentName, param]) => {
-        // tìm agent từ danh sách
+  async run(query: string): Promise<{ output: string | string[] }> {
+    const result = await this.agentExecutor.invoke({ input: query });
+    console.log('result', result);
 
-        const agent = this.agents.find(
-          (a) => a.name.toLowerCase() === agentName.toLowerCase(),
-        );
-        if (!agent) return { agent: agentName, result: null };
-        console.log('this.agents', agent);
-        console.log('this.param', param);
-        // nếu param là mảng, gọi từng phần tử
-        if (Array.isArray(param)) {
-          const result = await Promise.all(param.map((p) => agent.act(p)));
-          console.log('result-->', result);
-          return { agent: agentName, result };
-        }
-
-        const result = await agent.act(param);
-        // console.log('this.result', result);
-        return { agent: agentName, result };
-      }),
-    );
-
-    return results;
+    // Nếu output là string thì giữ nguyên, nếu là object thì chuyển thành array
+    if (Array.isArray(result.output)) {
+      return { output: result.output };
+    }
+    return { output: String(result.output ?? '') };
   }
 }

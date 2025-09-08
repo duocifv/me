@@ -1,27 +1,24 @@
 // ai/orchestrator.service.ts
 import { Injectable } from '@nestjs/common';
-import { AgentService } from './agent.service';
-import { ReasoningService } from './reasoning.service';
 import { RAGService } from './rag.service';
 import { ChatResponseDto, ChatResultDto } from '../dto/auto.dto';
+import { AgentService } from './agent.service';
+import { ReasoningService } from './reasoning.service';
 
 @Injectable()
 export class OrchestratorService {
   constructor(
     private readonly agent: AgentService,
-    private readonly reasoning: ReasoningService,
     private readonly rag: RAGService,
+    private readonly reasoning: ReasoningService,
   ) {}
 
-  private queryCache = new Map<
-    string,
-    { result: ChatResponseDto; timestamp: number }
-  >();
-  private readonly CACHE_TTL = 60 * 1000; // 1 phút
+  private cache = new Map<string, { result: ChatResponseDto; ts: number }>();
+  private readonly TTL = 60 * 1000; // 1 phút
 
   async handleUserQuery(q: string): Promise<ChatResponseDto> {
-    // 1️⃣ Filter nội dung cấm
-    if (q.includes('hack') || q.includes('xxx')) {
+    // 1️⃣ Kiểm duyệt nhanh
+    if (/hack|xxx/i.test(q)) {
       return {
         query: q,
         steps: [],
@@ -30,74 +27,63 @@ export class OrchestratorService {
       };
     }
 
-    // 2️⃣ Check cache
-    const cached = this.queryCache.get(q);
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      return cached.result;
-    }
+    // 2️⃣ Cache
+    const cached = this.cache.get(q);
+    if (cached && Date.now() - cached.ts < this.TTL) return cached.result;
 
-    // 3️⃣ Self-Ask / Reasoning: chia nhỏ vấn đề
-    const steps = (await this.reasoning.decomposeQuestion(q)) ?? [];
-    const stepResults: any[] = [];
-
-    // 4️⃣ Multi-Turn Reasoning: xử lý từng step
+    // 3️⃣ Gọi ReasoningService để phân rã câu hỏi
+    const steps = await this.reasoning.decomposeQuestion(q);
+    console.log('steps', steps);
+    const results: any[] = [];
     for (const step of steps) {
-      const searchResults = await this.agent.collaborate({ SalesAgent: step });
-      const products =
-        searchResults.find((r) => r.agent === 'SalesAgent')?.result || [];
-      stepResults.push({ step, products });
+      console.log('step', step);
+      const res = await this.agent.run(step);
+      results.push(res.output);
     }
 
-    // 5️⃣ Gộp tất cả products từ các step
-    const allProducts = stepResults.flatMap((r) => r.products);
-
-    // 6️⃣ Lưu embedding RAG (chỉ demo, không lưu trùng)
-    for (const prod of allProducts) {
-      await this.rag.addDocument(prod.title);
-    }
-
-    if (allProducts.length === 0) {
+    // 4️⃣ Nếu không có sản phẩm
+    if (!results.length) {
       const response: ChatResponseDto = {
         query: q,
-        steps: [...steps],
+        steps,
         result: [{ price: null, stock: null, reviews: [] }],
         evaluation: 'Không tìm thấy sản phẩm',
       };
-      this.queryCache.set(q, { result: response, timestamp: Date.now() });
+      this.cache.set(q, { result: response, ts: Date.now() });
       return response;
     }
 
-    // 7️⃣ Lấy itemId của sản phẩm đầu tiên
-    const productId = allProducts[0].id;
+    // 5️⃣ Lưu vào RAG
+    for (const p of results) {
+      if (p?.id && p?.title) {
+        await this.rag.addDocument(p.id.toString(), p.title);
+      }
+    }
 
-    // 8️⃣ Gọi InventoryAgent
-    const inventoryResults = await this.agent.collaborate({
-      InventoryAgent: [productId],
-    });
-    const inventory =
-      inventoryResults.find((r) => r.agent === 'InventoryAgent')?.result || [];
+    // 6️⃣ Lấy chi tiết sản phẩm đầu tiên
+    const productId = results[0].id;
+    const [inv, rev] = await Promise.all([
+      this.agent.run(`Check stock and price for ${productId}`),
+      this.agent.run(`Get reviews for ${productId}`),
+    ]);
 
-    // 9️⃣ Gọi ReviewAgent
-    const reviewResults = await this.agent.collaborate({
-      ReviewAgent: [productId],
-    });
-    const reviews = reviewResults[0]?.result ?? [];
+    // 7️⃣ Kết quả enriched
+    const enriched: ChatResultDto[] = [
+      {
+        price: (inv?.output as any)?.price ?? null,
+        stock: (inv?.output as any)?.stock ?? null,
+        reviews: Array.isArray(rev?.output) ? (rev.output as any) : [],
+      },
+    ];
 
-    // 10️⃣ Enrich kết quả
-    const enriched: ChatResultDto[] = inventory.map((item) => ({
-      price: item.price ?? null,
-      stock: item.stock ?? null,
-      reviews,
-    }));
-
-    // 11️⃣ Trả về và lưu cache
+    // 8️⃣ Trả về + cache
     const response: ChatResponseDto = {
       query: q,
-      steps: [...steps],
+      steps,
       result: enriched,
       evaluation: 'Đáp án có độ tin cậy cao ✅',
     };
-    this.queryCache.set(q, { result: response, timestamp: Date.now() });
+    this.cache.set(q, { result: response, ts: Date.now() });
 
     return response;
   }

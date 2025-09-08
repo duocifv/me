@@ -1,40 +1,82 @@
 // ai/mcp.service.ts
 import axios from 'axios';
+import { DynamicTool } from '@langchain/core/tools';
+import { RAGService } from './rag.service';
 
-export class MCPService {
-  private apiUrl = 'https://dummyjson.com/products';
+const API_URL = 'https://dummyjson.com/products';
 
-  async checkStock(itemId: number) {
+/**
+ * Tool: Check stock của sản phẩm theo ID
+ */
+export const checkStockTool = new DynamicTool({
+  name: 'check_stock',
+  description: 'Check stock for an item by its numeric ID',
+  func: async (input: string) => {
     try {
-      const res = await axios.get(`${this.apiUrl}/${itemId}`);
+      const id = Number(input);
+      const res = await axios.get(`${API_URL}/${id}`);
       const data = res.data;
-      return { itemId, stock: data.stock };
+      return JSON.stringify({ itemId: id, stock: data.stock });
     } catch (err) {
       console.error(err);
-      return { itemId, stock: null };
+      return JSON.stringify({ itemId: input, stock: null });
     }
-  }
+  },
+});
 
-  async getPrice(itemId: number) {
+/**
+ * Tool: Get price của sản phẩm theo ID
+ */
+export const getPriceTool = new DynamicTool({
+  name: 'get_price',
+  description: 'Get price for an item by its numeric ID',
+  func: async (input: string) => {
     try {
-      const res = await axios.get(`${this.apiUrl}/${itemId}`);
+      const id = Number(input);
+      const res = await axios.get(`${API_URL}/${id}`);
       const data = res.data;
-      return { itemId, price: data.price };
+      return JSON.stringify({ itemId: id, price: data.price });
     } catch (err) {
       console.error(err);
-      return { itemId, price: null };
+      return JSON.stringify({ itemId: input, price: null });
     }
-  }
+  },
+});
 
-  async search(query: string) {
+/**
+ * Tool: Search sản phẩm theo từ khóa
+ */
+export const searchTool = new DynamicTool({
+  name: 'search_products',
+  description: 'Search for products by keyword',
+  func: async (query: string) => {
     try {
       const res = await axios.get(
-        `${this.apiUrl}/search?q=${encodeURIComponent(query)}`,
+        `${API_URL}/search?q=${encodeURIComponent(query)}`,
       );
-      return res.data.products;
+      return JSON.stringify(res.data.products);
     } catch (err) {
       console.error(err);
-      return [];
+      return '[]';
     }
-  }
-}
+  },
+});
+
+export const ragSearchTool = (rag: RAGService) =>
+  new DynamicTool({
+    name: 'rag_search',
+    description:
+      'Search internal knowledge base for product info or contextual documents',
+    func: async (query: string) => {
+      try {
+        const result = await rag.search(query, 3);
+        return JSON.stringify({
+          documents: result.documents,
+          llmAnswer: result.llmAnswer,
+        });
+      } catch (err) {
+        console.error(err);
+        return JSON.stringify({ documents: [], llmAnswer: null });
+      }
+    },
+  });
