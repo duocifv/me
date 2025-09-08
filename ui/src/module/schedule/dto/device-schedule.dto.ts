@@ -11,9 +11,12 @@ export const TimeRangeSchema = z.object({
 
 export const ScheduleItemSchema = z.object({
   device: z
-    .enum(["pumpOn", "fanOn", "ledOn", "sensor", "camera"])
+    .enum(["pump", "fanCool", "fanVent", "led", "sensors", "camera"])
     .refine(
-      (val) => ["pumpOn", "fanOn", "ledOn", "sensor", "camera"].includes(val),
+      (val) =>
+        ["pump", "fanCool", "fanVent", "led", "sensors", "camera"].includes(
+          val
+        ),
       {
         message:
           "Thiết bị phải là một trong các giá trị: pump, fan, led, sensor, camera",

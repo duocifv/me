@@ -100,14 +100,16 @@ ${analysisText}
 4. Khung giờ ưu tiên tưới: **05:30–08:30** và **16:00–19:00** (có thể dời ±5 phút nếu thiếu).  
 
 ### Lịch quạt (fan) & LED giữ nguyên:
-- Fan: 10–12 lần/ngày, mỗi lần 10–15 phút, khung giờ 06:00–08:00, 09:00–15:00, 17:00–19:00.  
-- LED: 6–8 lần/ngày, mỗi lần 90–120 phút, tổng 10–14 giờ/ngày, chạy cùng fan, **khung giờ ưu tiên 05:00–17:00, không bật giờ tối**.
+- fanCool: 10–12 lần/ngày, mỗi lần 10–15 phút, khung giờ 06:00–08:00, 09:00–15:00, 17:00–19:00.  
+- fanVent: 10–12 lần/ngày, mỗi lần 10–15 phút, khung giờ 06:00–08:00, 09:00–15:00, 17:00–19:00. 
+- led: 6–8 lần/ngày, mỗi lần 90–120 phút, tổng 10–14 giờ/ngày, chạy cùng fan, **khung giờ ưu tiên 05:00–17:00, không bật giờ tối**.
 
 ### Quy tắc chung:
 - Pump không chạy cùng lúc với fan/LED  
-- Fan và LED có thể chạy đồng thời  
+- fanCool và led có thể chạy đồng thời  
 - LED chỉ được bật trong khung giờ 06:00–17:00, tuyệt đối không bật sau 17:00  
 - Nghỉ tối thiểu giữa mọi phiên bật (bất kể thiết bị): 10 phút  
+- "deviceId": luôn là device-001
 
 ### Định dạng JSON trả về (chỉ mỗi JSON, không giải thích):
 {
@@ -115,7 +117,7 @@ ${analysisText}
   "schedule": [
     {
       "deviceId": "device-001",
-      "device": "pumpOn",
+      "device": "pump",
       "times": [
         { "start": "HH:MM", "end": "HH:MM" },
         …
@@ -123,12 +125,17 @@ ${analysisText}
     },
     {
       "deviceId": "device-001",
-      "device": "fanOn",
+      "device": "fanCool",
+      "times": [ … ]
+    },
+      {
+      "deviceId": "device-001",
+      "device": "fanVent",
       "times": [ … ]
     },
     {
       "deviceId": "device-001",
-      "device": "ledOn",
+      "device": "led",
       "times": [ … ]
     }
   ]

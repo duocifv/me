@@ -79,6 +79,7 @@ export class AIService {
     // Debug trước khi lưu
     console.log('[Gemini] New schedule items:', result);
     const items = result.data.schedule;
+    console.log('items', items);
     // Xóa toàn bộ lịch cũ
     await this.scheduleService.deleteAllSchedules();
 
@@ -90,6 +91,7 @@ export class AIService {
         repeatOn: [0, 1, 2, 3, 4, 5, 6], // Cả tuần
         isEnabled: true,
       });
+      console.log('item', item);
     }
 
     return { updated: items.length };

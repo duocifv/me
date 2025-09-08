@@ -63,11 +63,8 @@ export default function AITable() {
                 {/* Thiết bị & Thời gian */}
                 <TableCell>
                   <div className="space-y-2">
-                    {record.schedule.map((s) => (
-                      <div
-                        key={s.deviceId}
-                        className="border rounded p-2 bg-gray-50"
-                      >
+                    {record.schedule.map((s, idx) => (
+                      <div key={idx} className="border rounded p-2 bg-gray-50">
                         <div className="font-medium uppercase">
                           {DEVICE_LABELS[s.device] || s.device}
                         </div>

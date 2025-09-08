@@ -131,7 +131,7 @@ export class OpenRouterAnalysisService {
       this.buildAiScheduleFeedbackPrompt(5),
     ]);
     const [camera] = await this.mqttService.findAllCamera();
-    // const sensor = await this.mqttService.findLastSensor();
+    const sensor = await this.mqttService.findLastSensor();
     // const scheduleOld =
     //   await this.scheduleService.getScheduleByDevice('device-001');
     // const scheduleOldText = JSON.stringify(
@@ -158,9 +158,9 @@ ${feedbackSection}
 - Thiết bị pump (device-001) lưu lượng 2 L/phút.
 - Camera giám sát (ID: ${camera.id}, vị trí: ${camera.url}).
 - Cảm biến:
-  • Nhiệt độ nước: ${29}°C  
-  • Nhiệt độ không khí: ${32}°C  
-  • Độ ẩm: ${60}%  
+  • Nhiệt độ nước: ${sensor.waterTemp ?? 29}°C  
+  • Nhiệt độ không khí: ${sensor.airTemp ?? 32}°C  
+  • Độ ẩm: ${sensor.humidity ?? 60}%  
 
 ### 4. Mục tiêu:
 1. Xác định giai đoạn sinh trưởng hiện tại dựa trên logs, feedback, và dữ liệu môi trường.  

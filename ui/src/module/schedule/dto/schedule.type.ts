@@ -4,11 +4,11 @@ export interface TimeRange {
 }
 
 export interface ScheduleItem {
-  device: "fanOn" | "pumpOn" | "ledOn" | "sensor" | "camera"; // hoặc string nếu có thêm
+  device: "pump" | "led" | "fanCool" | "fanVent" | "sensors" | "camera";
   times: TimeRange[];
-  repeatOn: string[]; // 0 = Chủ nhật, 6 = Thứ 7
+  repeatOn: string[];
   isEnabled: boolean;
-  id: number; // hoặc có thể là number nếu không cần chuỗi
+  id: number;
 }
 
 // Kiểu cho toàn bộ danh sách schedules

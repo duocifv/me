@@ -37,7 +37,7 @@ export default function ScheduleAdd() {
         <FormWrapper<ScheduleItemDto>
           schema={ScheduleItemSchema}
           defaultValues={{
-            device: "sensor",
+            device: "sensors",
             times: [
               {
                 start: "08:00",
@@ -82,10 +82,11 @@ export default function ScheduleAdd() {
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">-- Chọn thiết bị --</option>
-                      <option value="pumpOn">Máy bơm</option>
-                      <option value="fanOn">Quạt</option>
-                      <option value="ledOn">Đèn LED</option>
-                      <option value="sensor">Cảm biến</option>
+                      <option value="pump">Máy bơm</option>
+                      <option value="fanCool">Quạt tản nhiệt</option>
+                      <option value="fanVent">Quạt thông gió</option>
+                      <option value="led">Đèn LED</option>
+                      <option value="sensors">Cảm biến</option>
                       <option value="camera">Camera</option>
                     </select>
                     {form.formState.errors && (
