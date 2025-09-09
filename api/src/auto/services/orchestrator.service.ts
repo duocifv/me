@@ -4,6 +4,7 @@ import { RAGService } from './rag.service';
 import { ChatResponseDto, ChatResultDto } from '../dto/auto.dto';
 import { AgentService } from './agent.service';
 import { ReasoningService } from './reasoning.service';
+import { UpsertPayload } from '../type/upsert.type';
 
 @Injectable()
 export class OrchestratorService {
@@ -33,14 +34,30 @@ export class OrchestratorService {
 
     // 3️⃣ Gọi ReasoningService để phân rã câu hỏi
     const steps = await this.reasoning.decomposeQuestion(q);
+
     console.log('steps', steps);
     const results: any[] = [];
-    for (const step of steps) {
-      console.log('step', step);
-      const res = await this.agent.run(step);
-      results.push(res);
-    }
+    const raws = await this.agent.run(steps);
+    const once = JSON.parse(raws as any);
+    const twice = JSON.parse(once.itemId);
+    const thrice = JSON.parse(twice.itemId);
 
+    const result: UpsertPayload = {
+      items: [
+        {
+          id: 'doc15',
+          document: 'Hello 1212',
+          metadata: {
+            category: 'Hello',
+            author: 'Hello',
+          },
+        },
+      ],
+    };
+
+    console.log(result);
+    await this.rag.addDocument(result);
+    console.log('res', result, thrice);
     // 4️⃣ Nếu không có sản phẩm
     if (!results.length) {
       const response: ChatResponseDto = {
@@ -54,25 +71,25 @@ export class OrchestratorService {
     }
 
     // 5️⃣ Lưu vào RAG
-    for (const p of results) {
-      if (p?.id && p?.title) {
-        await this.rag.addDocument(p.id.toString(), p.title);
-      }
-    }
+    // for (const p of results) {
+    //   if (p?.id && p?.title) {
+    //     await this.rag.addDocument(p.id.toString(), p.title);
+    //   }
+    // }
 
     // 6️⃣ Lấy chi tiết sản phẩm đầu tiên
-    const productId = results[0].id;
-    const [inv, rev] = await Promise.all([
-      this.agent.run(`Check stock and price for ${productId}`),
-      this.agent.run(`Get reviews for ${productId}`),
-    ]);
+    // const productId = results[0].id;
+    // const [inv, rev] = await Promise.all([
+    //   this.agent.run(`Check stock and price for ${productId}`),
+    //   this.agent.run(`Get reviews for ${productId}`),
+    // ]);
 
     // 7️⃣ Kết quả enriched
     const enriched: ChatResultDto[] = [
       {
-        price: (inv as any)?.price ?? null,
-        stock: (inv as any)?.stock ?? null,
-        reviews: Array.isArray(rev) ? (rev as any) : [],
+        price: 100,
+        stock: 100,
+        reviews: [],
       },
     ];
 

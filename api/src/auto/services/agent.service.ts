@@ -1,6 +1,5 @@
 // ai/agent.service.ts
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { AgentExecutor, createOpenAIFunctionsAgent } from 'langchain/agents';
 import { RAGService } from './rag.service';
 import {
   checkStockTool,
@@ -9,87 +8,71 @@ import {
   searchTool,
 } from './mcp.service';
 import { LLMService } from './llm.service';
-import {
-  ChatPromptTemplate,
-  MessagesPlaceholder,
-} from '@langchain/core/prompts';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 
+interface ToolStep {
+  tool: 'search' | 'ragSearch' | 'checkStock' | 'getPrice';
+  input?: string; // input do LLM chỉ định
+  input_from_previous?: boolean; // nếu input lấy từ kết quả bước trước
+}
+
 @Injectable()
 export class AgentService implements OnModuleInit {
-  private agentExecutor: AgentExecutor;
   private chain: RunnableSequence;
+
   constructor(
     private readonly llm: LLMService,
     private readonly rag: RAGService,
   ) {}
 
-  async onModuleInit() {
-    // const tools = [
-    //   checkStockTool,
-    //   getPriceTool,
-    //   searchTool,
-    //   ragSearchTool(this.rag),
-    // ];
-
-    // Prompt yêu cầu Gemini chọn tool
+  onModuleInit() {
+    // Prompt Gemini quyết định sequence tool
     const prompt = ChatPromptTemplate.fromMessages([
       [
         'system',
         `Bạn là trợ lý thông minh. Chọn tool phù hợp và trả về kết quả cuối cùng cho người dùng.
-         Tool có sẵn: 
-         - search
-         - ragSearch
-         - checkStock
-         - getPrice
-         
-         ⚠️ Chỉ trả về text (không trả JSON, không trả object).`,
+Tool có sẵn: search, ragSearch, checkStock, getPrice.
+⚠️ Chỉ trả về text (không trả JSON, không trả object).`,
       ],
-      ['human', '{input}'],
+      ['human', '{input}'], // placeholder {input}
     ]);
 
     this.chain = RunnableSequence.from([
       prompt,
-      this.llm.gemini, // ✅ Gemini
-      new StringOutputParser(), // ép luôn output thành string
+      this.llm.gemini,
+      new StringOutputParser(),
     ]);
-
-    // const agent = await createOpenAIFunctionsAgent({
-    //   llm: this.llm.gemini, // LLMService trả về model
-    //   tools,
-    //   prompt,
-    // });
-
-    // this.agentExecutor = new AgentExecutor({
-    //   agent,
-    //   tools,
-    // });
   }
 
-  async run(query: string): Promise<{ output: string }> {
-    try {
-      const thought = await this.chain.invoke({ input: query });
-      console.log('🤖 LLM chọn:', thought);
+  async run(sequence: ToolStep[]): Promise<ToolStep | string> {
+    let prevResult: any = null;
 
-      // Ví dụ LLM có thể trả: "Dùng tool getPrice với input: Powder Canister"
-      let output = '';
-      if (thought.includes('getPrice')) {
-        output = await getPriceTool.invoke(query);
-      } else if (thought.includes('checkStock')) {
-        output = await checkStockTool.invoke(query);
-      } else if (thought.includes('ragSearch')) {
-        output = await ragSearchTool(this.rag).invoke(query);
-      } else if (thought.includes('search')) {
-        output = await searchTool.invoke(query);
-      } else {
-        output = thought; // fallback: trả thẳng câu trả lời LLM
+    for (const step of sequence) {
+      let input = step.input ?? '';
+      if (step.input_from_previous && prevResult) {
+        input = prevResult;
       }
 
-      return { output: String(output) };
-    } catch (err) {
-      console.error('invoke error:', err);
-      return { output: 'Xin lỗi, tôi gặp lỗi khi xử lý.' };
+      switch (step.tool) {
+        case 'getPrice':
+          prevResult = await getPriceTool.invoke(input);
+          break;
+        case 'checkStock':
+          prevResult = await checkStockTool.invoke(input);
+          break;
+        case 'ragSearch':
+          prevResult = await ragSearchTool(this.rag).invoke(input);
+          break;
+        case 'search':
+          prevResult = await searchTool.invoke(input);
+          break;
+        default:
+          prevResult = `Tool không xác định: ${step.tool}`;
+      }
     }
+    // console.log('prevResult', prevResult);
+    return String(prevResult ?? 'Không có kết quả');
   }
 }

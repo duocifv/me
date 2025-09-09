@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ToolStep } from '../type/tool-step.type';
 
 export class ChatQueryDto {
   @ApiProperty({
@@ -56,7 +57,7 @@ export class ChatResponseDto {
       'Còn hàng không?',
     ],
   })
-  steps: string[];
+  steps: ToolStep[];
 
   @ApiProperty({ type: [ChatResultDto] })
   result: ChatResultDto[];

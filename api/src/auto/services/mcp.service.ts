@@ -14,6 +14,9 @@ export const checkStockTool = new DynamicTool({
   func: async (input: string) => {
     try {
       const id = Number(input);
+      if (Number.isNaN(id)) {
+        return JSON.stringify({ itemId: input, stock: null });
+      }
       const res = await axios.get(`${API_URL}/${id}`);
       const data = res.data;
       return JSON.stringify({ itemId: id, stock: data.stock });
@@ -33,6 +36,9 @@ export const getPriceTool = new DynamicTool({
   func: async (input: string) => {
     try {
       const id = Number(input);
+      if (Number.isNaN(id)) {
+        return JSON.stringify({ itemId: input, stock: null });
+      }
       const res = await axios.get(`${API_URL}/${id}`);
       const data = res.data;
       return JSON.stringify({ itemId: id, price: data.price });
