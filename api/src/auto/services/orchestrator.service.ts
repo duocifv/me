@@ -16,6 +16,7 @@ export class OrchestratorService {
 
   private cache = new Map<string, { result: ChatResponseDto; ts: number }>();
   private readonly TTL = 60 * 1000; // 1 phút
+  private readonly DUMMY_API = 'https://dummyjson.com/products';
 
   async handleUserQuery(q: string): Promise<ChatResponseDto> {
     // 1️⃣ Kiểm duyệt nhanh
@@ -29,18 +30,21 @@ export class OrchestratorService {
     }
 
     // 2️⃣ Cache
-    const cached = this.cache.get(q);
-    if (cached && Date.now() - cached.ts < this.TTL) return cached.result;
+    // const cached = this.cache.get(q);
+    // if (cached && Date.now() - cached.ts < this.TTL) return cached.result;
 
-    // 3️⃣ Gọi ReasoningService để phân rã câu hỏi
-    const steps = await this.reasoning.decomposeQuestion(q);
+    // 3️⃣ Phân rã câu hỏi
+    const subQuestions = await this.reasoning.decomposeQuestion(q);
+    console.log('subQuestions', subQuestions);
 
-    console.log('steps', steps);
-    const results: any[] = [];
-    const raws = await this.agent.run(steps);
-    const once = JSON.parse(raws as any);
-    const twice = JSON.parse(once.itemId);
-    const thrice = JSON.parse(twice.itemId);
+    // 4️⃣ Lấy kết quả từ RAG/Chroma theo từng sub-question
+    const ragResult = await this.rag.search(subQuestions, 3);
+    console.log('ragResult', {
+      docs: ragResult.documentsByQuery,
+      ids: ragResult.idsByQuery,
+    });
+    const results = await this.agent.runMultiple(subQuestions);
+    console.log('steps', results);
 
     const result: UpsertPayload = {
       items: [
@@ -54,15 +58,13 @@ export class OrchestratorService {
         },
       ],
     };
-
     console.log(result);
     await this.rag.addDocument(result);
-    console.log('res', result, thrice);
     // 4️⃣ Nếu không có sản phẩm
     if (!results.length) {
       const response: ChatResponseDto = {
         query: q,
-        steps,
+        steps: [],
         result: [{ price: null, stock: null, reviews: [] }],
         evaluation: 'Không tìm thấy sản phẩm',
       };
@@ -96,7 +98,7 @@ export class OrchestratorService {
     // 8️⃣ Trả về + cache
     const response: ChatResponseDto = {
       query: q,
-      steps,
+      steps: [],
       result: enriched,
       evaluation: 'Đáp án có độ tin cậy cao ✅',
     };

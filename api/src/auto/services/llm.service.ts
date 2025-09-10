@@ -41,24 +41,12 @@ Hãy trả lời đầy đủ, rõ ràng và hữu ích.
     return await chain.invoke({ user_input: messages.join('\n') });
   }
 
-  /**
-   * Lấy embedding text từ Cohere
-   * @param text string
-   * @returns number[]
-   */
-  // async embed(text: string): Promise<number[]> {
-  //   const resp = await this.cohere.v2.embed({
-  //     texts: [text],
-  //     model: 'embed-v4.0',
-  //     inputType: 'classification',
-  //     embeddingTypes: ['float'],
-  //   });
-
-  //   const floats = (resp as any).embeddings?.float?.[0];
-  //   if (!Array.isArray(floats)) throw new Error('Invalid embedding');
-  //   return floats;
-  // }
   async embed(text: string): Promise<number[]> {
     return Settings.embedModel.getTextEmbedding(text);
+  }
+  // --- method QA mới ---
+  qa(query: string, retriever: any) {
+    // Sử dụng Gemini làm LLM
+    return null;
   }
 }

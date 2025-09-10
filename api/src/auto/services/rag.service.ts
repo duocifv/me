@@ -2,8 +2,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import { LLMService } from './llm.service';
-import { ToolStep } from '../type/tool-step.type';
 import { UpsertPayload } from '../type/upsert.type';
+import { ChromaQueryResult } from '../type/chroma-query.type';
+import { Document } from 'langchain/document';
 
 type UpsertItem = {
   id: string;
@@ -79,73 +80,83 @@ export class RAGService {
   /**
    * Query Chroma via /query, then optionally synthesize with injected LLMService
    */
-  async search(query: string, topK = 3) {
+  async search(
+    queries: string[] | string,
+    topK = 3,
+  ): Promise<{
+    documentsByQuery: string[][];
+    metadatasByQuery: any[][];
+    idsByQuery: (string | number)[][];
+    distancesByQuery: number[][];
+  }> {
     try {
-      const resp = await this.http.post('/query', {
-        query,
+      const queriesArr = Array.isArray(queries) ? queries : [queries];
+
+      const resp = await this.http.post<ChromaQueryResult>('/query', {
+        queries: queriesArr,
         n_results: topK,
       });
 
       const payload = resp.data?.result;
       if (!payload) {
+        // return empty arrays per query
         return {
-          rawResult: null,
-          documents: [],
-          metadatas: [],
-          ids: [],
-          distances: [],
-          llmAnswer: null,
+          documentsByQuery: queriesArr.map(() => []),
+          metadatasByQuery: queriesArr.map(() => []),
+          idsByQuery: queriesArr.map(() => []),
+          distancesByQuery: queriesArr.map(() => []),
         };
       }
 
-      // Chroma returns nested arrays per query; we assume single-query and take index 0
-      const documents: string[] =
-        (payload.documents && payload.documents[0]) || [];
-      const metadatas: any[] =
-        (payload.metadatas && payload.metadatas[0]) || [];
-      const ids: string[] = (payload.ids && payload.ids[0]) || [];
-      const distances: number[] =
-        (payload.distances && payload.distances[0]) || [];
-
-      // build context and call LLMService to synthesize (adjust to your LLMService API)
-      const context = documents.join('\n\n---\n\n');
-      let llmAnswer: string | null = null;
-      try {
-        // adapt to your LLMService: chat(messages) or generate(prompt)
-        // here we try common patterns; adjust if your LLMService exposes different method
-        if (typeof (this.llm as any).chat === 'function') {
-          llmAnswer = await (this.llm as any).chat([query, context]);
-        } else if (typeof (this.llm as any).generate === 'function') {
-          llmAnswer = (
-            await (this.llm as any).generate(context + '\n\n' + query)
-          ).toString();
-        } else {
-          // fallback: return context only
-          llmAnswer = null;
-        }
-      } catch (e) {
-        this.logger.warn('LLM synthesis failed', e);
-      }
+      // Chroma returns nested arrays per query
+      const documentsByQuery: string[][] = (payload.documents || []).map(
+        (arr: any) => (Array.isArray(arr) ? arr : []),
+      );
+      const metadatasByQuery: any[][] = (payload.metadatas || []).map(
+        (arr: any) => (Array.isArray(arr) ? arr : []),
+      );
+      const idsByQuery: (string | number)[][] = (payload.ids || []).map(
+        (arr: any) => (Array.isArray(arr) ? arr : []),
+      );
+      const distancesByQuery: number[][] = (payload.distances || []).map(
+        (arr: any) => (Array.isArray(arr) ? arr : []),
+      );
 
       return {
-        rawResult: payload,
-        documents,
-        metadatas,
-        ids,
-        distances,
-        llmAnswer,
+        documentsByQuery,
+        metadatasByQuery,
+        idsByQuery,
+        distancesByQuery,
       };
     } catch (err) {
       this.logger.error('search error', err);
       return {
-        rawResult: null,
-        documents: [],
-        metadatas: [],
-        ids: [],
-        distances: [],
-        llmAnswer: null,
-        error: err.toString?.() ?? 'unknown',
+        documentsByQuery: [] as string[][],
+        metadatasByQuery: [] as any[][],
+        idsByQuery: [] as (string | number)[][],
+        distancesByQuery: [] as number[][],
       };
     }
+  }
+}
+
+export class RAGRetriever {
+  constructor(
+    private rag: RAGService,
+    private topK = 5,
+  ) {}
+
+  async getRelevantDocuments(query: string): Promise<Document[]> {
+    const { documentsByQuery, metadatasByQuery } = await this.rag.search(
+      query,
+      this.topK,
+    );
+
+    const docs: Document[] = (documentsByQuery[0] || []).map((text, i) => ({
+      pageContent: text,
+      metadata: metadatasByQuery[0]?.[i] || {},
+    }));
+
+    return docs;
   }
 }
