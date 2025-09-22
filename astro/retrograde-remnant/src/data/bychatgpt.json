@@ -1,0 +1,44 @@
+[
+  {
+    "rank": 1,
+    "title": "Monday",
+    "desc": "A personality experiment...",
+    "author": "ChatGPT",
+    "img": "https://picsum.photos/80/80?random=10"
+  },
+  {
+    "rank": 2,
+    "title": "DALL·E",
+    "desc": "OpenAI’s legacy image generation model...",
+    "author": "ChatGPT",
+    "img": "https://picsum.photos/80/80?random=11"
+  },
+  {
+    "rank": 3,
+    "title": "Data Analyst",
+    "desc": "Drop in files to analyze & visualize...",
+    "author": "ChatGPT",
+    "img": "https://picsum.photos/80/80?random=12"
+  },
+  {
+    "rank": 4,
+    "title": "Hot Mods",
+    "desc": "Modify your image into something wild...",
+    "author": "ChatGPT",
+    "img": "https://picsum.photos/80/80?random=13"
+  },
+  {
+    "rank": 5,
+    "title": "Creative Writing Coach",
+    "desc": "Get feedback to improve your writing...",
+    "author": "ChatGPT",
+    "img": "https://picsum.photos/80/80?random=14"
+  },
+  {
+    "rank": 6,
+    "title": "Coloring Book Hero",
+    "desc": "Turn ideas into whimsical coloring pages",
+    "author": "ChatGPT",
+    "img": "https://picsum.photos/80/80?random=15"
+  }
+]

@@ -1,0 +1,115 @@
+---
+import featured from "../../data/featured.json";
+import trending from "../../data/trending.json";
+import bychatgpt from "../../data/bychatgpt.json";
+import "../../styles/gpts.css";
+
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPTs Explore</title>
+  </head>
+  <body>
+    <main class="page-container">
+      <!-- Header -->
+      <div class="header">
+        <h1>GPTs</h1>
+        <p>
+          Discover and create custom versions of ChatGPT that combine
+          instructions, extra knowledge, and any combination of skills.
+        </p>
+      </div>
+
+      <!-- Search bar -->
+      <div class="search">
+        <input type="text" placeholder="Search GPTs" />
+      </div>
+
+      <!-- Tabs -->
+      <nav class="tabs">
+        <a href="#" class="active">Featured</a>
+        <a href="#">Writing</a>
+        <a href="#">Productivity</a>
+        <a href="#">Research & Analysis</a>
+        <a href="#">Education</a>
+        <a href="#">Lifestyle</a>
+        <a href="#">Programming</a>
+      </nav>
+
+      <!-- Featured -->
+      <section class="section">
+        <h2>Featured</h2>
+        <p class="subtitle">Curated top picks from this week</p>
+        <div class="card-grid grid-3">
+          {
+            featured.map((item) => (
+              <div class="card">
+                <img src={item.img} alt={item.title} />
+                <h3>{item.title}</h3>
+                <p>{item.desc}</p>
+                <span>By {item.author}</span>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- Trending -->
+      <section class="section">
+        <h2>Trending</h2>
+        <p class="subtitle">Most popular GPTs by our community</p>
+        <div class="card-grid grid-2">
+          {
+            trending.map((item) => (
+              <div class="card flex">
+                <div class="rank">{item.rank}</div>
+                <img src={item.img} alt={item.title} />
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
+                  <span>By {item.author}</span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+        <div class="see-more"><button>See more</button></div>
+      </section>
+
+      <!-- By ChatGPT -->
+      <section class="section">
+        <h2>By ChatGPT</h2>
+        <p class="subtitle">GPTs created by the ChatGPT team</p>
+        <div class="card-grid grid-2">
+          {
+            bychatgpt.map((item) => (
+              <div class="card flex">
+                <div class="rank">{item.rank}</div>
+                <img src={item.img} alt={item.title} />
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
+                  <span>By {item.author}</span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+        <div class="see-more"><button>See more</button></div>
+      </section>
+    </main>
+    <script>
+      const tabs = document.querySelectorAll(".tabs a");
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", (e) => {
+          e.preventDefault();
+          tabs.forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>

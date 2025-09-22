@@ -1,0 +1,20 @@
+[
+  {
+    "title": "DALL·E",
+    "desc": "OpenAI’s legacy image generation model...",
+    "author": "ChatGPT",
+    "img": "https://picsum.photos/200/200?random=1"
+  },
+  {
+    "title": "Dribbble",
+    "desc": "Find top designers & creative professionals...",
+    "author": "dribbble.com",
+    "img": "https://picsum.photos/200/200?random=2"
+  },
+  {
+    "title": "Figma",
+    "desc": "Talk. Chat. Comment. Communicate via audio...",
+    "author": "figma.com",
+    "img": "https://picsum.photos/200/200?random=3"
+  }
+]
