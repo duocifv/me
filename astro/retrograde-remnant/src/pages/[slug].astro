@@ -1,0 +1,64 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const DATABASE_ID = "271529967a0c8041ad88fab4022bfdcb";
+const NOTION_TOKEN = "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"; // nên để trong .env
+
+// 🚀 Tạo static paths
+export async function getStaticPaths() {
+  const res = await fetch(
+    `https://api.notion.com/v1/databases/271529967a0c8041ad88fab4022bfdcb/query`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer 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`,
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  const data = await res.json();
+
+  const posts = (data.results || []).map((page: any) => {
+    const props = page.properties;
+    return {
+      id: page.id,
+      slug: props.Slug?.rich_text?.[0]?.plain_text || page.id,
+      title: props.Name?.title?.[0]?.plain_text || "No title",
+      content: props.Content?.rich_text?.[0]?.plain_text || "",
+    };
+  });
+
+  return posts.map((post: any) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+// ✅ Lấy prop post
+const { post } = Astro.props;
+
+const siteUrl = "https://yourdomain.com";
+const seo = {
+  title: "Novu",
+  description: "hello",
+  url: siteUrl,
+  image: `${siteUrl}/og-default.png`,
+  imageAlt: "Novu",
+  lang: "vi",
+};
+---
+
+<BaseLayout seo={seo}>
+  <main
+    style="max-width:700px;margin:40px auto;padding:20px;font-family:sans-serif;"
+  >
+    <h1 style="font-size:2rem;font-weight:bold;margin-bottom:20px;">
+      {post?.title}
+    </h1>
+
+    <div style="font-size:1rem;line-height:1.6;color:#333;">
+      {post?.content}
+    </div>
+  </main>
+</BaseLayout>
