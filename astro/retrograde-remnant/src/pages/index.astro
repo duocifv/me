@@ -79,40 +79,57 @@ const calculateReadTime = (intro: string, content: string) => {
       <section class="section">
         <h2>Featured</h2>
         <p class="subtitle">Curated top picks from this week</p>
-        <div class="card-grid grid-3">
-          {
-            posts.slice(0, 3).map((post: any) => (
-              <div class="card">
-                <a
-                  href={post.slug}
-                  class="read-more-btn mt-auto inline-block px-4 py-2 bg-[#f4953f] text-white rounded-md hover:bg-[#f67c2e] transition-colors duration-200"
-                >
-                  <img
-                    src="https://picsum.photos/200/200?random=2"
-                    alt={post.title}
-                  />
-                  <h3>{post.title}</h3>
-                  <p>{post.intro}</p>
-                  <>
-                    <span class="text-sm text-gray-500">
-                      <FormattedDate date={new Date(post.createdAt)} />
-                      {" • "}
-                      {calculateReadTime(post.intro, post.content)} min read
-                    </span>
-                    <br />
-                  </>
-                  <span>
-                    Tags:
-                    {post.tags.map((tag: any) => (
-                      <span class="text-xs bg-gray-200 px-2 py-1 rounded">
-                        {tag}
+
+        <div class="card-grid grid-2">
+          {/* Cột trái: Card lớn */}
+          <div class="mag-left">
+            {
+              posts.slice(0, 1).map((post: any) => (
+                <div class="mag-card mag-large">
+                  <a href={post.slug} class="mag-link-vertical">
+                    <img
+                      src="https://picsum.photos/600/400?random=1"
+                      alt={post.title}
+                    />
+                    <div class="mag-content">
+                      <h3>{post.title}</h3>
+                      <p>{post.intro}</p>
+                      <span class="mag-meta">
+                        <FormattedDate date={new Date(post.createdAt)} /> •{" "}
+                        {calculateReadTime(post.intro, post.content)} min read
                       </span>
-                    ))}
-                  </span>
-                </a>
-              </div>
-            ))
-          }
+                    </div>
+                  </a>
+                </div>
+              ))
+            }
+          </div>
+
+          {/* Cột phải: 4 card nhỏ giống phong cách trending */}
+          <div class="mag-right">
+            {
+              posts.slice(1, 4).map((post: any, i: number) => (
+                <div class="mag-card mag-small">
+                  <a href={post.slug} class="mag-link">
+                    <div class="mag-thumb">
+                      <img
+                        src={`https://picsum.photos/100/100?random=${i + 2}`}
+                        alt={post.title}
+                      />
+                    </div>
+                    <div class="mag-content">
+                      <h3 class="mag-sub">{post.title}</h3>
+                      <p class="mag-desc">{post.intro}</p>
+                      <span class="mag-meta">
+                        <FormattedDate date={new Date(post.createdAt)} /> •{" "}
+                        {calculateReadTime(post.intro, post.content)} min read
+                      </span>
+                    </div>
+                  </a>
+                </div>
+              ))
+            }
+          </div>
         </div>
       </section>
 

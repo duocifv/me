@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Minimal Magazine Layout</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #fff;
+            color: #1c1c1c;
+            line-height: 1.5;
+        }
+
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 2.5rem;
+            color: #111;
+        }
+
+        .card-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        /* Layout kiểu magazine */
+        .magazine-layout {
+            grid-template-areas:
+                "large large small1 small2"
+                "large large small3 small4";
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+            background: #fafafa;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e5e5e5;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .card:hover {
+            background: #f3f3f3;
+            transform: translateY(-2px);
+        }
+
+        .card img {
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem;
+            color: #111;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            color: #444;
+            margin-bottom: 0.8rem;
+        }
+
+        .meta {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        /* Card lớn */
+        .card-large {
+            grid-area: large;
+        }
+
+        .card-large img {
+            height: 100%;
+            max-height: 340px;
+        }
+
+        /* Card nhỏ */
+        .card-small:nth-child(2) {
+            grid-area: small1;
+        }
+
+        .card-small:nth-child(3) {
+            grid-area: small2;
+        }
+
+        .card-small:nth-child(4) {
+            grid-area: small3;
+        }
+
+        .card-small:nth-child(5) {
+            grid-area: small4;
+        }
+
+        .card-small img {
+            height: 160px;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .magazine-layout {
+                grid-template-areas:
+                    "large large"
+                    "small1 small2"
+                    "small3 small4";
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .card-large img {
+                max-height: 280px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .magazine-layout {
+                grid-template-areas:
+                    "large"
+                    "small1"
+                    "small2"
+                    "small3"
+                    "small4";
+                grid-template-columns: 1fr;
+            }
+
+            .card-large img {
+                max-height: 220px;
+            }
+
+            .card-small img {
+                height: 140px;
+            }
+        }
+
+        /* ===== Responsive Layout ===== */
+
+        /* Desktop lớn (≥1200px) */
+        @media (min-width: 1200px) {
+            .magazine-layout {
+                grid-template-areas:
+                    "large large small1 small2"
+                    "large large small3 small4";
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Laptop / Tablet ngang (992px – 1199px) */
+        @media (max-width: 1199px) and (min-width: 992px) {
+            .magazine-layout {
+                grid-template-areas:
+                    "large large small1"
+                    "large large small2"
+                    "small3 small4 small4";
+                grid-template-columns: 2fr 2fr 1fr;
+            }
+
+            .card-large img {
+                max-height: 320px;
+            }
+        }
+
+        /* Tablet dọc (768px – 991px) */
+        @media (max-width: 991px) and (min-width: 768px) {
+            .magazine-layout {
+                grid-template-areas:
+                    "large large"
+                    "small1 small2"
+                    "small3 small4";
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .card-large img {
+                max-height: 280px;
+            }
+        }
+
+        /* Mobile lớn (600px – 767px) */
+        @media (max-width: 767px) and (min-width: 600px) {
+            .magazine-layout {
+                grid-template-areas:
+                    "large"
+                    "small1 small2"
+                    "small3 small4";
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .card-large img {
+                max-height: 240px;
+            }
+
+            .card-small img {
+                height: 140px;
+            }
+        }
+
+        /* Mobile nhỏ (<600px) */
+        @media (max-width: 599px) {
+            .magazine-layout {
+                grid-template-areas:
+                    "large"
+                    "small1"
+                    "small2"
+                    "small3"
+                    "small4";
+                grid-template-columns: 1fr;
+            }
+
+            .card-large img {
+                max-height: 200px;
+            }
+
+            .card-small img {
+                height: 130px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container">
+        <h1 class="page-title">Featured Articles</h1>
+
+        <div class="card-grid magazine-layout">
+            <!-- Card lớn -->
+            <div class="card card-large">
+                <img src="https://picsum.photos/600/400?random=1" alt="Post title" />
+                <div class="card-content">
+                    <h3>Big Feature Post</h3>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vel orci ac lorem.</p>
+                    <span class="meta">Sep 20, 2025 • 8 min read</span>
+                </div>
+            </div>
+
+            <!-- 4 card nhỏ -->
+            <div class="card card-small">
+                <img src="https://picsum.photos/400/250?random=2" alt="Post title" />
+                <div class="card-content">
+                    <h3>Small Post One</h3>
+                    <span class="meta">Sep 21, 2025 • 5 min read</span>
+                </div>
+            </div>
+            <div class="card card-small">
+                <img src="https://picsum.photos/400/250?random=3" alt="Post title" />
+                <div class="card-content">
+                    <h3>Small Post Two</h3>
+                    <span class="meta">Sep 22, 2025 • 4 min read</span>
+                </div>
+            </div>
+            <div class="card card-small">
+                <img src="https://picsum.photos/400/250?random=4" alt="Post title" />
+                <div class="card-content">
+                    <h3>Small Post Three</h3>
+                    <span class="meta">Sep 23, 2025 • 6 min read</span>
+                </div>
+            </div>
+            <div class="card card-small">
+                <img src="https://picsum.photos/400/250?random=5" alt="Post title" />
+                <div class="card-content">
+                    <h3>Small Post Four</h3>
+                    <span class="meta">Sep 24, 2025 • 7 min read</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
