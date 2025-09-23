@@ -40,5 +40,19 @@
     "desc": "Discover recipes, home ideas, style...",
     "author": "pinterest.com",
     "img": "https://picsum.photos/80/80?random=9"
+  },
+  {
+    "rank": 7,
+    "title": "Framer",
+    "desc": "Where designing and building become one...",
+    "author": "framer.com",
+    "img": "https://picsum.photos/80/80?random=8"
+  },
+  {
+    "rank": 8,
+    "title": "Pinterest",
+    "desc": "Discover recipes, home ideas, style...",
+    "author": "pinterest.com",
+    "img": "https://picsum.photos/80/80?random=9"
   }
 ]

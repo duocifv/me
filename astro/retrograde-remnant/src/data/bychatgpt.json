@@ -40,5 +40,19 @@
     "desc": "Turn ideas into whimsical coloring pages",
     "author": "ChatGPT",
     "img": "https://picsum.photos/80/80?random=15"
+  },
+  {
+    "rank": 7,
+    "title": "Creative Writing Coach",
+    "desc": "Get feedback to improve your writing...",
+    "author": "ChatGPT",
+    "img": "https://picsum.photos/80/80?random=14"
+  },
+  {
+    "rank": 8,
+    "title": "Coloring Book Hero",
+    "desc": "Turn ideas into whimsical coloring pages",
+    "author": "ChatGPT",
+    "img": "https://picsum.photos/80/80?random=15"
   }
 ]
